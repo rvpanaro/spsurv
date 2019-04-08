@@ -1,26 +1,3 @@
-#' A function taken from the survival library - it is not exported from there hence a local copy
-#'
-#'@param x an R object
-#'@return a character vector
-#'@importFrom survival Surv
-#'@keywords internal
-
-terms.inner <- function (x)
-{
-  if (class(x) == "formula")
-    c(terms.inner(x[[2]]), terms.inner(x[[3]]))
-  else if (class(x) == "call" && (x[[1]] != as.name("$") &&
-                                  x[[1]] != as.name("["))) {
-    if (x[[1]] == "+" || x[[1]] == "*" || x[[1]] == "-") {
-      c(terms.inner(x[[2]]), terms.inner(x[[3]]))
-    }
-    else if (x[[1]] == as.name("Surv") || x[[1]] == as.name("rand"))
-      unlist(lapply(x[-1], terms.inner))
-    else terms.inner(x[[2]])
-  }
-  else (deparse(x))
-}
-
 #' Bernstein Polynomials base risk estimation in Proportional hazards model
 #'
 #' @export
@@ -35,10 +12,11 @@ terms.inner <- function (x)
 bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
                  approach = c("bayesian", "frequentist"),
                  a_gamma = .01, b_gamma = .01,
-                 m_beta = 0, S_beta = 100, ...) {
+                 m_beta = 0, S_beta = 100,
+                 chains = 1, ...) {
 
   Call <- match.call()
-  approach = ifelse(match.arg(approach) == "bayesian", 1, 0)
+  approach = ifelse(match.arg(approach) == "frequentist", 0, 1)
 
   #Step 1
   ## We want to pass any ... args to `rstan::sampling`, but not pass things
@@ -95,17 +73,24 @@ bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
 
   standata <- list(n = data.n, m = m, q = ncol(Z[,-1]),
                    status = as.vector(status), Z = Z[,-1], B = base$B, b = base$b,
-                   a_gamma = a_gamma, b_gamma = b_gamma,
-                   m_beta = m_beta, S_beta = S_beta, approach = approach)
+                   approach = approach)
+  # frequentist
   if(approach == 0){
-    stanfit <- rstan::optimizing(stanmodels$bpph, data = standata, ...)
+    standata$a_gamma = a_gamma
+    standata$b_gamma = b_gamma
+    standata$m_beta = m_beta
+    standata$S_beta = S_beta
+
+          stanfit <- rstan::optimizing(stanmodels$bpph, data = standata,...)
+
+    summary <- summary(stanfit)$summary
+    return(print(summary))
   }
+  # bayesian
   else{
-    stanfit <- rstan::sampling(stanmodels$bpph, data = standata, ...)
-    rstan::traceplot(out, pars = c("beta", "gamma"))
+    stanfit <- rstan::sampling(stanmodels$bpph, data = standata, chains = chains,  ...)
+    return(stanfit)
   }
-  print.stanfit(out, pars = c("beta", "gamma"))
-  return(out)
 }
 
 #' Bernstein Polynomials basis calculations
@@ -144,3 +129,25 @@ bp <- function(time, m,  tau = NA){
   return(list(b = b, B = B, m = m, tau = tau))
 }
 
+#' A function taken from the survival library - it is not exported from there hence a local copy
+#'
+#'@param x an R object
+#'@return a character vector
+#'@importFrom survival Surv
+#'@keywords internal
+
+terms.inner <- function (x)
+{
+  if (class(x) == "formula")
+    c(terms.inner(x[[2]]), terms.inner(x[[3]]))
+  else if (class(x) == "call" && (x[[1]] != as.name("$") &&
+                                  x[[1]] != as.name("["))) {
+    if (x[[1]] == "+" || x[[1]] == "*" || x[[1]] == "-") {
+      c(terms.inner(x[[2]]), terms.inner(x[[3]]))
+    }
+    else if (x[[1]] == as.name("Surv") || x[[1]] == as.name("rand"))
+      unlist(lapply(x[-1], terms.inner))
+    else terms.inner(x[[2]])
+  }
+  else (deparse(x))
+}

@@ -1,0 +1,6 @@
+setwd("~/Documents/spsurv")
+pkgbuild::compile_dll()
+devtools::document()
+devtools::install(local = T, quick = T)
+devtools::load_all(".")
+devtools::build()
