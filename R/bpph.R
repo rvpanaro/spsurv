@@ -9,88 +9,118 @@
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `stanfit` returned by `rstan::sampling`
 #'
+
 bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
                  approach = c("bayesian", "frequentist"),
-                 a_gamma = .01, b_gamma = .01,
-                 m_beta = 0, S_beta = 100,
-                 chains = 1, ...) {
+                 prior = NULL,
+                 chains = 1,
+                 verbose = FALSE, ...) {
 
-  Call <- match.call()
+  ## Approach error handling
   approach = ifelse(match.arg(approach) == "frequentist", 0, 1)
 
-  #Step 1
-  ## We want to pass any ... args to `rstan::sampling`, but not pass things
-  ##  like "chans=4" where someone just made a typo.  The use of ...
-  ##  is simply to allow things like "iter=5000" with easier typing
-  extraArgs <- list(...)
-  if (length(extraArgs)) {
-    stanargs <- names(formals(rstan::stan)) #legal arg names
-    indx <- pmatch(names(extraArgs), stanargs, nomatch=0L)
-    if (any(indx==0L))
-      stop(gettextf("Argument %s not matched",
-                    names(extraArgs)[indx==0L]), domain = NA)
+  if(approach == 1 & !is.null(prior)){
+    if(sum(c('a_gamma','b_gamma','m_beta', 'S_beta') %in% names(prior)) < 4) stop('Prior arguments do not match!')
+    else  prior <- as.list(prior)
+  }
+  else if(approach == 1 & is.null(prior)){
+      prior <- list(a_gamma = .01, b_gamma = .01, m_beta = 0, S_beta = 100)
+      warning('Due to bayesian approach, non informative priors are attributed, see approach in ??bpph().')
+  }
+  else{
+    if(!is.null(prior))warning('Due to frequentist approach, inputed priors are ignored.')
+    prior <- list(a_gamma = 0, b_gamma = 0, m_beta = 0, S_beta = 0)
   }
 
-  # Step 2
-  # create a call to model.frame() that contains the formula (required)
-  #  and any other of the relevant optional arguments
-  # then evaluate it in the proper frame
-  indx <- match(c("formula", "m", "tau", "optimize",
-                  "a_gamma", "b_gamma", "m_beta", "S_beta", "data"),
-                names(Call), nomatch=0)
-  if (indx[1] == 0) stop("A formula argument is required")
-  temp <- Call[c(1,indx)]  # only keep the arguments we wanted
-  temp[[1L]] <- quote(stats::model.frame)  # change the function called
+#-------------------------------------------------------------------
+  ##  ... arguments directly passed to `rstan::stan`, handles typos like "chans=4".
+  stanArgs <- list(...)
+  stanArgs <- list(chains = 1, iter = 1000)
 
-  temp$formula <- if(missing(data)) terms(formula)
-  else              terms(formula, data=data);
+  if (length(stanArgs)) {
+    stanformals <- names(formals(rstan::stan)) #legal arg names
+    aux <- pmatch(names(stanArgs), stanformals, nomatch = 0)
 
+    if (any(aux == 0))
+      stop(gettextf("Argument %s not matched", names(stanArgs)[aux==0]))
+  }
+
+  Call <- match.call()
+
+  # evaluate model.frame() containing the required formula
+  aux <- match(c("formula", "data", "m", "tau"), names(Call), nomatch = 0)
+
+  if (aux[1] == 0) stop("A formula argument is required")
+  if (aux[2] == 0) stop("A dataset argument is required")
+  temp <- Call[c(1, aux)]  # keep important args
+
+  temp[[1L]] <- quote(stats::model.frame)  # model frame call
+  temp$formula <- terms(formula, data = data);
   mf <- eval(temp, parent.frame());
 
-  if (nrow(mf) ==0) stop("No (non-missing) observations")
+  if (nrow(mf) == 0) stop("Only missing observations")
   Terms <- terms(mf)
 
-  Y <- model.extract(mf, "response")
+  Y <- model.extract(mf, "response") # in general, time-to-event response
   if (!inherits(Y, "Surv")) stop("Response must be a survival object")
   type <- attr(Y, "type")
   if (type!='right' && type!='counting')
-    stop(paste("Cox model doesn't support \"", type,
+    stop(paste("Proportional hazards model doesn't support \"", type,
                "\" survival data", sep=''))
-  data.n <- nrow(Y)   #remember this before any time transforms
   if (length(attr(Terms, 'variables')) > 2) { # a ~1 formula has length 2
     ytemp <- terms.inner(formula)[1:2]
     xtemp <- terms.inner(formula)[-c(1,2)]
-    if (any(!is.na(match(xtemp, ytemp))))
+  if (any(!is.na(match(xtemp, ytemp))))
       warning("a variable appears on both the left and right sides of the formula")
   }
-  ## ends Survival package
+##---------------------------------------------------------- ends Survival package
 
-  Z = model.matrix(Terms, mf)
-  time <- as.matrix(Y)[,1]
-  status <- as.matrix(Y)[,2]
+  ## Data
+  data.n <- nrow(Y)
+  if (length(attr(Terms, 'variables')) > 2){
+    Z = model.matrix(Terms, mf)[,-1]
+  }
+  else{
+    Z = as.matrix(rep(0, data.n), nrow = data.n)
+  }
+
+  Z = scale(Z, scale = F)
+  time <- as.vector(Y[,1])
+  status <- as.vector(Y[,2])
 
   base <- bp(time, m = m, tau = tau)
 
-  standata <- list(n = data.n, m = m, q = ncol(Z[,-1]),
-                   status = as.vector(status), Z = Z[,-1], B = base$B, b = base$b,
+  standata <- list(n = data.n, m = m, q = ncol(Z),
+                   status = status, Z = Z, B = base$B, b = base$b,
                    approach = approach)
+
+  ## Stan options
+
+  # avoid recompilations
+  rstan::rstan_options(auto_write = TRUE)
+
+  # run different chains in parallel.
+  options(mc.cores = parallel::detectCores())
+
+  ## Stanfit
+  pars = c("gamma", "beta")
+  print(standata)
+
+  model = rstan::stan_model('src/stan_files/bpph.stan')
+  standata <- do.call(c, list(standata, prior))
+  print(standata)
+
   # frequentist
   if(approach == 0){
-    standata$a_gamma = a_gamma
-    standata$b_gamma = b_gamma
-    standata$m_beta = m_beta
-    standata$S_beta = S_beta
 
-          stanfit <- rstan::optimizing(stanmodels$bpph, data = standata,...)
-
-    summary <- summary(stanfit)$summary
-    return(print(summary))
+    stanfit <- rstan::optimizing(model, data = standata, ...)
   }
   # bayesian
   else{
-    stanfit <- rstan::sampling(stanmodels$bpph, data = standata, chains = chains,  ...)
-    return(stanfit)
+      stanfit <- rstan::sampling(model, data = standata, chains = chains,
+                               pars = pars, ...)
   }
+  return(stanfit)
 }
 
 #' Bernstein Polynomials basis calculations

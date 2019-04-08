@@ -1,4 +1,5 @@
 rm(list = ls(all = T))
+
 require(spsurv)
 citation('spsurv')
 data('larynx')
@@ -8,6 +9,15 @@ head(larynx)
 larynx$stage <-  as.factor(larynx$stage)
 # spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx)
 
-fit <- spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "frequentist")
+fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "frequentist")
+names(fit)
+
+
+fit <- spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "bayesian")
 # spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx)
 
+rstan::traceplot(fit)
+
+
+prior <- list(a_gamma = 0, b_gamma = 0, m_beta = 0, S_beta = 0)
+standata <- do.call(c, list(prior, prior))
