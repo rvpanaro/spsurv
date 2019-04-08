@@ -6,7 +6,7 @@
 \usage{
 bpph(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
   approach = c("bayesian", "frequentist"), a_gamma = 0.01,
-  b_gamma = 0.01, m_beta = 0, S_beta = 100, ...)
+  b_gamma = 0.01, m_beta = 0, S_beta = 100, chains = 1, ...)
 }
 \arguments{
 \item{formula}{a formula object, with time-to-event data on the left side of ~ and explanatory terms on the right.}

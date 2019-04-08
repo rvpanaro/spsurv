@@ -1,6 +1,7 @@
 Package: spsurv
 Title: Semiparametric Survival Analysis
 Version: 0.0.1
+Date: 2019-08-04 10:35:17 UTC
 Authors@R: 
     person(given = "Renato",
            family = "Panaro",
