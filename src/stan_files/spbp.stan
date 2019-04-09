@@ -16,10 +16,10 @@ data{
   matrix[n,m] B;
 
   // setting hyperparameters:
-  real<lower=0> a_gamma;
-  real<lower=0> b_gamma;
-  real m_beta;
-  real S_beta;
+  real<lower=0> shape_gamma;
+  real<lower=0> rate_gamma;
+  real mean_beta;
+  real sd_beta;
 }
 
 // Parametes block (important).
@@ -34,8 +34,8 @@ model{
   target += sum(loglik);
 
   if( approach == 1){
-	beta ~ normal(m_beta,S_beta);
-	gamma ~ gamma(a_gamma, b_gamma);
+	beta ~ normal(mean_beta,sd_beta);
+	gamma ~ gamma(shape_gamma, rate_gamma);
   }
 }
 // Final line empty to avoid warnings.

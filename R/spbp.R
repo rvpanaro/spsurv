@@ -1,53 +1,65 @@
-#' Bernstein Polynomials base risk estimation in Proportional hazards model
+#' Semiparametric survival analysis using Bernstein Polynomials
 #'
 #' @export
 #' @param formula a formula object, with time-to-event data on the left side of ~ and explanatory terms on the right.
-#' @param m Bernstein Polynomial degree
-#' @param tau must be greater than times maximum value observed, this value is used for correction purposes.
-#' @param optimize Bayesian or frequentist inference method, by default optimize = FALSE.
+#' @param degree Bernstein Polynomial degree.
+#' @param tau must be greater than times maximum value observed, used for correction purposes.
+#' @param approach bayes or mle methods, default is approach = "bayes".
+#' @param model proportional hazards or porportional odds base, default is model = ph
 #' @param data a data.frame with variables named in the formula.
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
+#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains), see https://mc-stan.org/users/documentation/.
 #' @return An object of class `stanfit` returned by `rstan::sampling`
 #'
 
-bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
-                 approach = c("bayesian", "frequentist"),
+spbp <- function(formula, degree = NULL, tau = NULL, data,
+                 approach = c("bayes", "mle"),
+                 model = c("ph", "po"),
                  prior = NULL,
-                 chains = 1,
+                 priors = list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10),
                  verbose = FALSE, ...) {
 
-  ## Approach error handling
-  approach = ifelse(match.arg(approach) == "frequentist", 0, 1)
+  ## --------------- Degree error handling ---------------
+  ifelse(is.null(degree),
+         {degree  <- ceiling(sqrt(nrow(data)))},
+         {if(!is.integer(degree)) stop('Polynomial degree must be numeric.')})
+  #-------------------------------------------------------------------
 
+  ## --------------- Approach error handling ---------------
+  approach = ifelse(match.arg(approach) == "mle", 0, 1)
+
+  ## case 1: bayes aproach w/ wrong prior spec.
   if(approach == 1 & !is.null(prior)){
-    if(sum(c('a_gamma','b_gamma','m_beta', 'S_beta') %in% names(prior)) < 4) stop('Prior arguments do not match!')
-    else  prior <- as.list(prior)
+    if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(prior)) < 4) stop('Prior arguments do not match.')
   }
-  else if(approach == 1 & is.null(prior)){
-      prior <- list(a_gamma = .01, b_gamma = .01, m_beta = 0, S_beta = 100)
-      warning('Due to bayesian approach, non informative priors are attributed, see approach in ??bpph().')
+  ## case 2: ## case 1: bayes aproach wout/ prior spec
+  else if(approach == 1 & is.null(prior)){ .
+    warning('Due to bayes approach, default priors are attributed, see approach in ??bpph().')
   }
+  ## case 3: mle approach w/ prior spec.
   else{
-    if(!is.null(prior))warning('Due to frequentist approach, inputed priors are ignored.')
-    prior <- list(a_gamma = 0, b_gamma = 0, m_beta = 0, S_beta = 0)
+    if(!is.null(prior))warning('Due to mle approach priors are ignored.')
   }
+  #-------------------------------------------------------------------
 
-#-------------------------------------------------------------------
+  ## --------------- Extra args error handling ---------------
   ##  ... arguments directly passed to `rstan::stan`, handles typos like "chans=4".
   stanArgs <- list(...)
-  stanArgs <- list(chains = 1, iter = 1000)
 
   if (length(stanArgs)) {
-    stanformals <- names(formals(rstan::stan)) #legal arg names
+    stanformals <- switch(approach + 1,
+                          names(formals(rstan::sampling)),
+                          names(formals(rstan::optimizing))) #legal arg names
     aux <- pmatch(names(stanArgs), stanformals, nomatch = 0)
 
     if (any(aux == 0))
       stop(gettextf("Argument %s not matched", names(stanArgs)[aux==0]))
   }
+  #-------------------------------------------------------------------
 
+  ## --------------- Formula => model.frame args error handling ---------------
+  # evaluate model.frame() containing the required formula
   Call <- match.call()
 
-  # evaluate model.frame() containing the required formula
   aux <- match(c("formula", "data", "m", "tau"), names(Call), nomatch = 0)
 
   if (aux[1] == 0) stop("A formula argument is required")
@@ -73,8 +85,9 @@ bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
   if (any(!is.na(match(xtemp, ytemp))))
       warning("a variable appears on both the left and right sides of the formula")
   }
-##---------------------------------------------------------- ends Survival package
+#-------------------------------------------------------------------
 
+## --------------- Model Fitting ---------------
   ## Data
   data.n <- nrow(Y)
   if (length(attr(Terms, 'variables')) > 2){
@@ -90,34 +103,20 @@ bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
 
   base <- bp(time, m = m, tau = tau)
 
-  standata <- list(n = data.n, m = m, q = ncol(Z),
+  standata <- list(n = data.n, m = degree, q = ncol(Z),
                    status = status, Z = Z, B = base$B, b = base$b,
                    approach = approach)
 
-  ## Stan options
-
-  # avoid recompilations
-  rstan::rstan_options(auto_write = TRUE)
-
-  # run different chains in parallel.
-  options(mc.cores = parallel::detectCores())
-
   ## Stanfit
-  pars = c("gamma", "beta")
-  print(standata)
-
-  model = rstan::stan_model('src/stan_files/bpph.stan')
   standata <- do.call(c, list(standata, prior))
-  print(standata)
 
-  # frequentist
+  # mle
   if(approach == 0){
-
-    stanfit <- rstan::optimizing(model, data = standata, ...)
+    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, ...)
   }
-  # bayesian
+  # bayes
   else{
-      stanfit <- rstan::sampling(model, data = standata, chains = chains,
+      stanfit <- rstan::sampling(stanmodels$spbp, data = standata, chains = chains,
                                pars = pars, ...)
   }
   return(stanfit)
@@ -133,12 +132,12 @@ bpph <- function(formula, m = ceiling(sqrt(nrow(data))), tau = NA, data,
 #' @return A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.
 #'
 
-bp <- function(time, m,  tau = NA){
+bp <- function(time, m,  tau = NULL){
   n <- length(time)
 
-  if( is.na(tau) ){tau <- max(time)}
+  if( is.null(tau) ){tau <- max(time)}
   if(sum(time >= 0) != n | m < 0 | tau <  max(time) ){
-    stop("tau is less than a time to event observation, it must be greater!")
+    stop("tau must be greater than a any time-to-event observation.")
     }
 
   k <- 1:m
