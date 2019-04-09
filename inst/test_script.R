@@ -9,11 +9,11 @@ head(larynx)
 larynx$stage <-  as.factor(larynx$stage)
 # spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx)
 
-fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "frequentist")
+fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle")
 names(fit)
 
 
-fit <- spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "bayesian")
+fit <- spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "bayes")
 # spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx)
 
 rstan::traceplot(fit)
