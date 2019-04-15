@@ -1,5 +1,5 @@
 // include Functions block.
-#include /chunks/loglikbp.stan
+#include /chunks/logliks.stan
 
 // Data block (important).
 data{

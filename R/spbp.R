@@ -14,7 +14,6 @@
 spbp <- function(formula, degree = NULL, tau = NULL, data,
                  approach = c("bayes", "mle"),
                  model = c("ph", "po"),
-                 prior = NULL,
                  priors = list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10),
                  verbose = FALSE, ...) {
 
@@ -28,16 +27,16 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   approach = ifelse(match.arg(approach) == "mle", 0, 1)
 
   ## case 1: bayes aproach w/ wrong prior spec.
-  if(approach == 1 & !is.null(prior)){
-    if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(prior)) < 4) stop('Prior arguments do not match.')
+  if(approach == 1 & !is.null(priors)){
+    if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(priors)) < 4) stop('Prior arguments do not match.')
   }
   ## case 2: ## case 1: bayes aproach wout/ prior spec
-  else if(approach == 1 & is.null(prior)){ .
+  else if(approach == 1 & is.null(priors)){ .
     warning('Due to bayes approach, default priors are attributed, see approach in ??bpph().')
   }
   ## case 3: mle approach w/ prior spec.
   else{
-    if(!is.null(prior))warning('Due to mle approach priors are ignored.')
+    if(!is.null(priors))warning('Due to mle approach priors are ignored.')
   }
   #-------------------------------------------------------------------
 
@@ -46,9 +45,7 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   stanArgs <- list(...)
 
   if (length(stanArgs)) {
-    stanformals <- switch(approach + 1,
-                          names(formals(rstan::sampling)),
-                          names(formals(rstan::optimizing))) #legal arg names
+    stanformals <- names(formals(rstan::stan)) #legal arg names
     aux <- pmatch(names(stanArgs), stanformals, nomatch = 0)
 
     if (any(aux == 0))
@@ -60,7 +57,7 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   # evaluate model.frame() containing the required formula
   Call <- match.call()
 
-  aux <- match(c("formula", "data", "m", "tau"), names(Call), nomatch = 0)
+  aux <- match(c("formula", "data", "degree", "tau"), names(Call), nomatch = 0)
 
   if (aux[1] == 0) stop("A formula argument is required")
   if (aux[2] == 0) stop("A dataset argument is required")
@@ -101,23 +98,24 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   time <- as.vector(Y[,1])
   status <- as.vector(Y[,2])
 
-  base <- bp(time, m = m, tau = tau)
+  base <- bp(time, m = degree, tau = tau)
 
   standata <- list(n = data.n, m = degree, q = ncol(Z),
                    status = status, Z = Z, B = base$B, b = base$b,
                    approach = approach)
 
   ## Stanfit
-  standata <- do.call(c, list(standata, prior))
-
+  standata <- do.call(c, list(standata, priors))
+  print(standata)
+  names(standata)
+}
   # mle
   if(approach == 0){
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, ...)
   }
   # bayes
   else{
-      stanfit <- rstan::sampling(stanmodels$spbp, data = standata, chains = chains,
-                               pars = pars, ...)
+      stanfit <- rstan::sampling(stanmodels$spbp, data = standata, ...)
   }
   return(stanfit)
 }

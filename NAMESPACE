@@ -2,6 +2,7 @@
 
 export(bp)
 export(bpph)
+export(spbp)
 import(Rcpp)
 import(methods)
 import(rstantools)
