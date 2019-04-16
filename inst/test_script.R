@@ -8,13 +8,23 @@ data('larynx')
 head(larynx)
 
 larynx$stage <-  as.factor(larynx$stage)
-# spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx)
 
-fit <-spbp(Surv(time, delta) ~ age + stage, data = larynx, approach = "bayes")
-# spsurv::bpph(Surv(time, delta) ~ age + stage, data = larynx)
+fit1be <-spbp(Surv(time, delta) ~ age + stage, data = larynx,
+              approach = "bayes", baseline = "po", chains = 1)
+print(fit1be)
 
-fit <- spbp(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle")
-fit
+fit2be <-spbp(Surv(time, delta) ~ age + stage, data = larynx,
+              approach = "bayes", baseline = "ph", chains = 1)
+print(fit2be)
 
-rstan::traceplot(fit)
+fit1mle <- spbp(Surv(time, delta) ~ age + stage, data = larynx,
+                approach = "mle", model = "po", init = 0)
+print(fit1mle)
+
+fit2mle <- spbp(Surv(time, delta) ~ age + stage, data = larynx,
+                approach = "mle", model = "ph", init = 0)
+print(fit2mle)
+
+
+
 

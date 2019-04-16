@@ -23,6 +23,8 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
          {if(!is.integer(degree)) stop('Polynomial degree must be numeric.')})
   #-------------------------------------------------------------------
 
+  model = ifelse(match.arg(model) == "po", 0, 1)
+
   ## --------------- Approach error handling ---------------
   approach = ifelse(match.arg(approach) == "mle", 0, 1)
 
@@ -31,7 +33,7 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
     if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(priors)) < 4) stop('Prior arguments do not match.')
   }
   ## case 2: ## case 1: bayes aproach wout/ prior spec
-  else if(approach == 1 & is.null(priors)){ .
+  else if(approach == 1 & is.null(priors)){
     warning('Due to bayes approach, default priors are attributed, see approach in ??bpph().')
   }
   ## case 3: mle approach w/ prior spec.
@@ -102,20 +104,17 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
 
   standata <- list(n = data.n, m = degree, q = ncol(Z),
                    status = status, Z = Z, B = base$B, b = base$b,
-                   approach = approach)
+                   approach = approach, M = model)
 
   ## Stanfit
   standata <- do.call(c, list(standata, priors))
-  print(standata)
-  names(standata)
-}
+
   # mle
   if(approach == 0){
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, ...)
   }
-  # bayes
-  else{
-      stanfit <- rstan::sampling(stanmodels$spbp, data = standata, ...)
+  else{   # bayes
+    stanfit <- rstan::sampling(stanmodels$spbp, data = standata, ...)
   }
   return(stanfit)
 }

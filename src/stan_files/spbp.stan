@@ -1,5 +1,5 @@
 // include Functions block.
-#include /chunks/logliks.stan
+#include /chunks/loglikbp.stan
 
 // Data block (important).
 data{
@@ -8,6 +8,7 @@ data{
   int<lower=1> m;
   int<lower=1> q;
   int<lower=0, upper=1> approach;
+  int<lower=0, upper=1> M;
   vector<lower=0, upper = 1>[n] status;
 
   // observed arrays:
@@ -29,10 +30,16 @@ vector<lower=0>[m] gamma;
 }
 // Model block (important).
 model{
-  vector[n] loglik;
-  loglik = loglikbp(beta, gamma, status, Z, b, B);
-  target += sum(loglik);
-
+  if(M == 1){
+   vector[n] loglik;
+   loglik = loglikph(beta, gamma, status, Z, b, B);
+   target += sum(loglik);
+  }
+  else{
+    vector[n] loglik;
+    loglik = loglikpo(beta, gamma, status, Z, b, B);
+    target += sum(loglik);
+  }
   if( approach == 1){
 	beta ~ normal(mean_beta,sd_beta);
 	gamma ~ gamma(shape_gamma, rate_gamma);
