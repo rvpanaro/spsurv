@@ -107,8 +107,7 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
                    approach = approach, M = model)
 
   ## Stanfit
-  standata <- do.call(c, list(standata, priors))
-
+  standata <- do.call(c, list(standata, priors)); print(standata)
   # mle
   if(approach == 0){
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, ...)
