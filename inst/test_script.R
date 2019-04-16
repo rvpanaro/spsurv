@@ -9,13 +9,13 @@ head(larynx)
 
 larynx$stage <-  as.factor(larynx$stage)
 
-fit1be <-spbp(Surv(time, delta) ~ age + stage, data = larynx,
-              approach = "bayes", baseline = "po", chains = 1)
-print(fit1be)
-
-fit2be <-spbp(Surv(time, delta) ~ age + stage, data = larynx,
-              approach = "bayes", baseline = "ph", chains = 1)
-print(fit2be)
+# fit1be <-spbp(Surv(time, delta) ~ age + stage, data = larynx,
+#               approach = "bayes", model = "po", chains = 1)
+# print(fit1be)
+#
+# fit2be <-spbp(Surv(time, delta) ~ age + stage, data = larynx,
+#               approach = "bayes", model = "ph", chains = 1)
+# print(fit2be)
 
 fit1mle <- spbp(Surv(time, delta) ~ age + stage, data = larynx,
                 approach = "mle", model = "po", init = 0)

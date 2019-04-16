@@ -1,5 +1,5 @@
 // include Functions block.
-#include /chunks/loglikbp.stan
+#include /chunks/logliks.stan
 
 // Data block (important).
 data{
@@ -30,19 +30,13 @@ vector<lower=0>[m] gamma;
 }
 // Model block (important).
 model{
-  if(M == 1){
-   vector[n] loglik;
-   loglik = loglikph(beta, gamma, status, Z, b, B);
-   target += sum(loglik);
-  }
-  else{
-    vector[n] loglik;
-    loglik = loglikpo(beta, gamma, status, Z, b, B);
+  vector[n] loglik;
+    loglik = loglikbp(beta, gamma, status, Z, b, B, M);
     target += sum(loglik);
-  }
+
   if( approach == 1){
-	beta ~ normal(mean_beta,sd_beta);
-	gamma ~ gamma(shape_gamma, rate_gamma);
+	  beta ~ normal(mean_beta,sd_beta);
+	  gamma ~ gamma(shape_gamma, rate_gamma);
   }
 }
 // Final line empty to avoid warnings.
