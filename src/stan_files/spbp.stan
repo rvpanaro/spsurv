@@ -31,8 +31,8 @@ vector<lower=0>[m] gamma;
 // Model block (important).
 model{
   vector[n] loglik;
-    if(M == 1){
-      loglik = loglikph(beta, gamma, status, Z, b, B);
+    if(M == 0){
+      loglik = loglikpo(beta, gamma, status, Z, b, B);
     }
     else{
       loglik = loglikph(beta, gamma, status, Z, b, B);

@@ -110,7 +110,7 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   standata <- do.call(c, list(standata, priors))
   # mle
   if(approach == 0){
-    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, ...)
+    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = 0, ...)
   }
   else{   # bayes
     stanfit <- rstan::sampling(stanmodels$spbp, data = standata, ...)
