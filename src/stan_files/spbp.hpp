@@ -38,9 +38,9 @@ stan::io::program_reader prog_reader__() {
     reader.add_event(0, 0, "start", "model_spbp");
     reader.add_event(1, 1, "include", "/chunks/loglikbp.stan");
     reader.add_event(1, 0, "start", "/chunks/loglikbp.stan");
-    reader.add_event(40, 39, "end", "/chunks/loglikbp.stan");
-    reader.add_event(40, 2, "restart", "model_spbp");
-    reader.add_event(88, 48, "end", "model_spbp");
+    reader.add_event(37, 36, "end", "/chunks/loglikbp.stan");
+    reader.add_event(37, 2, "restart", "model_spbp");
+    reader.add_event(85, 48, "end", "model_spbp");
     return reader;
 }
 
@@ -179,10 +179,8 @@ loglikpo(const Eigen::Matrix<T0__, Eigen::Dynamic,1>& beta,
         current_statement_begin__ = 30;
         stan::math::assign(eta, multiply(Z,beta));
         current_statement_begin__ = 32;
-        stan::math::assign(loglik, add(elt_multiply(subtract(add(eta,stan::math::log(r0)),stan::math::log(add(stan::math::exp(eta),R0))),status),stan::math::log(add(1,elt_multiply(stan::math::exp(eta),R0)))));
-        current_statement_begin__ = 35;
-        stan::math::assign(loglik, subtract(elt_multiply(stan::math::log(elt_multiply(elt_divide(r0,add(1,R0)),stan::math::exp(eta))),status),elt_multiply(stan::math::log(add(1,R0)),stan::math::exp(eta))));
-        current_statement_begin__ = 36;
+        stan::math::assign(loglik, subtract(elt_multiply(stan::math::log(elt_multiply(elt_divide(r0,add(1,R0)),stan::math::exp(eta))),status),stan::math::log(elt_multiply(add(1,R0),stan::math::exp(eta)))));
+        current_statement_begin__ = 33;
         return stan::math::promote_scalar<fun_return_scalar_t__>(loglik);
         }
     } catch (const std::exception& e) {
@@ -258,37 +256,37 @@ public:
 
         // initialize member variables
         try {
-            current_statement_begin__ = 45;
+            current_statement_begin__ = 42;
             context__.validate_dims("data initialization", "n", "int", context__.to_vec());
             n = int(0);
             vals_i__ = context__.vals_i("n");
             pos__ = 0;
             n = vals_i__[pos__++];
-            current_statement_begin__ = 46;
+            current_statement_begin__ = 43;
             context__.validate_dims("data initialization", "m", "int", context__.to_vec());
             m = int(0);
             vals_i__ = context__.vals_i("m");
             pos__ = 0;
             m = vals_i__[pos__++];
-            current_statement_begin__ = 47;
+            current_statement_begin__ = 44;
             context__.validate_dims("data initialization", "q", "int", context__.to_vec());
             q = int(0);
             vals_i__ = context__.vals_i("q");
             pos__ = 0;
             q = vals_i__[pos__++];
-            current_statement_begin__ = 48;
+            current_statement_begin__ = 45;
             context__.validate_dims("data initialization", "approach", "int", context__.to_vec());
             approach = int(0);
             vals_i__ = context__.vals_i("approach");
             pos__ = 0;
             approach = vals_i__[pos__++];
-            current_statement_begin__ = 49;
+            current_statement_begin__ = 46;
             context__.validate_dims("data initialization", "M", "int", context__.to_vec());
             M = int(0);
             vals_i__ = context__.vals_i("M");
             pos__ = 0;
             M = vals_i__[pos__++];
-            current_statement_begin__ = 50;
+            current_statement_begin__ = 47;
             validate_non_negative_index("status", "n", n);
             context__.validate_dims("data initialization", "status", "vector_d", context__.to_vec(n));
             validate_non_negative_index("status", "n", n);
@@ -299,7 +297,7 @@ public:
             for (size_t i_vec__ = 0; i_vec__ < status_i_vec_lim__; ++i_vec__) {
                 status[i_vec__] = vals_r__[pos__++];
             }
-            current_statement_begin__ = 53;
+            current_statement_begin__ = 50;
             validate_non_negative_index("Z", "n", n);
             validate_non_negative_index("Z", "q", q);
             context__.validate_dims("data initialization", "Z", "matrix_d", context__.to_vec(n,q));
@@ -315,7 +313,7 @@ public:
                     Z(m_mat__,n_mat__) = vals_r__[pos__++];
                 }
             }
-            current_statement_begin__ = 54;
+            current_statement_begin__ = 51;
             validate_non_negative_index("b", "n", n);
             validate_non_negative_index("b", "m", m);
             context__.validate_dims("data initialization", "b", "matrix_d", context__.to_vec(n,m));
@@ -331,7 +329,7 @@ public:
                     b(m_mat__,n_mat__) = vals_r__[pos__++];
                 }
             }
-            current_statement_begin__ = 55;
+            current_statement_begin__ = 52;
             validate_non_negative_index("B", "n", n);
             validate_non_negative_index("B", "m", m);
             context__.validate_dims("data initialization", "B", "matrix_d", context__.to_vec(n,m));
@@ -347,25 +345,25 @@ public:
                     B(m_mat__,n_mat__) = vals_r__[pos__++];
                 }
             }
-            current_statement_begin__ = 58;
+            current_statement_begin__ = 55;
             context__.validate_dims("data initialization", "shape_gamma", "double", context__.to_vec());
             shape_gamma = double(0);
             vals_r__ = context__.vals_r("shape_gamma");
             pos__ = 0;
             shape_gamma = vals_r__[pos__++];
-            current_statement_begin__ = 59;
+            current_statement_begin__ = 56;
             context__.validate_dims("data initialization", "rate_gamma", "double", context__.to_vec());
             rate_gamma = double(0);
             vals_r__ = context__.vals_r("rate_gamma");
             pos__ = 0;
             rate_gamma = vals_r__[pos__++];
-            current_statement_begin__ = 60;
+            current_statement_begin__ = 57;
             context__.validate_dims("data initialization", "mean_beta", "double", context__.to_vec());
             mean_beta = double(0);
             vals_r__ = context__.vals_r("mean_beta");
             pos__ = 0;
             mean_beta = vals_r__[pos__++];
-            current_statement_begin__ = 61;
+            current_statement_begin__ = 58;
             context__.validate_dims("data initialization", "sd_beta", "double", context__.to_vec());
             sd_beta = double(0);
             vals_r__ = context__.vals_r("sd_beta");
@@ -373,30 +371,30 @@ public:
             sd_beta = vals_r__[pos__++];
 
             // validate, data variables
-            current_statement_begin__ = 45;
+            current_statement_begin__ = 42;
             check_greater_or_equal(function__,"n",n,1);
-            current_statement_begin__ = 46;
+            current_statement_begin__ = 43;
             check_greater_or_equal(function__,"m",m,1);
-            current_statement_begin__ = 47;
+            current_statement_begin__ = 44;
             check_greater_or_equal(function__,"q",q,1);
-            current_statement_begin__ = 48;
+            current_statement_begin__ = 45;
             check_greater_or_equal(function__,"approach",approach,0);
             check_less_or_equal(function__,"approach",approach,1);
-            current_statement_begin__ = 49;
+            current_statement_begin__ = 46;
             check_greater_or_equal(function__,"M",M,0);
             check_less_or_equal(function__,"M",M,1);
-            current_statement_begin__ = 50;
+            current_statement_begin__ = 47;
             check_greater_or_equal(function__,"status",status,0);
             check_less_or_equal(function__,"status",status,1);
-            current_statement_begin__ = 53;
-            current_statement_begin__ = 54;
+            current_statement_begin__ = 50;
+            current_statement_begin__ = 51;
+            current_statement_begin__ = 52;
             current_statement_begin__ = 55;
-            current_statement_begin__ = 58;
             check_greater_or_equal(function__,"shape_gamma",shape_gamma,0);
-            current_statement_begin__ = 59;
+            current_statement_begin__ = 56;
             check_greater_or_equal(function__,"rate_gamma",rate_gamma,0);
-            current_statement_begin__ = 60;
-            current_statement_begin__ = 61;
+            current_statement_begin__ = 57;
+            current_statement_begin__ = 58;
             // initialize data variables
 
 
@@ -405,10 +403,10 @@ public:
             // validate, set parameter ranges
             num_params_r__ = 0U;
             param_ranges_i__.clear();
-            current_statement_begin__ = 66;
+            current_statement_begin__ = 63;
             validate_non_negative_index("beta", "q", q);
             num_params_r__ += q;
-            current_statement_begin__ = 67;
+            current_statement_begin__ = 64;
             validate_non_negative_index("gamma", "m", m);
             num_params_r__ += m;
         } catch (const std::exception& e) {
@@ -520,7 +518,7 @@ public:
 
             // model body
             {
-            current_statement_begin__ = 71;
+            current_statement_begin__ = 68;
             validate_non_negative_index("loglik", "n", n);
             Eigen::Matrix<local_scalar_t__,Eigen::Dynamic,1>  loglik(static_cast<Eigen::VectorXd::Index>(n));
             (void) loglik;  // dummy to suppress unused var warning
@@ -529,24 +527,24 @@ public:
             stan::math::fill(loglik,DUMMY_VAR__);
 
 
-            current_statement_begin__ = 72;
+            current_statement_begin__ = 69;
             if (as_bool(logical_eq(M,0))) {
 
-                current_statement_begin__ = 73;
+                current_statement_begin__ = 70;
                 stan::math::assign(loglik, loglikpo(beta,gamma,status,Z,b,B, pstream__));
             } else {
 
-                current_statement_begin__ = 76;
+                current_statement_begin__ = 73;
                 stan::math::assign(loglik, loglikph(beta,gamma,status,Z,b,B, pstream__));
             }
-            current_statement_begin__ = 79;
+            current_statement_begin__ = 76;
             lp_accum__.add(sum(loglik));
-            current_statement_begin__ = 81;
+            current_statement_begin__ = 78;
             if (as_bool(logical_eq(approach,1))) {
 
-                current_statement_begin__ = 82;
+                current_statement_begin__ = 79;
                 lp_accum__.add(normal_log<propto__>(beta, mean_beta, sd_beta));
-                current_statement_begin__ = 83;
+                current_statement_begin__ = 80;
                 lp_accum__.add(gamma_log<propto__>(gamma, shape_gamma, rate_gamma));
             }
             }

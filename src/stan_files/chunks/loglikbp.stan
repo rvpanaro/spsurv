@@ -28,7 +28,7 @@ functions{
     R0 = B*gamma;
     eta = Z*beta;
 
-   loglik = log(r0 ./ (1+R0) .* exp(eta)) .* status - log(1+R0) .* exp(eta);
+   loglik = log( (r0 ./ (1 + R0)) .* exp(eta) ) .* status - log((1 + R0) .* exp(eta)) ;
     return loglik;
   }
 }
