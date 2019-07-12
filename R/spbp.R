@@ -1,21 +1,39 @@
 #' Semiparametric survival analysis using Bernstein Polynomials
 #'
 #' @export
-#' @param formula a formula object, with time-to-event data on the left side of ~ and explanatory terms on the right.
+#' @param formula a Surv object with time to event, status and explanatory terms.
 #' @param degree Bernstein Polynomial degree.
-#' @param tau must be greater than times maximum value observed, used for correction purposes.
-#' @param approach bayes or mle methods, default is approach = "bayes".
-#' @param model proportional hazards or porportional odds base, default is model = ph
-#' @param data a data.frame with variables named in the formula.
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains), see https://mc-stan.org/users/documentation/.
-#' @return An object of class `stanfit` returned by `rstan::sampling`
+#' @param tau Real valued number greater than any time observed.
+#' @param data a data.frame object.
+#' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes".
+#' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph".
+#' @param priors Prior settings for the Bayesian approach.
+#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
+#' @return An object of class `stanfit` returned by `rstan::stan`.
+#' @seealso https://mc-stan.org/users/documentation/
+#' @examples
+#' library(KMsurv)
+#' data("larynx")
 #'
+#' #Fit a Proportional Odds BP based model to the veteran cancer data set
+#' library ("survival")
+#' data("veteran")
+#'
+#' library("spsurv")
+#'
+#' fitmle <− spbp(Surv(time, delta) ~ karno + factor(celltype),
+#' data = veteran, approach =  "mle", model = "po")
+#'
+#' print(fitmle)
+#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+#' @importFrom rstan stan sampling optimizing
+#' @importFrom survival Surv
 
 spbp <- function(formula, degree = NULL, tau = NULL, data,
                  approach = c("bayes", "mle"),
                  model = c("ph", "po"),
                  priors = list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10),
-                 verbose = FALSE, ...) {
+                 verbose = FALSE, init = 0, algorithm = "LBFGS",  hessian = TRUE, ...) {
 
   ## --------------- Degree error handling ---------------
   ifelse(is.null(degree),
@@ -27,18 +45,19 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
 
   ## --------------- Approach error handling ---------------
   approach = ifelse(match.arg(approach) == "mle", 0, 1)
+  defaultPriors <- list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10)
 
   ## case 1: bayes aproach w/ wrong prior spec.
   if(approach == 1 & !is.null(priors)){
     if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(priors)) < 4) stop('Prior arguments do not match.')
   }
   ## case 2: ## case 1: bayes aproach wout/ prior spec
-  else if(approach == 1 & is.null(priors)){
-    warning('Due to bayes approach, default priors are attributed, see approach in ??bpph().')
+  else if(approach == 1 &  sum(priors %in% defaultPriors) == 4){
+    message('Due to bayes approach, default priors are attributed, see approach in ??bpph().')
   }
   ## case 3: mle approach w/ prior spec.
   else{
-    if(!is.null(priors))warning('Due to mle approach priors are ignored.')
+    if(!is.null(priors))message('Due to mle approach priors are ignored.')
   }
   #-------------------------------------------------------------------
 
@@ -47,7 +66,15 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   stanArgs <- list(...)
 
   if (length(stanArgs)) {
-    stanformals <- names(formals(rstan::stan)) #legal arg names
+    ifelse(approach == 0,
+           stanformals <- c(names(formals(rstan::stan)),
+                            "seed", "check_data", "sample_file",
+                            ~~"algorithm", "verbose", "hessian", "as_vector",
+                            "draws", "constrained", "save_iterations",
+                            "refresh", "init_alpha", "tol_obj",
+                            "tol_rel_obj", "tol_grad", "tol_rel_grad",
+                            "tol_param", "history_size"),
+           stanformals <- names(formals(rstan::stan))) #legal arg names
     aux <- pmatch(names(stanArgs), stanformals, nomatch = 0)
 
     if (any(aux == 0))
@@ -89,44 +116,84 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
 ## --------------- Model Fitting ---------------
   ## Data
   data.n <- nrow(Y)
-  if (length(attr(Terms, 'variables')) > 2){
-    Z = model.matrix(Terms, mf)[,-1]
-  }
-  else{
-    Z = as.matrix(rep(0, data.n), nrow = data.n)
-  }
+  labels <- attributes(temp$formula)$term.labels
+  null <- 0
 
-  Z = scale(Z, scale = F)
+   if (length(labels) > 1){
+    Z <-  model.matrix(Terms, mf)[,-1]
+   }
+   else if(length(labels) == 1){
+    Z <- as.matrix(model.matrix(Terms, mf)[,-1], ncol = data.n)
+    colnames(Z) <- labels
+   }
+   else{
+    Z <- as.matrix(rep(0, data.n), ncol = data.n)
+    null <- 1
+   }
+  Z <-  scale(Z, scale = F)
   time <- as.vector(Y[,1])
   status <- as.vector(Y[,2])
 
   base <- bp(time, m = degree, tau = tau)
-
   standata <- list(n = data.n, m = degree, q = ncol(Z),
                    status = status, Z = Z, B = base$B, b = base$b,
-                   approach = approach, M = model)
-
+                   approach = approach, M = model, null = null)
   ## Stanfit
   standata <- do.call(c, list(standata, priors))
   # mle
   if(approach == 0){
-    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = 0, ...)
+    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = init, hessian = hessian, ...)
+
+    coef <- stanfit$par[1:ncol(Z)]
+    names(coef) <- colnames(Z)
+
+    if(hessian == FALSE || null == 1){
+      stanfit$hessian <- matrix(rep(NA, ncol(Z)^2), ncol = 1:ncol(Z), nrow = 1:ncol(Z))
+    }
+    nulldata <- standata
+    nulldata$null <- 1
+    nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init, hessian = hessian, ...)
+
+    output <- list(coefficients = coef,
+                 var = solve(-stanfit$hessian[1:ncol(Z), 1:ncol(Z)]),
+                 loglik = c(nullfit$value, stanfit$value),
+                 score = 0,
+                 iter = 0,
+                 linear.predictors = c(Z %*% coef),
+                 residuals = rep(0, data.n),
+                 means = colMeans(Z),
+                 concordance = survConcordance(Surv(time, status) ~ c(Z %*% coef), data)$stats,
+                 method = algorithm,
+                 n = data.n,
+                 nevent = sum(status),
+                 terms = Terms,
+                 assign = assign,
+                 wald.test = coxph.wtest(solve(-stanfit$hessian[1:ncol(Z), 1:ncol(Z)]), stanfit$par[1:ncol(Z)])$test,
+                 y = Y,
+                 formula = formula,
+                 call = Call
+    )
+    class(output) <- "coxph"
   }
   else{   # bayes
     stanfit <- rstan::sampling(stanmodels$spbp, data = standata, ...)
+    samp <- coda::mcmc(rstan::extract(stanfit, pars = "beta")$beta)
+    output <- list(summary = cbind(Median = apply(samp, 2, median), summary(samp)[[1]],
+                                   HPDL = coda::HPDinterval(samp)[,1], HPDU = coda::HPDinterval(samp)[,2])[,c(1,2,3,6,7)])
+    output$samp <- samp
+    rownames(output$summary) <- colnames(Z)
   }
-  return(stanfit)
+  output$stanfit <- stanfit
+  return(output)
 }
 
 #' Bernstein Polynomials basis calculations
-#'
 #' @export
 #' @param time a vector of times to events.
 #' @param m Bernstein Polynomial degree
 #' @param tau must be greater than times maximum value observed, this value is used for correction purposes.
 #' @param data a data.frame with variables named in the formula.
 #' @return A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.
-#'
 
 bp <- function(time, m,  tau = NULL){
   n <- length(time)

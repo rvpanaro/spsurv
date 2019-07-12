@@ -8,6 +8,7 @@ data{
   int<lower=1> m;
   int<lower=1> q;
   int<lower=0, upper=1> approach;
+  int<lower=0, upper=1> null;
   int<lower=0, upper=1> M;
   vector<lower=0, upper = 1>[n] status;
 
@@ -32,10 +33,10 @@ vector<lower=0>[m] gamma;
 model{
   vector[n] loglik;
     if(M == 0){
-      loglik = loglikpo(beta, gamma, status, Z, b, B);
+      loglik = loglikpo(beta, gamma, status, Z, b, B, null);
     }
     else{
-      loglik = loglikph(beta, gamma, status, Z, b, B);
+      loglik = loglikph(beta, gamma, status, Z, b, B, null);
     }
 
     target += sum(loglik);

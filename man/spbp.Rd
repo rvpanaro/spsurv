@@ -6,26 +6,50 @@
 \usage{
 spbp(formula, degree = NULL, tau = NULL, data, approach = c("bayes",
   "mle"), model = c("ph", "po"), priors = list(shape_gamma = 0.01,
-  rate_gamma = 0.01, mean_beta = 0, sd_beta = 10), verbose = FALSE, ...)
+  rate_gamma = 0.01, mean_beta = 0, sd_beta = 10), verbose = FALSE,
+  init = 0, algorithm = "LBFGS", hessian = TRUE, ...)
 }
 \arguments{
-\item{formula}{a formula object, with time-to-event data on the left side of ~ and explanatory terms on the right.}
+\item{formula}{a Surv object with time to event, status and explanatory terms.}
 
 \item{degree}{Bernstein Polynomial degree.}
 
-\item{tau}{must be greater than times maximum value observed, used for correction purposes.}
+\item{tau}{Real valued number greater than any time observed.}
 
-\item{data}{a data.frame with variables named in the formula.}
+\item{data}{a data.frame object.}
 
-\item{approach}{bayes or mle methods, default is approach = "bayes".}
+\item{approach}{Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes".}
 
-\item{model}{proportional hazards or porportional odds base, default is model = ph}
+\item{model}{Proportional Hazards or Proportional Odds BP based regression, default is model = "ph".}
 
-\item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains), see https://mc-stan.org/users/documentation/.}
+\item{priors}{Prior settings for the Bayesian approach.}
+
+\item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
 }
 \value{
-An object of class `stanfit` returned by `rstan::sampling`
+An object of class `stanfit` returned by `rstan::stan`.
 }
 \description{
 Semiparametric survival analysis using Bernstein Polynomials
+}
+\examples{
+library(KMsurv)
+data("larynx")
+
+#Fit a Proportional Odds BP based model to the veteran cancer data set
+library ("survival")
+data("veteran")
+
+library("spsurv")
+
+fitmle <− spbp(Surv(time, delta) ~ karno + factor(celltype),
+data = veteran, approach =  "mle", model = "po")
+
+print(fitmle)
+}
+\references{
+Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+}
+\seealso{
+https://mc-stan.org/users/documentation/
 }
