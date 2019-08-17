@@ -173,17 +173,23 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
                  formula = formula,
                  call = Call
     )
-    class(output) <- "coxph"
+
+     # ifelse(model == 1,
+     #        class(output) <- c('bpph.mle', 'spbp'),
+     #        class(output) <- c('bppo.mle', 'spbp'))
   }
   else{   # bayes
-    stanfit <- rstan::sampling(stanmodels$spbp, data = standata, ...)
-    samp <- coda::mcmc(rstan::extract(stanfit, pars = "beta")$beta)
-    output <- list(summary = cbind(Median = apply(samp, 2, median), summary(samp)[[1]],
-                                   HPDL = coda::HPDinterval(samp)[,1], HPDU = coda::HPDinterval(samp)[,2])[,c(1,2,3,6,7)])
-    output$samp <- samp
-    rownames(output$summary) <- colnames(Z)
+    output <- list()
+    stanfit <- rstan::sampling(stanmodels$spbp, data = standata, verbose = verbose, ...)
+    # ifelse(model == 1,
+    #         class(output) <- c('bpph.bayes', 'spbp'),
+    #         class(output) <- c('bppo.bayes', 'spbp'))
   }
   output$stanfit <- stanfit
+  output$model <- model
+  output$approach <- approach
+
+  class(output) <- "spbp"
   return(output)
 }
 
