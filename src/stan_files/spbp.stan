@@ -7,13 +7,15 @@ data{
   int<lower=1> n;
   int<lower=1> m;
   int<lower=1> q;
+  real<lower= m> tau;
   int<lower=0, upper=1> approach;
   int<lower=0, upper=1> null;
-  int<lower=0, upper=1> M;
+  int<lower=0, upper=2> M;
   vector<lower=0, upper = 1>[n] status;
+  vector<lower=0>[n] time;
 
   // observed arrays:
-  matrix[n,q] Z;
+  matrix[n,q] X;
   matrix[n,m] b;
   matrix[n,m] B;
 
@@ -33,10 +35,13 @@ vector<lower=0>[m] gamma;
 model{
   vector[n] loglik;
     if(M == 0){
-      loglik = loglikpo(beta, gamma, status, Z, b, B, null);
+      loglik = loglikpo(beta, gamma, status, X, b, B, null);
+    }
+    else if( M == 1){
+      loglik = loglikph(beta, gamma, status, X, b, B, null);
     }
     else{
-      loglik = loglikph(beta, gamma, status, Z, b, B, null);
+      loglik = loglikaft(time, beta, gamma, status, X, b, B, tau, null);
     }
 
     target += sum(loglik);
