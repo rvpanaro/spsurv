@@ -29,9 +29,9 @@
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv
 
-spbp <- function(formula, degree = NULL, tau = NULL, data,
+spbp <- function(formula, degree = NULL, tau = max(time), data,
                  approach = c("bayes", "mle"),
-                 model = c("ph", "po"),
+                 model = c("ph", "po", "aft"),
                  priors = list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10),
                  verbose = FALSE, init = 0, algorithm = "LBFGS",  hessian = TRUE, ...) {
 
@@ -41,7 +41,7 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
          {if(!is.integer(degree)) stop('Polynomial degree must be numeric.')})
   #-------------------------------------------------------------------
 
-  model = ifelse(match.arg(model) == "po", 0, 1)
+  model <- switch(model, "po" = 0, "ph" = 1, "aft" = 2)
 
   ## --------------- Approach error handling ---------------
   approach = ifelse(match.arg(approach) == "mle", 0, 1)
@@ -120,23 +120,23 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   null <- 0
 
    if (length(labels) > 1){
-    Z <-  model.matrix(Terms, mf)[,-1]
+    X <-  model.matrix(Terms, mf)[,-1]
    }
    else if(length(labels) == 1){
-    Z <- as.matrix(model.matrix(Terms, mf)[,-1], ncol = data.n)
-    colnames(Z) <- labels
+    X <- as.matrix(model.matrix(Terms, mf)[,-1], ncol = data.n)
+    colnames(X) <- labels
    }
    else{
-    Z <- as.matrix(rep(0, data.n), ncol = data.n)
+    X <- as.matrix(rep(0, data.n), ncol = data.n)
     null <- 1
    }
-  Z <-  scale(Z, scale = F)
+  X <-  scale(X, scale = F)
   time <- as.vector(Y[,1])
   status <- as.vector(Y[,2])
 
   base <- bp(time, m = degree, tau = tau)
-  standata <- list(n = data.n, m = degree, q = ncol(Z),
-                   status = status, Z = Z, B = base$B, b = base$b,
+  standata <- list(time = time, tau = tau, n = data.n, m = degree, q = ncol(X),
+                   status = status, X = X, B = base$B, b = base$b,
                    approach = approach, M = model, null = null)
   ## Stanfit
   standata <- do.call(c, list(standata, priors))
@@ -144,46 +144,39 @@ spbp <- function(formula, degree = NULL, tau = NULL, data,
   if(approach == 0){
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = init, hessian = hessian, ...)
 
-    coef <- stanfit$par[1:ncol(Z)]
-    names(coef) <- colnames(Z)
+    coef <- stanfit$par[1:ncol(X)]
+    names(coef) <- colnames(X)
 
     if(hessian == FALSE || null == 1){
-      stanfit$hessian <- matrix(rep(NA, ncol(Z)^2), ncol = 1:ncol(Z), nrow = 1:ncol(Z))
+      stanfit$hessian <- matrix(rep(NA, ncol(X)^2), ncol = 1:ncol(X), nrow = 1:ncol(X))
     }
     nulldata <- standata
     nulldata$null <- 1
     nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init, hessian = hessian, ...)
 
     output <- list(coefficients = coef,
-                 var = solve(-stanfit$hessian[1:ncol(Z), 1:ncol(Z)]),
+                 var = solve(-stanfit$hessian[1:ncol(X), 1:ncol(X)]),
                  loglik = c(nullfit$value, stanfit$value),
                  score = 0,
                  iter = 0,
-                 linear.predictors = c(Z %*% coef),
+                 linear.predictors = c(X %*% coef),
                  residuals = rep(0, data.n),
-                 means = colMeans(Z),
-                 concordance = survConcordance(Surv(time, status) ~ c(Z %*% coef), data)$stats,
+                 means = colMeans(X),
+                 concordance = survConcordance(Surv(time, status) ~ c(X %*% coef), data)$stats,
                  method = algorithm,
                  n = data.n,
                  nevent = sum(status),
                  terms = Terms,
                  assign = assign,
-                 wald.test = coxph.wtest(solve(-stanfit$hessian[1:ncol(Z), 1:ncol(Z)]), stanfit$par[1:ncol(Z)])$test,
+                 wald.test = coxph.wtest(solve(-stanfit$hessian[1:ncol(X), 1:ncol(X)]), stanfit$par[1:ncol(X)])$test,
                  y = Y,
                  formula = formula,
                  call = Call
     )
-
-     # ifelse(model == 1,
-     #        class(output) <- c('bpph.mle', 'spbp'),
-     #        class(output) <- c('bppo.mle', 'spbp'))
   }
   else{   # bayes
     output <- list()
     stanfit <- rstan::sampling(stanmodels$spbp, data = standata, verbose = verbose, ...)
-    # ifelse(model == 1,
-    #         class(output) <- c('bpph.bayes', 'spbp'),
-    #         class(output) <- c('bppo.bayes', 'spbp'))
   }
   output$stanfit <- stanfit
   output$model <- model

@@ -4,8 +4,8 @@ data("veteran")
 str(veteran)
 
 fit <- spbp(Surv(time, status) ~ karno + celltype,
-     approach = 'bayes', model = 'po',
-     iter = 200, data = veteran)
+     approach = 'mle', model = 'aft', data = veteran)
+
 names(fit)
 fit$stanfit
 fit$model
