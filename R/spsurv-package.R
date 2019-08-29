@@ -1,6 +1,6 @@
 #' The 'spsurv' package.
 #'
-#' @description Semiparametric Survival Analysis
+#' @description A DESCRIPTION OF THE PACKAGE
 #'
 #' @docType package
 #' @name spsurv-package
@@ -8,11 +8,9 @@
 #' @useDynLib spsurv, .registration = TRUE
 #' @import methods
 #' @import Rcpp
-#' @import rstantools
 #' @importFrom rstan sampling
-#' @importFrom survival Surv
 #'
 #' @references
-#' Stan Development Team (2018). RStan: the R interface to Stan. R package version 2.18.2. http://mc-stan.org
+#' Stan Development Team (2019). RStan: the R interface to Stan. R package version 2.19.2. https://mc-stan.org
 #'
 NULL

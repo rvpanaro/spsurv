@@ -6,8 +6,8 @@
 \alias{spsurv}
 \title{The 'spsurv' package.}
 \description{
-Semiparametric Survival Analysis
+A DESCRIPTION OF THE PACKAGE
 }
 \references{
-Stan Development Team (2018). RStan: the R interface to Stan. R package version 2.18.2. http://mc-stan.org
+Stan Development Team (2019). RStan: the R interface to Stan. R package version 2.19.2. https://mc-stan.org
 }

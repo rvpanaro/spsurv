@@ -178,6 +178,7 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
     output <- list()
     stanfit <- rstan::sampling(stanmodels$spbp, data = standata, verbose = verbose, ...)
   }
+  print(stanfit)
   output$stanfit <- stanfit
   output$model <- model
   output$approach <- approach
