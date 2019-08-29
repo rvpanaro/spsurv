@@ -1,18 +1,16 @@
+source(file = 'inst/guidelines_load.R')
 # library(spsurv)
-library(survival)
-data("veteran")
-str(veteran)
+data("larynx"); str(larynx)
 
-fit <- spbp(Surv(time, status) ~ karno + celltype,
-     approach = 'mle', model = 'aft', data = veteran)
+fit1 <- spbp(Surv(time, delta) ~ age + factor(stage),
+            approach = 'mle', model = 'ph', data = larynx)
+summary(fit1)
+fit1$stanfit$return_code
 
-names(fit)
-fit$stanfit
-fit$model
-fit$approach
-summary(fit)
-class(fit)
-traceplot.spbp(fit, pars = 'beta')
-traceplot(fit, pars = 'beta')
-survfit(fit)
+fit2 <- spbp(Surv(time, delta) ~ age + factor(stage),
+     approach = 'bayes', model = 'aft', data = larynx, chain = 1)
 
+class(fit2)
+summary(fit2)
+fit2$stanfit$return_code
+getwd()
