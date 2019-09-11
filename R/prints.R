@@ -1,52 +1,67 @@
-print.summary.bpph.mle <-
-  function(x, digits = max(getOption('digits')-3, 3),
+## spbp object printings
+print.spbp <- function(spbp, digits = max(getOption('digits')-3, 3),
+                       signif.stars = getOption("show.signif.stars"), ...){
+  if(spbp$approach == "mle"){
+
+    if (!is.null(spbp$call)) {
+      cat("Call:\n")
+      dput(spbp$call)
+      cat("\n")
+    }
+    savedig <- options(digits = digits)
+    on.exit(options(savedig))
+
+    if(!is.null(spbp$coefficients)) {
+      cat("\n Coefficients:\n")
+      print(spbp$coefficients)
+    }
+    if(!is.null(spbp$loglik)) {
+    cat("\n Loglik(model)= ", spbp$loglik[2])
+    cat("      Loglik(no predictors)= ", spbp$loglik[1], "\n")
+    }
+    logtest <- -2 * (spbp$loglik[1] - spbp$loglik[2])
+    cat("      Chisq= ", logtest," on ", spbp$q, " degrees of freedom ",
+        pchisq(logtest, spbp$q, lower.tail=FALSE), "\n")
+
+    if(!is.null(spbp$n)) {
+        cat("n= ", spbp$n)
+    }
+  }
+  else{
+    print('no print methos yet')
+  }
+}
+
+## summary printings
+print.summary.spbp.mle <- function(x, digits = max(getOption('digits')-3, 3),
            signif.stars = getOption("show.signif.stars"), ...) {
-    cat('Bernstein Polynomial based Proportional Hazards Model\n ---\n')
 
     if (!is.null(x$call)) {
       cat("Call:\n")
       dput(x$call)
       cat("\n")
     }
-    if (!is.null(x$fail)) {
-      cat(" Coxreg failed.", x$fail, "\n")
-      return()
-    }
     savedig <- options(digits = digits)
     on.exit(options(savedig))
 
-    omit <- x$na.action
     cat("  n=", x$n)
     if (!is.null(x$nevent)) cat(", number of events=", x$nevent, "\n")
     else cat("\n")
-    if (length(omit))
-      cat("   (", naprint(omit), ")\n", sep="")
 
     if (nrow(x$coef)==0) {   # Null model
-      cat ("   Null model\n")
+      cat ("Null model\n")
       return()
     }
-
-
     if(!is.null(x$coefficients)) {
       cat("\n")
-      printCoefmat(x$coefficients, digits=digits,
-                   signif.stars=signif.stars, ...)
+      printCoefmat(x$coefficients, digits = digits,
+                   signif.stars = signif.stars, ...)
     }
     if(!is.null(x$conf.int)) {
       cat("\n")
       print(x$conf.int)
     }
     cat("\n")
-
-    # if (!is.null(x$concordance)) {
-    #   cat("Concordance=", format(round(x$concordance[1],3)),
-    #       " (se =", format(round(x$concordance[2], 3)),")\n")
-    # }
-    #    cat("Rsquare=", format(round(x$rsq["rsq"],3)),
-    #            "  (max possible=", format(round(x$rsq["maxrsq"],3)),
-    #            ")\n" )
-
     pdig <- max(1, getOption("digits")-4)  # default it too high IMO
     cat("Likelihood ratio test= ", format(round(x$logtest["test"], 2)), "  on ",
         x$logtest["df"], " df,", "   p=",
@@ -56,92 +71,21 @@ print.summary.bpph.mle <-
         x$waldtest["df"], " df,", "   p=",
         format.pval(x$waldtest["pvalue"], digits=pdig),
         "\n", sep = "")
-    # cat("Score (logrank) test = ", format(round(x$sctest["test"], 2)), "  on ",
-    #     x$sctest["df"]," df,", "   p=",
-    #     format.pval(x$sctest["pvalue"], digits=pdig), sep ="")
-    if (is.null(x$robscore))
-      cat("\n\n")
-    else cat(",   Robust = ", format(round(x$robscore["test"], 2)),
-             "  p=",
-             format.pval(x$robscore["pvalue"], digits=pdig), "\n\n", sep="")
-
-    if (x$used.robust)
-      cat("  (Note: the likelihood ratio and score tests",
-          "assume independence of\n     observations within a cluster,",
-          "the Wald and robust score tests do not).\n")
     invisible()
   }
 
-print.summary.bppo.mle <-
-  function(x, digits = max(getOption('digits')-3, 3),
-           signif.stars = getOption("show.signif.stars"), ...) {
-    cat('Bernstein Polynomial based Proportional Odds Model\n ---\n')
+print.summary.bppo.mle <- function(...){
+  cat("Bernstein Polynomial based Proportional Odds model\n")
+  print.summary.spbp.mle(...)
+}
 
-    if (!is.null(x$call)) {
-      cat("Call:\n")
-      dput(x$call)
-      cat("\n")
-    }
-    if (!is.null(x$fail)) {
-      cat(" Coxreg failed.", x$fail, "\n")
-      return()
-    }
-    savedig <- options(digits = digits)
-    on.exit(options(savedig))
+print.summary.bpph.mle <- function(...){
+  cat("Bernstein Polynomial based Proportional Hazards model\n")
+  print.summary.spbp.mle(...)
+}
 
-    omit <- x$na.action
-    cat("  n=", x$n)
-    if (!is.null(x$nevent)) cat(", number of events=", x$nevent, "\n")
-    else cat("\n")
-    if (length(omit))
-      cat("   (", naprint(omit), ")\n", sep="")
+print.summary.bpaft.mle <- function(...){
+  cat("Bernstein Polynomial based Accelerated Failure Time model\n")
+  print.summary.spbp.mle(...)
+}
 
-    if (nrow(x$coef)==0) {   # Null model
-      cat ("   Null model\n")
-      return()
-    }
-
-
-    if(!is.null(x$coefficients)) {
-      cat("\n")
-      printCoefmat(x$coefficients, digits=digits,
-                   signif.stars=signif.stars, ...)
-    }
-    if(!is.null(x$conf.int)) {
-      cat("\n")
-      print(x$conf.int)
-    }
-    cat("\n")
-
-    # if (!is.null(x$concordance)) {
-    #   cat("Concordance=", format(round(x$concordance[1],3)),
-    #       " (se =", format(round(x$concordance[2], 3)),")\n")
-    # }
-    #    cat("Rsquare=", format(round(x$rsq["rsq"],3)),
-    #            "  (max possible=", format(round(x$rsq["maxrsq"],3)),
-    #            ")\n" )
-
-    pdig <- max(1, getOption("digits")-4)  # default it too high IMO
-    cat("Likelihood ratio test= ", format(round(x$logtest["test"], 2)), "  on ",
-        x$logtest["df"], " df,", "   p=",
-        format.pval(x$logtest["pvalue"], digits=pdig),
-        "\n", sep = "")
-    cat("Wald test            = ", format(round(x$waldtest["test"], 2)), "  on ",
-        x$waldtest["df"], " df,", "   p=",
-        format.pval(x$waldtest["pvalue"], digits=pdig),
-        "\n", sep = "")
-    # cat("Score (logrank) test = ", format(round(x$sctest["test"], 2)), "  on ",
-    #     x$sctest["df"]," df,", "   p=",
-    #     format.pval(x$sctest["pvalue"], digits=pdig), sep ="")
-    if (is.null(x$robscore))
-      cat("\n\n")
-    else cat(",   Robust = ", format(round(x$robscore["test"], 2)),
-             "  p=",
-             format.pval(x$robscore["pvalue"], digits=pdig), "\n\n", sep="")
-
-    if (x$used.robust)
-      cat("  (Note: the likelihood ratio and score tests",
-          "assume independence of\n     observations within a cluster,",
-          "the Wald and robust score tests do not).\n")
-    invisible()
-  }
