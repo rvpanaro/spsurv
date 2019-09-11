@@ -1,16 +1,22 @@
-source(file = 'inst/guidelines_load.R')
-# library(spsurv)
-data("larynx"); str(larynx)
+# source(file = 'inst/guidelines_load.R')
 
-fit1 <- spbp(Surv(time, delta) ~ age + factor(stage),
-            approach = 'mle', model = 'ph', data = larynx)
-summary(fit1)
-fit1$stanfit$return_code
+rm(list = ls())
+options(scipen = 9999)
 
-fit2 <- spbp(Surv(time, delta) ~ age + factor(stage),
-     approach = 'bayes', model = 'aft', data = larynx, chain = 1)
+library(spsurv)
+library(survival)
+data("larynx")
+str(larynx)
 
-class(fit2)
-summary(fit2)
-fit2$stanfit$return_code
-getwd()
+fit <- spbp(Surv(time, delta) ~  factor(stage) + age,
+             approach = 'mle', model = 'ph', data = larynx)
+
+fit
+plot(fit)
+summary(fit)
+fit$call$data
+plot(fit)
+
+fit_survival <- coxph(Surv(time, delta) ~ factor(stage) + age, data = larynx)
+fit_survival$coefficients
+plot(survfit(fit_survival))

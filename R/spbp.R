@@ -30,30 +30,43 @@
 #' @importFrom survival Surv
 
 spbp <- function(formula, degree = NULL, tau = max(time), data,
-                 approach = c("bayes", "mle"),
+                 approach = c("mle", "bayes"),
                  model = c("ph", "po", "aft"),
-                 priors = list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10),
-                 verbose = FALSE, init = 0, algorithm = "LBFGS",  hessian = TRUE, ...) {
+                 priors = list(shape_gamma = .01, rate_gamma = .01,
+                               mean_beta = 0, sd_beta = 10),
+                 verbose = FALSE, init = 0, algorithm = "LBFGS",
+                 hessian = TRUE, ...) {
 
   ## --------------- Degree error handling ---------------
   ifelse(is.null(degree),
          {degree  <- ceiling(sqrt(nrow(data)))},
-         {if(!is.integer(degree)) stop('Polynomial degree must be numeric.')})
+         {if(!is.integer(degree)) stop('Polynomial degree must be numeric.')}
+)
   #-------------------------------------------------------------------
+  model_flag <- model; approach_flag <- approach ### creates flags to save char
+  model <- ifelse(match.arg(model) == "po", 0,
+                  ifelse(match.arg(model) == "ph", 1, 2))
+  approach <- ifelse(match.arg(approach) == "mle", 0, 1)
 
-  model <- switch(model, "po" = 0, "ph" = 1, "aft" = 2)
+  ## --------------- Formula => model.frame args error handling ---------------
+  # evaluate model.frame() containing the required formula
+  Call <- match.call()
+  aux <- match(c("formula", "data", "degree", "tau"),
+               names(Call), nomatch = 0)
+  if (aux[1] == 0) stop("A formula argument is required")
+  if (aux[2] == 0) stop("A dataset argument is required")
 
   ## --------------- Approach error handling ---------------
-  approach = ifelse(match.arg(approach) == "mle", 0, 1)
-  defaultPriors <- list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0, sd_beta = 10)
-
+  defaultPriors <- list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0,
+                        sd_beta = 10)
   ## case 1: bayes aproach w/ wrong prior spec.
   if(approach == 1 & !is.null(priors)){
     if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(priors)) < 4) stop('Prior arguments do not match.')
   }
   ## case 2: ## case 1: bayes aproach wout/ prior spec
   else if(approach == 1 &  sum(priors %in% defaultPriors) == 4){
-    message('Due to bayes approach, default priors are attributed, see approach in ??bpph().')
+    message('Due to bayes approach, default priors are attributed,
+            see approach in ??bpph().')
   }
   ## case 3: mle approach w/ prior spec.
   else{
@@ -62,7 +75,9 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   #-------------------------------------------------------------------
 
   ## --------------- Extra args error handling ---------------
-  ##  ... arguments directly passed to `rstan::stan`, handles typos like "chans=4".
+  ##  ... arguments directly passed to `rstan::stan`, handles typos
+  ## like "chans=4".
+
   stanArgs <- list(...)
 
   if (length(stanArgs)) {
@@ -80,21 +95,14 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
     if (any(aux == 0))
       stop(gettextf("Argument %s not matched", names(stanArgs)[aux==0]))
   }
+
   #-------------------------------------------------------------------
-
-  ## --------------- Formula => model.frame args error handling ---------------
-  # evaluate model.frame() containing the required formula
-  Call <- match.call()
-
-  aux <- match(c("formula", "data", "degree", "tau"), names(Call), nomatch = 0)
-
-  if (aux[1] == 0) stop("A formula argument is required")
-  if (aux[2] == 0) stop("A dataset argument is required")
   temp <- Call[c(1, aux)]  # keep important args
 
   temp[[1L]] <- quote(stats::model.frame)  # model frame call
   temp$formula <- terms(formula, data = data);
-  mf <- eval(temp, parent.frame());
+
+  mf <- eval(temp, parent.frame())
 
   if (nrow(mf) == 0) stop("Only missing observations")
   Terms <- terms(mf)
@@ -109,7 +117,8 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
     ytemp <- terms.inner(formula)[1:2]
     xtemp <- terms.inner(formula)[-c(1,2)]
   if (any(!is.na(match(xtemp, ytemp))))
-      warning("a variable appears on both the left and right sides of the formula")
+      warning("a variable appears on both the left and right sides of
+              the formula")
   }
 #-------------------------------------------------------------------
 
@@ -130,59 +139,69 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
     X <- as.matrix(rep(0, data.n), ncol = data.n)
     null <- 1
    }
-  X <-  scale(X, scale = F)
+  features <- X
+  X <-  scale(X, scale = T)
+  q <- ncol(X)
   time <- as.vector(Y[,1])
   status <- as.vector(Y[,2])
 
+  # base calculations
   base <- bp(time, m = degree, tau = tau)
-  standata <- list(time = time, tau = tau, n = data.n, m = degree, q = ncol(X),
+
+  # data
+  standata <- list(time = time, tau = tau, n = data.n, m = degree, q = q,
                    status = status, X = X, B = base$B, b = base$b,
                    approach = approach, M = model, null = null)
+
   ## Stanfit
-  standata <- do.call(c, list(standata, priors))
+  standata <- c(standata, priors)
   # mle
   if(approach == 0){
-    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = init, hessian = hessian, ...)
+    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = init,
+                                 hessian = hessian, verbose = verbose, ...)
 
-    coef <- stanfit$par[1:ncol(X)]
-    names(coef) <- colnames(X)
+    coef <- stanfit$par ## rescaled coefficients
+    coef[1:q] <- stanfit$par[1:q] / attr(X, 'scaled:scale')
+    beta <- coef[1:q]
 
+    info <- chol2inv(-stanfit$hessian)/(attr(X, 'scaled:scale'))^2 ## rescaled fisher info
+
+    names(beta) <- colnames(X)
+    names(coef) <- c(colnames(X), paste0('gamma', 1:(length(stanfit$par)-q)))
     if(hessian == FALSE || null == 1){
-      stanfit$hessian <- matrix(rep(NA, ncol(X)^2), ncol = 1:ncol(X), nrow = 1:ncol(X))
+      stanfit$hessian <- matrix(rep(NA, q^2), ncol = 1:q,
+                                nrow = 1:q)
     }
     nulldata <- standata
     nulldata$null <- 1
-    nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init, hessian = hessian, ...)
-
+    nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init,
+                                 hessian = hessian, ...)
     output <- list(coefficients = coef,
-                 var = solve(-stanfit$hessian[1:ncol(X), 1:ncol(X)]),
+                 var = info,
                  loglik = c(nullfit$value, stanfit$value),
-                 score = 0,
-                 iter = 0,
-                 linear.predictors = c(X %*% coef),
-                 residuals = rep(0, data.n),
+                 linear_predictors = c(features %*% beta),
                  means = colMeans(X),
-                 concordance = survConcordance(Surv(time, status) ~ c(X %*% coef), data)$stats,
                  method = algorithm,
                  n = data.n,
+                 q = q,
                  nevent = sum(status),
                  terms = Terms,
-                 assign = assign,
-                 wald.test = coxph.wtest(solve(-stanfit$hessian[1:ncol(X), 1:ncol(X)]), stanfit$par[1:ncol(X)])$test,
+                 wald.test = coxph.wtest(chol2inv(-stanfit$hessian), stanfit$par)$test,
                  y = Y,
                  formula = formula,
-                 call = Call
+                 call = Call,
+                 return_code = stanfit$return_code
     )
   }
   else{   # bayes
     output <- list()
-    stanfit <- rstan::sampling(stanmodels$spbp, data = standata, verbose = verbose, ...)
+    stanfit <- rstan::sampling(stanmodels$spbp, data = standata,
+                               verbose = verbose, ...)
+    output$stanfit <- stanfit
   }
-  print(stanfit)
-  output$stanfit <- stanfit
-  output$model <- model
-  output$approach <- approach
 
+  output$model <- model_flag
+  output$approach <- approach_flag
   class(output) <- "spbp"
   return(output)
 }

@@ -1,5 +1,5 @@
 // include Functions block.
-#include /chunks/loglikbp.stan
+#include /include/loglikbp.stan
 
 // Data block (important).
 data{
@@ -7,7 +7,7 @@ data{
   int<lower=1> n;
   int<lower=1> m;
   int<lower=1> q;
-  real<lower= m> tau;
+  real tau;
   int<lower=0, upper=1> approach;
   int<lower=0, upper=1> null;
   int<lower=0, upper=2> M;
@@ -28,26 +28,31 @@ data{
 
 // Parametes block (important).
 parameters{
-vector[q] beta;
-vector<lower=0>[m] gamma;
+  vector[q] beta;
+  vector<lower=0>[m] gamma;
 }
+
 // Model block (important).
 model{
   vector[n] loglik;
+  if(null == 1){
+      loglik = loglik_null(beta, gamma, status, X, b, B, M);
+  }
+  else{
     if(M == 0){
-      loglik = loglikpo(beta, gamma, status, X, b, B, null);
+      loglik = loglik_po(beta, gamma, status, X, b, B);
     }
     else if( M == 1){
-      loglik = loglikph(beta, gamma, status, X, b, B, null);
+      loglik = loglik_ph(beta, gamma, status, X, b, B);
     }
     else{
-      loglik = loglikaft(time, beta, gamma, status, X, b, B, null);
+      loglik = loglik_aft(time, beta, gamma, status, X, b, B);
     }
-
+  }
     target += sum(loglik);
 
   if( approach == 1){
-	  beta ~ normal(mean_beta,sd_beta);
+	  beta ~ normal(mean_beta, sd_beta);
 	  gamma ~ gamma(shape_gamma, rate_gamma);
   }
 }
