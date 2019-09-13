@@ -34,8 +34,8 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
                  model = c("ph", "po", "aft"),
                  priors = list(shape_gamma = .01, rate_gamma = .01,
                                mean_beta = 0, sd_beta = 10),
-                 verbose = FALSE, init = 0, algorithm = "LBFGS",
-                 hessian = TRUE, ...) {
+                 hessian = TRUE, verbose = FALSE,
+                 init = 0, algorithm = "LBFGS", ...) {
 
   ## --------------- Degree error handling ---------------
   ifelse(is.null(degree),
@@ -129,17 +129,25 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   null <- 0
 
    if (length(labels) > 1){
-    X <-  model.matrix(Terms, mf)[,-1]
+    X <-  model.matrix(Terms, mf)[, -1]
    }
    else if(length(labels) == 1){
-    X <- as.matrix(model.matrix(Terms, mf)[,-1], ncol = data.n)
+    X <- as.matrix(model.matrix(Terms, mf)[, -1], ncol = data.n)
     colnames(X) <- labels
    }
    else{
     X <- as.matrix(rep(0, data.n), ncol = data.n)
+    colnames(X) <- "non-parametric"
     null <- 1
    }
+
   features <- X
+  attr(X, "assign") <- attr(model.matrix(Terms, mf), "assign")[-1]
+  attr(X, "contrasts") <- attr(model.matrix(Terms, mf), "contrasts")
+  xlevels <- .getXlevels(Terms, mf)
+  contrasts <- attr(X, "contrasts")
+
+  assign <- attrassign(X, Terms)
   X <-  scale(X, scale = T)
   q <- ncol(X)
   time <- as.vector(Y[,1])
@@ -159,7 +167,6 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   if(approach == 0){
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = init,
                                  hessian = hessian, verbose = verbose, ...)
-
     coef <- stanfit$par ## rescaled coefficients
     coef[1:q] <- stanfit$par[1:q] / attr(X, 'scaled:scale')
     beta <- coef[1:q]
@@ -179,16 +186,19 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
     output <- list(coefficients = coef,
                  var = info,
                  loglik = c(nullfit$value, stanfit$value),
-                 linear_predictors = c(features %*% beta),
-                 means = colMeans(X),
+                 linear.predictors = c(features %*% beta),
+                 means = colMeans(features),
                  method = algorithm,
                  n = data.n,
-                 q = q,
                  nevent = sum(status),
+                 q = q,
                  terms = Terms,
+                 assign = assign,
                  wald.test = coxph.wtest(chol2inv(-stanfit$hessian), stanfit$par)$test,
                  y = Y,
                  formula = formula,
+                 xlevels = xlevels,
+                 contrasts = contrasts,
                  call = Call,
                  return_code = stanfit$return_code
     )
@@ -239,13 +249,6 @@ bp <- function(time, m,  tau = NULL){
   # }
   return(list(b = b, B = B, m = m, tau = tau))
 }
-
-#' A function taken from the survival library - it is not exported from there hence a local copy
-#'
-#'@param x an R object
-#'@return a character vector
-#'@importFrom survival Surv
-#'@keywords internal
 
 terms.inner <- function (x)
 {

@@ -1,9 +1,6 @@
 
 plot.survfit.spbp <- function(){
 
-
-
-
  ####
   if(spbp$model == "ph"){
 
