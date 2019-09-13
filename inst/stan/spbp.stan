@@ -7,6 +7,7 @@ data{
   int<lower=1> n;
   int<lower=1> m;
   int<lower=1> q;
+  int<lower=0> id[n]; // used for frailty models
   real tau;
   int<lower=0, upper=1> approach;
   int<lower=0, upper=1> null;
@@ -54,6 +55,7 @@ model{
   if( approach == 1){
 	  beta ~ normal(mean_beta, sd_beta);
 	  gamma ~ gamma(shape_gamma, rate_gamma);
+	  // w ~ lognormal(0, sigma); // frailty
   }
 }
 // Final line empty to avoid warnings.

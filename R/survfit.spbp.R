@@ -1,38 +1,79 @@
 survfit.spbp <- function(spbp, tau = max(spbp$y[,1]), conf.int = .95,
-                         newdata = rep(0, ncol(model.matrix.spbp(spbp)))){
-  Call <- match.call()
-  tab <- as.data.frame(table(spbp$y[,1]))
-  n <- length(spbp$y[,1])
-  time <- as.numeric(levels(tab[, 1]))
-  n.risk <- n - cumsum( tab[, 2]) + tab[1,2]
-  n.event <- tab[, 2]
+                         newdata = NULL){
 
-  alpha <- (1 - conf_level); ## signif level
-  q <- spbp$q
-  beta <- matrix(spbp$coef[1:q], ncol = 1) ## coef. vector
-  gamma <- matrix(spbp$coef[(q + 1):length(spbp$coef)], ncol = 1)
+  if(is.null(newdata)) newdata <- spbp$means
+  else   newdata <- model.matrix(spbp, data = newdata)
+
+  if (is.vector(newdata, "numeric")) {
+     if (is.null(names(newdata))) {
+      stop("Newdata argument must be a data frame")
+    }
+    newdata <- data.frame(as.list(newdata))
+  }
+
+  Call <- match.call() ## call
+  n <- length(spbp$y[, 1]) ## dataset dimension= n x cols
+  tab <- table(spbp$y[, 1], spbp$y[, 2])
+  col_sum <- tab[, 1] + tab[, 2]
+
+  ### time, n.risk, n.event and n.censor
+  time <- as.numeric(rownames(tab))
+  n.risk <- as.numeric(n  - c(0 , cumsum(col_sum)[-length(col_sum)]))
+  n.event <- as.numeric(tab[, 2])
+  n.censor <- as.numeric(tab[, 1])
+  ##
+
+  ### surv, cumhaz
+  aux <- paste('~', paste(attr(spbp$terms, "term.labels"),
+                          collapse = '+'))
+  X <- as.matrix(newdata, ncol = spbp$q)
+  coef <- spbp$coefficients
+  beta <- matrix(coef[1:spbp$q], ncol = 1)
+  gamma <- matrix(coef[(spbp$q + 1):length(coef)], ncol = 1)
+
   degree <- length(gamma)
+  model <- spbp$model
+  var  <- spbp$var
 
-  X <- newdata
+  ## cumhaz.f
 
-  time_scaled <- spbp$y[,1] / tau ## saled time
-  grad <- matrix(NA, nrow = n, ncol = length(spbp$coefficients))
+  cumhaz <- cumhaz(t = time, coef = coef, degree = degree,
+                            tau = tau, model = model, features = X)
+  if(nrow(cumhaz) == 1) cumhaz <- as.numeric(cumhaz)
 
-  print(newdata)
+  surv <- exp(-cumhaz)
+  ##
+
+  ### std.err, lower, upper
+  grad <- grad(t = time, coef = coef, degree = degree,
+                       tau = tau, model = model, features = X)
+ print(grad)
+  std.err <- NULL
+  for(i in 1:length(time)){
+    std.err[i] <- sqrt(t(grad[i,]) %*% (var/n) %*% grad[i, ])
+    print(std.err[i])
+  }
+
+  ## significance  level
+  alpha <- 1 - conf.int
+  upper <- surv + qnorm(1-(alpha/2)) * std.err
+  lower <- surv - qnorm(1-(alpha/2)) * std.err
+  ##
+
   output <- list(n = n,
                  time = time,
-                 n.risk,
-                 n.event,
-                 n.censor,
-                 surv,
+                 n.risk = n.risk,
+                 n.event = n.event,
+                 n.censor = n.censor,
+                 surv = surv,
                  type = 'right',
-                 cumhaz,
-                 std.err,
+                 cumhaz = cumhaz,
+                 std.err= std.err,
                  lower = lower,
                  upper = upper,
                  conf.int = conf.int,
-                 call = Call
-                 )
-  return()
+                 call = Call)
+  class(output) <- c("survfit.spbp", "survfit")
+  return(output)
 }
 
