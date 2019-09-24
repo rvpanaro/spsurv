@@ -4,8 +4,8 @@
 \alias{spbp}
 \title{Semiparametric survival analysis using Bernstein Polynomials}
 \usage{
-spbp(formula, degree = NULL, tau = max(time), data,
-  approach = c("mle", "bayes"), model = c("ph", "po", "aft"),
+spbp(formula, degree = ceiling(sqrt(length(time))), tau = max(time),
+  data, approach = c("mle", "bayes"), model = c("ph", "po", "aft"),
   priors = list(shape_gamma = 0.01, rate_gamma = 0.01, mean_beta = 0,
   sd_beta = 10), hessian = TRUE, verbose = FALSE, init = 0,
   algorithm = "LBFGS", ...)

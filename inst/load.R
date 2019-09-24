@@ -1,0 +1,16 @@
+setwd("~/Documents/spsurv")
+if(!require(roxygen2))install.packages('roxygen2')
+if(!require(rstan))install.packages('rstan')
+if(!require(pkgbuild))install.packages('pkgbuild')
+if(!require(rstantools))install.packages('rstantools')
+if(!require(Rcpp))install.packages('Rcpp')
+
+try(devtools::uninstall())
+roxygen2::roxygenise()
+# pkgbuild::compile_dll()
+devtools::document()
+# devtools::install()
+devtools::install(local = T, quick = T)
+devtools::load_all(".")
+devtools::build()
+
