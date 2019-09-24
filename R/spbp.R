@@ -29,7 +29,8 @@
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv
 
-spbp <- function(formula, degree = NULL, tau = max(time), data,
+spbp <- function(formula, degree = ceiling(sqrt(length(time))),
+                 tau = max(time), data,
                  approach = c("mle", "bayes"),
                  model = c("ph", "po", "aft"),
                  priors = list(shape_gamma = .01, rate_gamma = .01,
@@ -38,10 +39,9 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
                  init = 0, algorithm = "LBFGS", ...) {
 
   ## --------------- Degree error handling ---------------
-  ifelse(is.null(degree),
-         {degree  <- ceiling(sqrt(nrow(data)))},
-         {if(!is.integer(degree)) stop('Polynomial degree must be numeric.')}
-)
+  if(!(degree %% 1 == 0))
+    stop('Polynomial degree must be integer.')
+
   #-------------------------------------------------------------------
   model_flag <- model; approach_flag <- approach ### creates flags to save char
   model <- ifelse(match.arg(model) == "po", 0,
@@ -51,14 +51,47 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   ## --------------- Formula => model.frame args error handling ---------------
   # evaluate model.frame() containing the required formula
   Call <- match.call()
+
   aux <- match(c("formula", "data", "degree", "tau"),
                names(Call), nomatch = 0)
+
   if (aux[1] == 0) stop("A formula argument is required")
   if (aux[2] == 0) stop("A dataset argument is required")
+
+  temp <- Call[c(1, aux)]
+  temp[[1L]] <- quote(stats::model.frame)
+  special <- c("frailty", "frailty.gamma", "frailty.gaussian", "frailty.t")
+  temp$formula <- terms(formula, special, data = data)
+
+  ## --------------- Frailty handling ---------------
+  if (!is.null(attr(temp$formula, "specials")$frailty)) {
+     id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty]
+     dist <- 1 ## gamma
+  }
+  else if (!is.null(attr(temp$formula, "specials")$frailty.gamma)) {
+    id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gamma]
+    dist <- 1 ## gamma
+  }
+  else if (!is.null(attr(temp$formula, "specials")$frailty.gauss)) {
+    id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gauss]
+    dist <- 2 ## gauss
+  }
+  else if (!is.null(attr(temp$formula, "specials")$frailty.t)) {
+    id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.t]
+    dist <- 3 ## t-student
+  }
+  else{
+    id = NULL
+    dist <- 0
+  }
+
+  if(approach == 0 && !is.null(id))
+    stop("Change approach to `bayes` for frailty estimation.")
 
   ## --------------- Approach error handling ---------------
   defaultPriors <- list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0,
                         sd_beta = 10)
+
   ## case 1: bayes aproach w/ wrong prior spec.
   if(approach == 1 & !is.null(priors)){
     if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(priors)) < 4) stop('Prior arguments do not match.')
@@ -70,14 +103,16 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   }
   ## case 3: mle approach w/ prior spec.
   else{
-    if(!is.null(priors))message('Due to mle approach priors are ignored.')
+    if(!is.null(priors))
+      message('Due to mle approach priors are ignored.')
   }
-  #-------------------------------------------------------------------
 
+  #-------------------------------------------------------------------
   ## --------------- Extra args error handling ---------------
   ##  ... arguments directly passed to `rstan::stan`, handles typos
   ## like "chans=4".
 
+  ## stan arguments
   stanArgs <- list(...)
 
   if (length(stanArgs)) {
@@ -107,7 +142,7 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   if (nrow(mf) == 0) stop("Only missing observations")
   Terms <- terms(mf)
 
-  Y <- model.extract(mf, "response") # in general, time-to-event response
+  Y <- model.extract(mf, "response") # time-to-event response
   if (!inherits(Y, "Surv")) stop("Response must be a survival object")
   type <- attr(Y, "type")
   if (type!='right' && type!='counting')
@@ -154,35 +189,66 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
   status <- as.vector(Y[,2])
 
   # base calculations
-  base <- bp(time, m = degree, tau = tau)
+  base <- bp_basis(time, degree = degree, tau = tau)
+
+  if(!is.null(id)) id <- rep(1, data.n)
+
 
   # data
-  standata <- list(time = time, tau = tau, n = data.n, m = degree, q = q,
-                   status = status, X = X, B = base$B, b = base$b,
-                   approach = approach, M = model, null = null)
+  standata <- list(time = time, tau = tau, n = data.n,
+                   m = base$degree, q = q, status = status, X = X,
+                   B = base$B, b = base$b, approach = approach,
+                   M = model, null = null, id = id, dist = dist
+                   )
 
   ## Stanfit
   standata <- c(standata, priors)
+
   # mle
   if(approach == 0){
-    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata, init = init,
-                                 hessian = hessian, verbose = verbose, ...)
-    coef <- stanfit$par ## rescaled coefficients
+    stanfit <- rstan::optimizing(stanmodels$spbp, data = standata,
+                                 init = init, hessian = hessian,
+                                 verbose = verbose, ...)
+    ## stanfit coefficients (beta, nu)
+    coef <- stanfit$par
+
+    ## rescaled coefficients
     coef[1:q] <- stanfit$par[1:q] / attr(X, 'scaled:scale')
+
+    ## regression estimates
     beta <- coef[1:q]
 
-    info <- chol2inv(-stanfit$hessian)/(attr(X, 'scaled:scale'))^2 ## rescaled fisher info
+    ## rescaled hessian matrix
+    hess <- stanfit$hessian
+    hess[1:q, 1:q] <- stanfit$hessian[1:q, 1:q]/(attr(X, 'scaled:scale'))^2
 
     names(beta) <- colnames(X)
-    names(coef) <- c(colnames(X), paste0('gamma', 1:(length(stanfit$par)-q)))
+    names(coef) <- c(names(beta), paste0("log(gamma", 1:(length(stanfit$par)-q), ")"))
+
+    ## singular matrices handler
+    if(det(-hess) == 0)
+      stop("Optimizing hesssian matrix is singular!")
+
+    ## rescaled fisher info
+    info <- NA
+    tol <- .Machine$double.eps ## solve default tolerance
+    class(info) <- "try-error"
+
+    while(class(info) == "try-error"){
+      info <- try(solve(-hess, tol = tol), silent = T)
+      tol <- tol^(1.1)
+    }
+
     if(hessian == FALSE || null == 1){
       stanfit$hessian <- matrix(rep(NA, q^2), ncol = 1:q,
                                 nrow = 1:q)
     }
+
     nulldata <- standata
     nulldata$null <- 1
     nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init,
                                  hessian = hessian, ...)
+
     output <- list(coefficients = coef,
                  var = info,
                  loglik = c(nullfit$value, stanfit$value),
@@ -194,7 +260,7 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
                  q = q,
                  terms = Terms,
                  assign = assign,
-                 wald.test = coxph.wtest(chol2inv(-stanfit$hessian), stanfit$par)$test,
+                 wald.test = coxph.wtest(info[1:q, 1:q], beta)$test,
                  y = Y,
                  formula = formula,
                  xlevels = xlevels,
@@ -219,35 +285,44 @@ spbp <- function(formula, degree = NULL, tau = max(time), data,
 #' Bernstein Polynomials basis calculations
 #' @export
 #' @param time a vector of times to events.
-#' @param m Bernstein Polynomial degree
+#' @param degree Bernstein Polynomial degree
 #' @param tau must be greater than times maximum value observed, this value is used for correction purposes.
 #' @param data a data.frame with variables named in the formula.
 #' @return A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.
 
-bp <- function(time, m,  tau = NULL){
+bp_basis <- function(time, degree,  tau = max(time)){
   n <- length(time)
 
-  if( is.null(tau) ){tau <- max(time)}
-  if(sum(time >= 0) != n | m < 0 | tau <  max(time) ){
-    stop("tau must be greater than a any time-to-event observation.")
-    }
+  ## error handling
+  if(sum(time >= 0) != n)
+    stop("time must be a positive vector.")
 
-  k <- 1:m
-  b <- matrix(NA, n, m )
-  B <- matrix(NA, n, m )
+  if(degree < 0)
+    stop("polynomial degree must be positive.")
+
+  if(!(degree %% 1 == 0))
+    stop("polynomial degree must be integer.")
+
+  if(tau <  max(time))
+    stop("tau must be greater than the last time.")
+
+
+  k <- 1:degree
+  b <- matrix(NA, n, degree )
+  B <- matrix(NA, n, degree )
   y <- time/tau
 
-  b <- sapply(k, function(k){dbeta(y, k, m - k + 1) / tau})
-  B <- sapply(k, function(k) pbeta(y, k, m - k + 1) )
+  b <- sapply(k, function(k){dbeta(y, k, degree - k + 1) / tau})
+  B <- sapply(k, function(k) pbeta(y, k, degree - k + 1) )
 
   # Equivalent to
   # for (i in 1:n){
-  #   for(k in 1:m){
-  #     b[i,k] <- dbeta(y[i], k, m - k + 1) / tau
-  #     B[i,k] <- pbeta(y[i], k, m - k + 1)
+  #   for(k in 1:degree){
+  #     b[i,k] <- dbeta(y[i], k, degree - k + 1) / tau
+  #     B[i,k] <- pbeta(y[i], k, degree - k + 1)
   #   }
   # }
-  return(list(b = b, B = B, m = m, tau = tau))
+  return(list(b = b, B = B, degree = degree, tau = tau))
 }
 
 terms.inner <- function (x)

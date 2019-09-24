@@ -1,2 +1,0 @@
-# spsurv
-Semiparametric Survival Analysis

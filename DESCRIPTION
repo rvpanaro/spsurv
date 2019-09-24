@@ -1,31 +1,31 @@
 Package: spsurv
 Title: Semiparametric Survival Analysis
-Version: 0.0.1
-Date: 2019-08-04 10:35:17 UTC
+Version: 0.0.0.9000
 Authors@R: 
     person(given = "Renato",
            family = "Panaro",
            role = c("aut", "cre"),
-           email = "renatovp@id.uff.br")
-Description: Semiparametric survival models analysis routines to Cox's proportional hazards model extensions.
+           email = "renatovp@ufmg.br",
+           comment = c(ORCID = "YOUR-ORCID-ID", GITHUB= ""))
+Description: Semiparametric survival models analysis routines.
 License: GPL (>=3)
-URL: https://github.com/rvpanaro/spsurv
-Depends: 
-    methods,
-    R (>= 3.4.0),
-    Rcpp (>= 1.0.1),
-    survival
-Imports: 
-    rstan (>= 2.18.2),
-    rstantools (>= 1.5.1)
-LinkingTo: 
-    BH (>= 1.69.0-1),
-    Rcpp (>= 1.0.1),
-    RcppEigen (>= 0.3.3.5.0),
-    rstan (>= 2.18.2),
-    StanHeaders (>= 2.18.1)
 Encoding: UTF-8
 LazyData: true
-NeedsCompilation: yes
+Biarch: true
+Depends: 
+    R (>= 3.4.0),
+    survival (>= 2.44-1.1)
+Imports: 
+    methods,
+    Rcpp (>= 0.12.0),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.0.0)
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
 SystemRequirements: GNU make
 RoxygenNote: 6.1.1
+
