@@ -35,7 +35,7 @@
 #' newdata <- sim_weibull(n = rows, beta = c(1, -2, .5, .1, 1),
 #'   x = x, model = 'ph', dist = 'weibull')
 #'
-#' @seealso \code{\link[spsurv]{sim_llogis}}, \code{\link[spsurv]{spbp}}
+#' @seealso \code{\link[spsurv]{spbp}}
 #' @references
 #' Collett, D. (2015). Modelling survival data in medical research. Chapman and Hall/CRC.
 #'

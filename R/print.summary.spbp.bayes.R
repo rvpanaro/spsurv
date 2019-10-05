@@ -1,3 +1,9 @@
+#' Bernstein Polynomial based Regression Object
+#'
+#' @export
+#' @method print summary.spbp.bayes
+#'
+
 print.summary.spbp.bayes <- ## summary printings
   function(x, digits = max(getOption('digits')-3, 3)) {
     if (!is.null(x$call)) {
