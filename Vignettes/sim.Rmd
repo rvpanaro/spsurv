@@ -1,0 +1,225 @@
+---
+title: "Using `sim_surv` function to generate random survival times from parametric models"
+author: "Renato Panaro"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    highlight: tango
+bibliography: references.bib
+vignette: >
+  %\VignetteIndexEntry{Using sim_ functions to generate random survival times from parametric models}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+# Parametric Models for Survival Data {-}
+
+Although parametric models aren't the focus of this work, it is substancial to revise commonly employed parametric models. @Klein:1997 discuss exponential, weibull, log normal, log logistic and gamma distributions among other applications to time-to-event data. In this vignette, in order to generate survival data we will stick to the weibull and the log-logistic distributions due to their particular characteristics.
+
+It is well known that Proportional Hazards (PH) models are broadly applied in survival analysis literature. However, other survival general families of models such as the Accelerated Failure Time (AFT) and Proportional Odds (PO) models might be helpful in distinct situations. Specially, the weibull parametric model is suitable in conjunction with both PH and AFT applications. Likewise, the log logistic form comprises both PO and AFT families. The data is generated assuming the parametric version of these families which allows the evaluation of the semiparametric Bernstein Polynomial (BP) based regression estimates (BPPH, BPPO and BPAFT) proposed in the `spsurv::spbp` function.
+
+## Weibull Distribution {.tabset .tabset-fade .tabset-pills -}
+
+A Weibull probability density function (p.d.f.) with scale parameter $\lambda > 0$ and shape parameter $\gamma > 0$ is given by
+
+$$
+f(y \mid \lambda, \gamma) = \lambda \gamma e^{-\gamma y^\lambda},~ y \ge 0. 
+$$
+In survival analysis, the survivor function is certainly of greater interest because it describes the probability of a patient surviving beyond a specified time. Clearly, other functions, such as risk, cumulative risk, and odds, play a key role in building structures that describe the time until the event occurs. However, all the above mentioned functions are related to the survival function and can be obtained with it. The survivor function and the hazard function of a weibull distributed time-to-event variable are respectively
+
+
+$$
+S(y) = P(Y > y) = \int_y^{\infty} f(u) du = e^{-\gamma y^\lambda},
+$$
+
+$$
+h(y) = -\frac{d}{dy} \log S(y) = \lambda \gamma y^{\gamma - 1}.
+$$
+
+From here forth, $\lambda$ and $\gamma$ will be omitted in favor of a reader-friendly writing. Also for a clear understanding, consider a column vector of constant coefficients denoted as $\boldsymbol\beta$ and a column vector $\boldsymbol{x_i}$ of features, such that $\boldsymbol{\eta_i} = \boldsymbol{\beta^\top x_i}$ for the $i^{th}$ patient.
+
+### Weibull AFT {-}
+
+The AFT model is closely related to the general linear model used in regression analysis in terms of formulation and modeling assumptions [@Collett:2003]. In AFT modeling,  $\alpha$ and $\sigma$ are respectively the intercept and the scale parameter while $\epsilon_i$ is a random variable that assumes a probability distribution in the log-linear relationship $\log Y_i = \alpha + \boldsymbol{\eta_i} + \sigma \epsilon_i$, note either $Y$ or $\epsilon$ can be treated as random variables [@Colosismo:2006]. The hazard function for a AFT model is $h(t) = e^{-\eta_i} h_0(y_i e^{-\eta_i})$, then, assuming weibull disributed response we have
+
+$$
+\begin{aligned}
+h(y_i \mid \boldsymbol{x_i}) &= e^{-\boldsymbol{\eta_i}} \color{red}{h_0(}y_i e^{-\boldsymbol{\eta_i}}\color{red}{)} = e^{\boldsymbol{-\eta_i}} \color{red}{\lambda \gamma (}y_i e^{\boldsymbol{-\eta_i}}\color{red}{)^{\gamma - 1}}\\
+&= e^{-\boldsymbol{\eta_i} -\boldsymbol{\eta_i}(\gamma-1)} \lambda \gamma y_i^{\gamma - 1} = (\lambda e^{-\boldsymbol{\eta_i}\gamma}) \gamma y_i^{\gamma - 1} = \lambda^* \gamma y_i^{\gamma - 1}.
+\end{aligned}
+$$
+
+Therefore, if $Y_i$ assumes a weibull form in AFT general framework, with scale parameter $\lambda^* = \lambda e^{-\boldsymbol{\eta_i}\gamma}$ and shape parameter $\gamma$, we have
+
+$$Y_i \sim weibull(\lambda e^{-\boldsymbol{\eta_i}\gamma}, \gamma).$$
+
+### Weibull PH {-}
+
+The PH model relies on multiplicative effect on risk rates to incorporate regression-like arguments into lifetime analysis. In association with covariates, coefficients exponentially increments (or decrements) nonparametric baseline risk, [@Kalbfleisch:2011]. The hazard function for a PH model is $h(t) = h_0(y_i) e^{\eta_i}$, then, assuming weibull disributed response we have
+
+$$
+\begin{aligned}
+h(y_i\mid \boldsymbol{x_i}) &= \color{red}{h_0(y_i)} e^{\boldsymbol{\eta_i}} = \color{red}{\lambda \gamma y_i^{\gamma - 1}}e^{\boldsymbol{\eta_i}}\\
+&=(\lambda e^{\boldsymbol{\eta_i}})\gamma y_i^{\gamma - 1} = \lambda^*\gamma y_i^{\gamma - 1}.
+\end{aligned}
+$$
+
+Thus, for a weibull distributed survival times in PH modeling, with scale parameter $\lambda^* = \lambda e^{\boldsymbol{\eta_i}}$ and shape parameter $\gamma$, it follows that $$Y_i \sim weibull(\lambda e^{\boldsymbol{\eta_i}}, \gamma).$$
+
+### Weibull PO {-}
+
+The PO model is conferred to time to event data in which survival curves get close with time for different subject groups [@Bennett:1983]. The odds on the event occurring at time $y$ has a multiplicative relationship with the explanatory variables, where $F(y_i\mid\boldsymbol{x_i})$ is the cumulative distribution function of the occurrence of events in group $\boldsymbol{x_i}$, this is
+
+$$
+\frac{F(y_i \mid \boldsymbol{x_i})}{1-F(y_i\mid \boldsymbol{x_i})} \frac{1- F_0(y_i)}{F_0(y_i)}=\exp(\boldsymbol{\eta_i}).\\
+$$
+
+
+Accordingly,
+
+$$
+\frac{1 - F(y_i\mid \boldsymbol{x_i})}{1-F(y_i\mid \boldsymbol{x_i})} + \frac{F(y_i \mid \boldsymbol{x_i})}{1-F(y_i\mid \boldsymbol{x_i})} = 1 +  \frac{F_0(y_i)}{1-F_0(y_i)}\exp(\boldsymbol{\eta_i}),
+$$
+which leads to 
+$$
+S(y_i\mid \boldsymbol{x_i}) = \frac{1}{1 +  \frac{F_0(y_i)}{1-F_0(y_i)}\exp(\boldsymbol{\eta_i})}.
+$$
+
+Considering weibull distributed times 
+
+$$
+S(y_i\mid \boldsymbol{x_i}) == \frac{1}{1 +  \color{red}{\frac{F_0(y_i)}{1-F_0(y_i)}}\exp(\boldsymbol{\eta_i})}= \frac{1}{1 +  \color{red}{\frac{1-e^{-\gamma y^\lambda}}{e^{-\gamma y^\lambda}}}\exp(\boldsymbol{\eta_i})} = \frac{1}{1 +  \left(\frac{1}{e^{-\gamma y^\lambda}-1}\right)\exp(\boldsymbol{\eta_i})}.
+$$
+
+
+As mentioned earlier, it is known that by assuming weibull life-time distribution in the PH and AFT models it is possible to obtain  weibull hazard functions that consists in reparametrized versions of the baseline hazard form to accommodate the presence of linear regression arguments. Although it does not result in any known parametric model for the time variable, it is also possible to use this distribution to generate databases based on the PO model.
+
+## Log logistic Distribution {.tabset .tabset-fade .tabset-pills -}
+
+A Log logistic p.d.f. with scale parameter $\lambda>0$ and shape parameter $\alpha>0$ is given by
+
+$$
+f(y \mid \lambda, \alpha) = \frac{\alpha \lambda y^{\alpha-1}}{[1+\lambda y^\alpha]^2},~ y \ge 0. 
+$$
+
+Hence, its survivor and hazard functions are respectively
+
+$$
+S(y) = P(Y > y) = \int_y^{\infty} f(u) du = (1+\lambda y_i^\alpha)^{-1}, 
+$$
+
+$$
+h(y) = -\frac{d}{dy}\log S(y) = \frac{\alpha\lambda y_i^{\alpha-1}}{1+\lambda y_i^\alpha}.
+$$
+
+@Bennett:1983 defined the odds on ocurrence time $y$ as
+$$
+\begin{aligned}
+\frac{F(y_i)}{1-F(y_i)}
+&=\frac{1-S(y_i)}{S(y_i)} =\frac{1-(1+\lambda y_i^\alpha)^{-1}}{(1+\lambda y_i^\alpha)^{-1}} = \lambda y_i^\alpha.\\
+\end{aligned}
+$$
+
+### Log logistic AFT {-}
+
+Again, in the AFT model is $\epsilon_i$ is a random variable that assumes a probability distribution in the log-linear relationship $\log Y_i = \alpha + \boldsymbol{\eta_i} + \sigma \epsilon_i$. 
+
+$$
+\begin{aligned}
+h(y_i \mid \boldsymbol{x_i}) &= e^{\boldsymbol{\eta_i}} \color{red}{h_0(}y_i/e^{\boldsymbol{\eta_i}}\color{red}{)} = e^\boldsymbol{\eta_i} \frac{\color{red}{\alpha\lambda} (y_i e^{-\boldsymbol{\eta_i}})\color{red}{^{\alpha-1}}}{\color{red}{1+\lambda} (y_i e^{-\boldsymbol{\eta_i}})^\color{red}{\alpha}}\\
+&= \frac{\alpha (\lambda e^{-\alpha\boldsymbol{\eta_i}})y_i^{\alpha-1}}{1+(\lambda e^{-\alpha\boldsymbol{\eta_i}})y_i^\alpha}.
+\end{aligned}
+$$
+
+So, $Y_i$ follows a log logistic distribution with scale parameter $\lambda^* = \lambda e^{-\alpha\boldsymbol{\eta_i}}$ and shape parameter $\gamma$, i.e, $$Y_i \sim llogis(\lambda e^{-\alpha\boldsymbol{\eta_i}}, \alpha).$$
+
+### Log-logistic PH {-}
+
+As well as the Weibull PO, Log-logistic times can also be used to generate PH model based datasets. It occurs that a nameless form is found for the survival times. The general formulation for the survivor function is given by
+
+$$S(y_i \mid \boldsymbol x_i) = S_0(y_i)^{e^{\eta_i}}.$$
+
+If the times follow logistic distribution we have
+
+$$S(y_i \mid \boldsymbol x_i) = \color{red}{S_0(y_i)}^{e^\eta_i} = \color{red}{(1+\lambda y_i^\alpha)}^{\color{red}{-}e^{\eta_i}}.$$
+
+
+### Log-logistic PO {-}
+
+As described above, the odds on the event occurring at time $y$ can be rewritten as
+
+$$
+\begin{aligned}
+\frac{1-S(y_i \mid \boldsymbol{x_i})}{S(y_i\mid \boldsymbol{x_i})} &= \color{red}{\frac{1-S_0(y_i)}{S_0(y_i)}} e^{\boldsymbol{\eta_i}}=\color{red}{\lambda y_i^\alpha} e^{\boldsymbol{\eta_i}}= (\lambda e^{\boldsymbol{\eta_i}}) y_i^\alpha.
+\end{aligned}
+$$
+Inevitably, $Y_i$ follows a Log logistic distribution with scale parameter $\lambda^* = \lambda e^{\boldsymbol{\eta_i}}$ and shape parameter $\alpha$, i.e, $$Y_i \sim llogis(\lambda e^{\boldsymbol{\eta_i}}, \alpha).$$
+
+# Inverse transform sampling {-}
+
+Following @Ross:2012, let $X$ be a random variable $X = F^{-1}(U)$, with $U \sim uniform(0,1)$. Now, consider another random variable $Y = S^{-1}(1-U)$, once necessarily $S(X) = 1-U$ and let $S_Y(y)$ denote the survivor function of $Y$. 
+
+Then, 
+
+$$
+\begin{aligned}
+S_Y(y) &= P[Y \ge y] \\
+       &= P[S^{-1}(1-U) \ge y]\\
+       &= P\{S[S^{-1}(1-U)] \ge S(y)\}\\
+       &= P[1-U \ge S(y)]\\
+       &= P[S(Y) \ge S(y)]\\
+       &= P[Y \ge y].
+\end{aligned}
+$$ 
+
+Clearly, we can generate a random variable $Y$
+from the survivor function $S$ by generating a random number $U$
+and then setting $Y = S^{-1}(1-U)$.
+
+In this context, the `sim_surv` routine internally computes weibull sampling when `dist = "weibull"` with shape $\lambda^* = \lambda e^{\boldsymbol{\beta^\top x_i}}$ if  `model = "ph"`(default) or $\lambda^* = \lambda e^{\boldsymbol{-\gamma^\top x_i}\alpha}$ if ``model = "aft"`. The sampling step is straightforward as it makes uses of the `rweibull` inherited from `stats` package. If `model = "po"`, then the inverse transform method makes use of the survival function derived before in this vignette. The censoring mechanism assumes independence between censoring and event times. In order to sample right censored observations, the argument `scaleC` inputs a scale parameter to another weibull sampling, the shape is the same as the one adopted to event time sampling. Finally, the times-to-event are the minimum values between generated event and generated censoring. The observed time is then returned together with the status indicator (1 = event) and the features used in this process. Analogue procedures were taken with respect to data generation based on logistic distribution, the user must change `dist = "weibull"` (default) to `dist = "llogis"`.
+
+```{r}
+library(spsurv)
+library(magrittr)
+
+sim_surv(n = 100, model = "po", dist = "llogis") %>% head() 
+
+## censor = F allows mean(status) = 0
+sim_surv(n = 5, model = "aft", scaleC=1.5, censor = F) %>% head() 
+
+## include categorical data
+rows <- 200
+
+categorical <- rbinom(rows, size = 3, prob = .5)
+x <- cbind(numerical = rnorm(rows),
+           cat0 = as.numeric(categorical == 0),
+           cat1 = as.numeric(categorical == 1),
+           cat2 = as.numeric(categorical == 2),
+           cat3 = as.numeric(categorical == 3))
+
+# newdata <- sim_surv(n = rows, beta = c(1, -2, .5, .1, 1),
+#   x = x, model = 'aft')
+# newdata %>% tail()
+```
+
+
+The `sim_weibull` routine computes weibull sampling with $\lambda^* = \lambda e^{\boldsymbol{\beta^\top x_i}}$ if `model = "ph"` and $\lambda^* = \lambda e^{\boldsymbol{-\alpha^\top x_i}\gamma}$ if `model = "aft"`. The censoring mechanism assumes independence between censoring and event times. In order to sample right censored data, the argument `scaleC` inputs a scale parameter to another weibull inverse transform sampling, the shape is the same as the one adopted to event time sampling. Finally, the to the ocurrence is the minimum values between generated event and generated censoring. The observed time is then returned together with the status indicator and the features used this process.
+
+
+## Examples {-}
+```{r}
+library(spsurv)
+library(magrittr)
+
+sim_surv(n = 100, model = "aft", dist = "weibull") %>% head() 
+
+# sim_surv(n = 3, model = "ph", dist = "weibull", scaleT = 0.15, scaleC = 0.2) %>% head() 
+```
+
+
+# References {-}
+
