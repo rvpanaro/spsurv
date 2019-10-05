@@ -25,7 +25,8 @@ Biarch: true
 Depends: 
     R (>= 3.5.0),
     survival (>= 2.44-1.1),
-    loo (>= 2.1.0)
+    loo (>= 2.1.0),
+    coda (>= 0.19-3)		
 Imports: 
     methods,
     Rcpp (>= 0.12.0),
