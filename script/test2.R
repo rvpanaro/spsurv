@@ -1,13 +1,17 @@
 source(file = "inst/load.R")
 library(spsurv)
 
-## weibull aft
-# db1 <- sim_surv(100, model = "aft")
-# fit1 <- spbp(Surv(y,status) ~ x1 + x2,  model = "aft",
-#              approach = "mle", data = db1)
-#
-# fit1_bayes <- spbp(Surv(y,status) ~ x1 + x2,  model = "aft",
-#              approach = "bayes", data = db1)
+# weibull aft
+db1 <- sim_surv(100, model = "aft")
+fit1 <- spbp(Surv(y,status) ~ x1 + x2,  model = "aft",
+             approach = "mle", data = db1)
+t1 <- Sys.time()
+fit1_bayes <- spbp(Surv(y,status) ~ x1 + x2,  model = "aft",
+             approach = "bayes", data = db1)
+t2 <- Sys.time()
+t2 -t1
+fit1_bayes
+
 #
 # pred1 <- fit1$linear.predictors
 

@@ -1,3 +1,8 @@
+#' Bernstein Polynomial based Regression Object
+#'
+#' @export
+#' @method summary spbp
+
 summary.spbp <- function(spbp, interval = 0.95, ...){
     ## mle approach
     if(spbp$call$approach == "mle"){

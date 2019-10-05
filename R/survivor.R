@@ -1,3 +1,4 @@
+
 survivor <- function(spbp, ...){
   UseMethod("survivor", spbp)
 }

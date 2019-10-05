@@ -409,12 +409,12 @@ loglik_aft(const Eigen::Matrix<T0__, Eigen::Dynamic, 1>& time,
                 current_statement_begin__ = 104;
                 stan::model::assign(b2, 
                             stan::model::cons_list(stan::model::index_uni(i), stan::model::cons_list(stan::model::index_uni(j), stan::model::nil_index_list())), 
-                            (stan::math::exp(beta_log(get_base1(y_alt, i, "y_alt", 1), i, ((m - i) + 1))) / tau_aft), 
+                            (stan::math::exp(beta_log(get_base1(y_alt, i, "y_alt", 1), j, ((m - j) + 1))) / tau_aft), 
                             "assigning variable b2");
                 current_statement_begin__ = 105;
                 stan::model::assign(B2, 
                             stan::model::cons_list(stan::model::index_uni(i), stan::model::cons_list(stan::model::index_uni(j), stan::model::nil_index_list())), 
-                            beta_cdf(get_base1(y_alt, i, "y_alt", 1), i, ((m - i) + 1)), 
+                            beta_cdf(get_base1(y_alt, i, "y_alt", 1), j, ((m - j) + 1)), 
                             "assigning variable B2");
             }
             current_statement_begin__ = 107;

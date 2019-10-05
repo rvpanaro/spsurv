@@ -62,5 +62,5 @@ Collett, D. (2015). Modelling survival data in medical research. Chapman and Hal
  Klein, J. P., & Moeschberger, M. L. (2006). Survival analysis: techniques for censored and truncated data. Springer Science & Business Media.
 }
 \seealso{
-\code{\link[spsurv]{sim_llogis}}, \code{\link[spsurv]{spbp}}
+\code{\link[spsurv]{spbp}}
 }

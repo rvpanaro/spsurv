@@ -1,3 +1,8 @@
+#' Bernstein Polynomial based Regression Object
+#'
+#' @export
+#' @method print spbp
+
 print.spbp <-
   function(spbp, digits = max(getOption('digits')-3, 3),
            signif.stars = getOption("show.signif.stars"), ...){
