@@ -4,11 +4,11 @@
 \alias{spbp}
 \title{Semiparametric survival analysis using Bernstein Polynomials}
 \usage{
-spbp(formula, degree = ceiling(sqrt(length(time))), tau = max(time),
+spbp(formula, degree = ceiling(sqrt(nrow(data))), tau = max(time),
   data, approach = c("mle", "bayes"), model = c("ph", "po", "aft"),
-  priors = list(shape_gamma = 0.01, rate_gamma = 0.01, mean_beta = 0,
-  sd_beta = 10), hessian = TRUE, verbose = FALSE, init = 0,
-  algorithm = "LBFGS", ...)
+  priors = list(hyper_gamma = 0.1, mean_beta = 0, sd_beta = sqrt(10)),
+  hessian = TRUE, verbose = FALSE, init = 0, algorithm = "LBFGS",
+  ...)
 }
 \arguments{
 \item{formula}{a Surv object with time to event, status and explanatory terms.}
@@ -52,5 +52,5 @@ print(fitmle)
 Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 }
 \seealso{
-https://mc-stan.org/users/documentation/
+\url{https://mc-stan.org/users/documentation/}
 }

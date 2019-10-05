@@ -10,7 +10,7 @@
 #' @param priors Prior settings for the Bayesian approach.
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
 #' @return An object of class `stanfit` returned by `rstan::stan`.
-#' @seealso https://mc-stan.org/users/documentation/
+#' @seealso \url{https://mc-stan.org/users/documentation/}
 #' @examples
 #' library(KMsurv)
 #' data("larynx")
@@ -29,14 +29,15 @@
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv
 
-spbp <- function(formula, degree = ceiling(sqrt(length(time))),
+spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                  tau = max(time), data,
                  approach = c("mle", "bayes"),
                  model = c("ph", "po", "aft"),
-                 priors = list(shape_gamma = .01, rate_gamma = .01,
-                               mean_beta = 0, sd_beta = 10),
+                 priors = list(hyper_gamma = .1,
+                               mean_beta = 0,
+                               sd_beta = sqrt(10)),
                  hessian = TRUE, verbose = FALSE,
-                 init = 0, algorithm = "LBFGS", ...) {
+                 init = 0, algorithm = "LBFGS", ...){
 
   ## --------------- Degree error handling ---------------
   if(!(degree %% 1 == 0))
@@ -58,43 +59,47 @@ spbp <- function(formula, degree = ceiling(sqrt(length(time))),
   if (aux[1] == 0) stop("A formula argument is required")
   if (aux[2] == 0) stop("A dataset argument is required")
 
-  temp <- Call[c(1, aux)]
-  temp[[1L]] <- quote(stats::model.frame)
+  temp <- Call[c(1, aux)] # keep important args
+  temp[[1L]] <- quote(stats::model.frame) # model frame call
   special <- c("frailty", "frailty.gamma", "frailty.gaussian", "frailty.t")
   temp$formula <- terms(formula, special, data = data)
+  temp$formula <- terms(formula, data = data);
 
   ## --------------- Frailty handling ---------------
+  id <- NULL
   if (!is.null(attr(temp$formula, "specials")$frailty)) {
-     id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty]
+    frailty_idx <- attr(temp$formula, "specials")$frailty
+    id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty]
      dist <- 1 ## gamma
   }
   else if (!is.null(attr(temp$formula, "specials")$frailty.gamma)) {
+    frailty_idx <- attr(temp$formula, "specials")$frailty.gamma
     id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gamma]
     dist <- 1 ## gamma
   }
   else if (!is.null(attr(temp$formula, "specials")$frailty.gauss)) {
+    frailty_idx <- attr(temp$formula, "specials")$frailty.gauss
     id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gauss]
     dist <- 2 ## gauss
   }
   else if (!is.null(attr(temp$formula, "specials")$frailty.t)) {
+    frailty_idx <- attr(temp$formula, "specials")$frailty.t
     id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.t]
     dist <- 3 ## t-student
   }
   else{
-    id = NULL
     dist <- 0
+    frailty_idx = NULL
   }
 
-  if(approach == 0 && !is.null(id))
-    stop("Change approach to `bayes` for frailty estimation.")
-
   ## --------------- Approach error handling ---------------
-  defaultPriors <- list(shape_gamma = .01, rate_gamma = .01, mean_beta = 0,
+  defaultPriors <- list(hyper_gamma = .01,
+                        mean_beta = 0,
                         sd_beta = 10)
 
   ## case 1: bayes aproach w/ wrong prior spec.
   if(approach == 1 & !is.null(priors)){
-    if(sum(c('shape_gamma','rate_gamma','mean_beta', 'sd_beta') %in% names(priors)) < 4) stop('Prior arguments do not match.')
+    if(sum(c('hyper_gamma', 'mean_beta', 'sd_beta') %in% names(priors)) < 3) stop('Prior arguments do not match.')
   }
   ## case 2: ## case 1: bayes aproach wout/ prior spec
   else if(approach == 1 &  sum(priors %in% defaultPriors) == 4){
@@ -132,10 +137,6 @@ spbp <- function(formula, degree = ceiling(sqrt(length(time))),
   }
 
   #-------------------------------------------------------------------
-  temp <- Call[c(1, aux)]  # keep important args
-
-  temp[[1L]] <- quote(stats::model.frame)  # model frame call
-  temp$formula <- terms(formula, data = data);
 
   mf <- eval(temp, parent.frame())
 
@@ -191,24 +192,27 @@ spbp <- function(formula, degree = ceiling(sqrt(length(time))),
   # base calculations
   base <- bp_basis(time, degree = degree, tau = tau)
 
-  if(!is.null(id)) id <- rep(1, data.n)
-
-
   # data
   standata <- list(time = time, tau = tau, n = data.n,
                    m = base$degree, q = q, status = status, X = X,
                    B = base$B, b = base$b, approach = approach,
-                   M = model, null = null, id = id, dist = dist
+                   M = model, null = null, id = rep(1, data.n),
+                   dist = dist, z = rep(0, data.n)
                    )
-
   ## Stanfit
   standata <- c(standata, priors)
 
   # mle
   if(approach == 0){
+    if(!is.null(frailty_idx)){
+      standata$X <- X[, -frailty_idx]
+      message("Frailty ignored, change approach to `bayes` for frailty estimation.")
+    }
+
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata,
                                  init = init, hessian = hessian,
                                  verbose = verbose, ...)
+
     ## stanfit coefficients (beta, nu)
     coef <- stanfit$par
 
@@ -243,7 +247,6 @@ spbp <- function(formula, degree = ceiling(sqrt(length(time))),
       stanfit$hessian <- matrix(rep(NA, q^2), ncol = 1:q,
                                 nrow = 1:q)
     }
-
     nulldata <- standata
     nulldata$null <- 1
     nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init,
@@ -265,19 +268,31 @@ spbp <- function(formula, degree = ceiling(sqrt(length(time))),
                  formula = formula,
                  xlevels = xlevels,
                  contrasts = contrasts,
-                 call = Call,
-                 return_code = stanfit$return_code
-    )
+                 return_code = stanfit$return_code,
+                 tau = tau)
   }
   else{   # bayes
     output <- list()
-    stanfit <- rstan::sampling(stanmodels$spbp, data = standata,
-                               verbose = verbose, ...)
-    output$stanfit <- stanfit
-  }
 
-  output$model <- model_flag
-  output$approach <- approach_flag
+    if(dist == 0){
+      output$stanfit <- rstan::sampling(stanmodels$spbp, data = standata,
+                                 verbose = verbose, ...)
+      output$pmode <- rstan::optimizing(stanmodels$spbp, data = standata,
+                                      verbose = verbose)
+    }
+    else{
+      standata$X <- X[, -frailty_idx]
+
+      output$stanfit <- rstan::sampling(stanmodels$spbp_frailty,
+                                        data = standata,
+                                        verbose = verbose, ...)
+      output$pmode <- rstan::optimizing(stanmodels$spbp_frailty, data = standata,
+                                      verbose = verbose)
+    }
+    output$loo <- loo::loo(loo::extract_log_lik(output$stanfit))
+    output$waic <- loo::waic(loo::extract_log_lik(output$stanfit))
+  }
+  output$call <- Call
   class(output) <- "spbp"
   return(output)
 }

@@ -1,7 +1,6 @@
-summary.spbp <- function(spbp, conf.int = 0.95, ...) {
+summary.spbp <- function(spbp, interval = 0.95, ...){
     ## mle approach
-
-    if(spbp$approach == "mle"){
+    if(spbp$call$approach == "mle"){
         beta <- spbp$coefficients[1:spbp$q]
         var <- spbp$var[1:spbp$q, 1:spbp$q]
 
@@ -20,19 +19,19 @@ summary.spbp <- function(spbp, conf.int = 0.95, ...) {
                        loglik = spbp$loglik)
 
         if (!is.null(spbp$nevent))
-         output$nevent <- spbp$nevent
+        output$nevent <- spbp$nevent
 
         output$coefficients  <- cbind(beta, exp(beta), se, beta/se,
                          pchisq((beta/ se)^2, 1, lower.tail=FALSE))
         dimnames(output$coefficients) <- list(names(beta), c("coef", "exp(coef)",
                                                  "se(coef)", "z", "Pr(>|z|)"))
-        if (conf.int) {
-            z <- qnorm((1 + conf.int)/2, 0, 1)
-            output$conf.int <- cbind(exp(beta), exp(-beta), exp(beta - z * se),
+        if (interval) {
+            z <- qnorm((1 + interval)/2, 0, 1)
+            output$interval <- cbind(exp(beta), exp(-beta), exp(beta - z * se),
                          exp(beta + z * se))
-            dimnames(output$conf.int) <- list(names(beta), c("exp(coef)", "exp(-coef)",
-                                                 paste("lower .", round(100 * conf.int, 2), sep = ""),
-                                                 paste("upper .", round(100 * conf.int, 2), sep = "")))
+            dimnames(output$interval) <- list(names(beta), c("exp(coef)", "exp(-coef)",
+                                                 paste("lower .", round(100 * interval, 2), sep = ""),
+                                                 paste("upper .", round(100 * interval, 2), sep = "")))
         }
         df <- length(beta2)
         logtest <- -2 * (spbp$loglik[1] - spbp$loglik[2])
@@ -47,18 +46,50 @@ summary.spbp <- function(spbp, conf.int = 0.95, ...) {
                                           lower.tail=FALSE))
 
 
-        class(output) <- switch (spbp$model, "po"  = "summary.bppo.mle",
+        class(output) <- switch (spbp$call$model, "po"  = "summary.bppo.mle",
                                              "ph"  = "summary.bpph.mle",
                                              "aft" = "summary.bpaft.mle")
     }
     else{
-        samp <- coda::mcmc(rstan::extract(spbp$stanfit, pars = "beta")$beta)
-        output <- list(summary = cbind(Median = apply(samp, 2, median), summary(samp)[[1]],
-                                       HPDL = coda::HPDinterval(samp)[,1], HPDU = coda::HPDinterval(samp)[,2])[,c(1,2,3,6,7)])
-        # rownames(output$summary) <- colnames(Z)
-        class(output) <- switch (spbp$model, "po"  = "summary.bppo.bayes",
-                                             "ph"  = "summary.bpph.bayes",
-                                             "aft" = "summary.bpaft.bayes")
+        status <- eval(spbp$call$data)$status
+        output <- list(nevent = sum(status),
+                       n = length(status),
+                       call = spbp$call)
+
+        output$coef_names <- all.vars(spbp$call$formula)[-c(1,2)]
+        output$summarise <- rstan::summary(spbp$stanfit,
+                                  probs = c((1-interval)/2, .5, interval + (1-interval)/2), pars = "beta")$summary
+        exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta")$beta))
+
+        output$Coefmat <- cbind(spbp$pmode$par[1:length( output$coef_names)],
+                                coda::HPDinterval(log(exp_samp), prob = interval),
+                                output$summarise)
+
+        colnames(output$Coefmat) <- c("mode", "lowerHPD", "upperHPD",
+                                      colnames(output$summarise))
+        rownames(output$Coefmat) <- output$coef_names
+        #####
+
+
+
+        output$Coefmat2 <- cbind(exp(output$Coefmat[,1]),
+                                 exp(output$Coefmat[,2]),
+                                 apply(exp_samp, 2, mean),
+                                 apply(exp_samp, 2, median),
+                                 apply(exp_samp, 2, sd),
+                                 coda::HPDinterval(exp_samp, prob = interval)
+                                 )
+        rownames(output$Coefmat2) <- rownames(output$Coefmat)
+        colnames(output$Coefmat2) <-  c("exp(mode)", "exp(mean)", "mean_exp", "median_exp", "sd_exp",
+                                        "lowerHPD_exp", "upperHPD_exp")
+
+        output$waic <- spbp$waic
+        output$loo <- spbp$loo
+
+        class(output) <- switch (spbp$call$model, "po"  = "summary.bppo.bayes",
+                                 "ph"  = "summary.bpph.bayes",
+                                 "aft" = "summary.bpaft.bayes")
+
     }
     return(output)
 }

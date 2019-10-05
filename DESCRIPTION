@@ -1,31 +1,48 @@
 Package: spsurv
-Title: Semiparametric Survival Analysis
-Version: 0.0.0.9000
+Title: Bernstein Polynomial based Semiparametric Survival Analysis
+Version: 1.0
 Authors@R: 
-    person(given = "Renato",
+    c(person(given = "Renato",
            family = "Panaro",
            role = c("aut", "cre"),
            email = "renatovp@ufmg.br",
-           comment = c(ORCID = "YOUR-ORCID-ID", GITHUB= ""))
-Description: Semiparametric survival models analysis routines.
-License: GPL (>=3)
+           comment = c(ORCID = "0000-0002-1903-2091", URL= "https://rvpanaro.github.io/")),
+	person(given = "Fábio",
+           family = "Demarqui",
+           role = "aut",
+           email = "fndemarqui@gmail.com",
+           comment = c(ORCID = "0000-0001-9236-1986")),
+	person(given = "Vinícius",
+           family = "Mayrink",
+           role = "aut",
+           email = "vdinizm@gmail.com",
+           comment = c(ORCID = "0000-0002-5683-8326")))
+Description: "A set of reliable routines to ease semiparametric survival regression modeling based on Bernstein Polynomials. `spsurv` includes Proportional Hazards, Proportional Odds and Accelerated Failure Time frameworks for right censored data, it also includes bayesian frailty modeling."
 Encoding: UTF-8
 LazyData: true
 Biarch: true
 Depends: 
-    R (>= 3.4.0),
-    survival (>= 2.44-1.1)
+    R (>= 3.5.0),
+    survival (>= 2.44-1.1),
+    loo (>= 2.1.0)
 Imports: 
     methods,
     Rcpp (>= 0.12.0),
     rstan (>= 2.18.1),
-    rstantools (>= 2.0.0)
+    rstantools (>= 1.5.1)
 LinkingTo: 
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
     RcppEigen (>= 0.3.3.3.0),
     rstan (>= 2.18.1),
     StanHeaders (>= 2.18.0)
+Suggests:
+    knitr,
+    devtools,
+    roxygen2,
+    testthat
+License: MIT + file LICENSE
+VignetteBuilder: knitr
 SystemRequirements: GNU make
+BugReports: https://github.com/rvpanaro/spsurv/issues
 RoxygenNote: 6.1.1
-
