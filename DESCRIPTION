@@ -1,4 +1,5 @@
 Package: spsurv
+Type: Package
 Title: Bernstein Polynomial based Semiparametric Survival Analysis
 Version: 1.0
 Authors@R: 
@@ -17,9 +18,9 @@ Authors@R:
            role = "aut",
            email = "vdinizm@gmail.com",
            comment = c(ORCID = "0000-0002-5683-8326")))
+Maintainer: Renato Panaro <renatovp@ufmg.br>
 Description: "A set of reliable routines to ease semiparametric survival regression modeling based on Bernstein Polynomials. `spsurv` includes Proportional Hazards, Proportional Odds and Accelerated Failure Time frameworks for right censored data, it also includes bayesian frailty modeling."
-Encoding: UTF-8
-LazyData: true
+License: MIT + file LICENSE
 Biarch: true
 Depends: 
     R (>= 3.5.0),
@@ -41,7 +42,8 @@ Suggests:
     devtools,
     roxygen2,
     testthat
-License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
 VignetteBuilder: knitr
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues

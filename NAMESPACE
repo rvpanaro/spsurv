@@ -2,11 +2,9 @@
 
 S3method(survivor,spbp)
 export(bp_basis)
-export(cumhaz)
 export(grad)
 export(sim_surv)
 export(spbp)
-export(surv)
 import(Rcpp)
 import(methods)
 import(survival)
