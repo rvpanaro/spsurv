@@ -8,7 +8,7 @@ spbp(formula, degree = ceiling(sqrt(nrow(data))), tau = max(time),
   data, approach = c("mle", "bayes"), model = c("ph", "po", "aft"),
   priors = list(hyper_gamma = 0.1, mean_beta = 0, sd_beta = sqrt(10)),
   hessian = TRUE, verbose = FALSE, init = 0, algorithm = "LBFGS",
-  ...)
+  chains = 1, ...)
 }
 \arguments{
 \item{formula}{a Surv object with time to event, status and explanatory terms.}
