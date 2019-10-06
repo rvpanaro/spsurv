@@ -6,7 +6,7 @@
 print.spbp <-
   function(spbp, digits = max(getOption('digits')-3, 3),
            signif.stars = getOption("show.signif.stars"), ...){
-
+print("yo")
   savedig <- options(digits = digits)
   on.exit(options(savedig))
 
@@ -59,7 +59,7 @@ print.spbp <-
                   exp(summarise[,1]),
                   coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta")$beta)),
                   summarise[, -c(1, 5, 7, 9, 10)])
-    rownames(Coef) <-  all.vars(spbp$call$formula)[-c(1,2)]
+    rownames(Coef) <-  colnames(model.matrix(spbp))
     colnames(Coef) <- c("mean", "exp(mean)", "lowerHPD", "upperHPD", colnames(summarise[, -c(1, 5, 7, 9, 10)]))
     print(Coef)
 

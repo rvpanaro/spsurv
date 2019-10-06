@@ -4,8 +4,7 @@
 \alias{model.matrix.spbp}
 \title{Model.matrix method for fitted spbp models}
 \usage{
-\method{model.matrix}{spbp}(object,
-  data = get(as.character(object$call$data)), ...)
+\method{model.matrix}{spbp}(spbp, data = eval(spbp$call$data))
 }
 \arguments{
 \item{object}{the result of a \code{\link[spsurv]{spbp}} fit.}
