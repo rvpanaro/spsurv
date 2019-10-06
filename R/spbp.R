@@ -212,7 +212,8 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
 
     stanfit <- rstan::optimizing(stanmodels$spbp, data = standata,
                                  init = init, hessian = hessian,
-                                 verbose = verbose, ...)
+                                 verbose = verbose,
+                                 iter = 10000, ...)
 
     ## stanfit coefficients (beta, nu)
     coef <- stanfit$par[1:(q+degree)]
@@ -253,7 +254,8 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
     nulldata <- standata
     nulldata$null <- 1
     nullfit <- rstan::optimizing(stanmodels$spbp, data = nulldata, init = init,
-                                 hessian = hessian, ...)
+                                 hessian = hessian,
+                                 iter = 10000, ...)
 
     output <- list(coefficients = coef,
                  var = info,
@@ -282,7 +284,7 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                                  verbose = verbose,
                                  chains = chains, ...)
       output$pmode <- rstan::optimizing(stanmodels$spbp, data = standata,
-                                      verbose = verbose)
+                                      verbose = verbose, iter = 10000)$par[1:(q+degree)]
     }
     else{
       standata$X <- X[, -frailty_idx]

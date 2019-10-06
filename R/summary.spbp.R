@@ -61,7 +61,7 @@ summary.spbp <- function(spbp, interval = 0.95, ...){
                        n = length(status),
                        call = spbp$call)
 
-        output$coef_names <- all.vars(spbp$call$formula)[-c(1,2)]
+        output$coef_names <- colnames(model.matrix(spbp))
         output$summarise <- rstan::summary(spbp$stanfit,
                                   probs = c((1-interval)/2, .5, interval + (1-interval)/2), pars = "beta")$summary
         exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta")$beta))
@@ -74,8 +74,6 @@ summary.spbp <- function(spbp, interval = 0.95, ...){
                                       colnames(output$summarise))
         rownames(output$Coefmat) <- output$coef_names
         #####
-
-
 
         output$Coefmat2 <- cbind(exp(output$Coefmat[,1]),
                                  exp(output$Coefmat[,2]),
