@@ -37,7 +37,8 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                                mean_beta = 0,
                                sd_beta = sqrt(10)),
                  hessian = TRUE, verbose = FALSE,
-                 init = 0, algorithm = "LBFGS", ...){
+                 init = 0, algorithm = "LBFGS",
+                 chains = 1, ...){
 
   ## --------------- Degree error handling ---------------
   if(!(degree %% 1 == 0))
@@ -214,7 +215,7 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                                  verbose = verbose, ...)
 
     ## stanfit coefficients (beta, nu)
-    coef <- stanfit$par
+    coef <- stanfit$par[1:(q+degree)]
 
     ## rescaled coefficients
     coef[1:q] <- stanfit$par[1:q] / attr(X, 'scaled:scale')
@@ -227,7 +228,9 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
     hess[1:q, 1:q] <- stanfit$hessian[1:q, 1:q]/(attr(X, 'scaled:scale'))^2
 
     names(beta) <- colnames(X)
-    names(coef) <- c(names(beta), paste0("log(gamma", 1:(length(stanfit$par)-q), ")"))
+    names(coef) <- c(names(beta),
+                     paste0("log(gamma", 1:(degree), ")")
+                     )
 
     ## singular matrices handler
     if(det(-hess) == 0)
@@ -276,7 +279,8 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
 
     if(dist == 0){
       output$stanfit <- rstan::sampling(stanmodels$spbp, data = standata,
-                                 verbose = verbose, ...)
+                                 verbose = verbose,
+                                 chains = chains, ...)
       output$pmode <- rstan::optimizing(stanmodels$spbp, data = standata,
                                       verbose = verbose)
     }
@@ -285,7 +289,8 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
 
       output$stanfit <- rstan::sampling(stanmodels$spbp_frailty,
                                         data = standata,
-                                        verbose = verbose, ...)
+                                        verbose = verbose,
+                                        chains = chains, ...)
       output$pmode <- rstan::optimizing(stanmodels$spbp_frailty, data = standata,
                                       verbose = verbose)
     }
