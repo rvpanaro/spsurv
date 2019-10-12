@@ -1,26 +1,19 @@
-source('inst/load.R')
 rm(list = ls())
-## Weibull simulated data: Inverse transform method
+?spbp
+library("data.table")
+dat <- fread("../MC/ph_weibull/data_ph_weibull_128.txt")
 
+fitmle <- spbp(Surv(y, status)~., data = dat, approach = "mle")
+print(fitmle)
 
-library(spsurv) # semiparametric survival
-data("llogis_aft")
+fitbe <- spbp(Surv(y, status)~., data = dat, approach = "bayes")
+print(fitbe)
 
-?sim_weibull()
-fitph <- spbp(Surv(time, status) ~ x1 + x2 + frailty.gamma(x1), data = dat,
-            model = 'ph', approach = 'bayes', chain = 1)
+class(fitmle$coefficients)
+class(c(1,colMeans(extract(fitbe$stanfit)$beta)))
 
-summary(fitph)
+cox <- coxph(Surv(y, status)~., data = dat)
 
-cox <- coxph(Surv(time, status) ~ x1 + x2, data = dat)
-cox
-summary(cox)
-
-round(diag(fit$var), 3)
-data("lung")
-
-# Random institutional effect
-cox_fra <- coxph(formula = Surv(time, status) ~ I(age, 6) + frailty(inst, df=4), lung)
-model.matrix(cox_fra)
-View(formula)
-survival:::coxph
+plot(survfit(cox)$surv, col = 1)
+points(survivor(fitmle), col = 2)
+points(survivor(fitbe), col = 4)

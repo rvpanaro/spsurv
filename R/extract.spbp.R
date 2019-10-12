@@ -1,7 +1,6 @@
 #' Extract method for fitted spbp models
 #'
 #' @export
-#' @method extract spbp
 #' @description Extract samples from a fitted \code{\link[spsurv]{spbp}} model.
 #' @param spbp the result of a \code{\link[spsurv]{spbp}} fit.
 #' @param ... arguments inherent from \code{\link[rstan]{extract}}.
@@ -17,6 +16,6 @@ extract.spbp <-
     if(spbp$call$approach == "bayes")
       rstan:::extract(object = spbp$stanfit, ...)
     else{
-      "not applicable, change approach to 'bayes' to extract MCMC chains"
+      "not applicable, change approach to 'bayes' to traceplot MCMC chains"
     }
   }

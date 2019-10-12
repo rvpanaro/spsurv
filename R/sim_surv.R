@@ -41,23 +41,23 @@
 #'
 #'  Klein, J. P., & Moeschberger, M. L. (2006). Survival analysis: techniques for censored and truncated data. Springer Science & Business Media.
 
-sim_surv <-
-  function(n,
+sim_surv <- function(n,
   beta = c(2, -1),
-  scaleT = 2, # baseline hazard
+  scaleT = 8, # baseline hazard
   scaleC = 3, # hazard of censoring
-  x = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)),
+  features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)),
   shape = 2,
   model = c("ph", "po", "aft"),
   dist = c("weibull", "llogis"),
   censor = TRUE){
 
   if(n %% 1 != 0) stop("n must be integer")
-  if(dim(x)[1] != n) stop("Lengths differ: dim(x)[1] = ", dim(x)[1],
+  if(dim(features)[1] != n) stop("Lengths differ: dim(x)[1] = ", dim(features)[1],
          " but n = ", n)
-  if(class(x) != "data.frame") stop("x must be data.frame")
+  if(class(features) != "data.frame") stop("x must be data.frame")
 
-  x <-  model.matrix(~., data = x)[, -1]
+  x <-  model.matrix(~., data = features)[, -1]
+
   eta <- x %*% beta
   model <- match.arg(model)
   dist <- match.arg(dist)

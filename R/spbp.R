@@ -1,6 +1,7 @@
 #' Semiparametric survival analysis using Bernstein Polynomials
 #'
 #' @export
+#' @description Fits Bernstein Polynomial based Proportional Odds model to lung cancer data.
 #' @param formula a Surv object with time to event, status and explanatory terms.
 #' @param degree Bernstein Polynomial degree.
 #' @param tau Real valued number greater than any time observed.
@@ -12,22 +13,18 @@
 #' @return An object of class `stanfit` returned by `rstan::stan`.
 #' @seealso \url{https://mc-stan.org/users/documentation/}
 #' @examples
-#' library(KMsurv)
-#' data("larynx")
 #'
-#' #Fit a Proportional Odds BP based model to the veteran cancer data set
-#' library ("survival")
-#' data("veteran")
-#'
+#' data("veteran") ## imports from survival package
 #' library("spsurv")
 #'
-#' fitmle <− spbp(Surv(time, delta) ~ karno + factor(celltype),
-#' data = veteran, approach =  "mle", model = "po")
+#' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
 #'
-#' print(fitmle)
+#' print(fit)
+#' summary(fit)
 #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
-#' @importFrom survival Surv
+#' @importFrom survival Surv frailty
 
 spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                  tau = max(time), data,
@@ -35,7 +32,9 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                  model = c("ph", "po", "aft"),
                  priors = list(hyper_gamma = .1,
                                mean_beta = 0,
-                               sd_beta = sqrt(10)),
+                               sd_beta = sqrt(10),
+                               mean_nu = 0,
+                               sd_nu = 10),
                  hessian = TRUE, verbose = FALSE,
                  init = 0, algorithm = "LBFGS",
                  chains = 1, ...){
@@ -94,13 +93,15 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
   }
 
   ## --------------- Approach error handling ---------------
-  defaultPriors <- list(hyper_gamma = .01,
-                        mean_beta = 0,
-                        sd_beta = 10)
+  defaultPriors <- list(hyper_gamma = .1,
+                           mean_beta = 0,
+                           sd_beta = sqrt(15),
+                           mean_nu = 0,
+                           sd_nu = sqrt(25))
 
   ## case 1: bayes aproach w/ wrong prior spec.
   if(approach == 1 & !is.null(priors)){
-    if(sum(c('hyper_gamma', 'mean_beta', 'sd_beta') %in% names(priors)) < 3) stop('Prior arguments do not match.')
+    if(sum(c('hyper_gamma', 'mean_beta', 'sd_beta', 'mean_nu', 'sd_nu') %in% names(priors)) < 5) stop('Prior arguments do not match.')
   }
   ## case 2: ## case 1: bayes aproach wout/ prior spec
   else if(approach == 1 &  sum(priors %in% defaultPriors) == 4){
@@ -150,7 +151,7 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
   if (type!='right' && type!='counting')
     stop(paste("Proportional hazards model doesn't support \"", type,
                "\" survival data", sep=''))
-  if (length(attr(Terms, 'variables')) > 2) { # a ~1 formula has length 2
+  if (length(attr(Terms, '))variables')) > 2) { # a ~1 formula has length 2
     ytemp <- terms.inner(formula)[1:2]
     xtemp <- terms.inner(formula)[-c(1,2)]
   if (any(!is.na(match(xtemp, ytemp))))
@@ -234,18 +235,11 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                      )
 
     ## singular matrices handler
-    if(det(-hess) == 0)
-      stop("Optimizing hesssian matrix is singular!")
+    # if(det(-hess) == 0)
+    #   stop("Optimizing hesssian matrix is singular!")
 
     ## rescaled fisher info
-    info <- NA
-    tol <- .Machine$double.eps ## solve default tolerance
-    class(info) <- "try-error"
-
-    while(class(info) == "try-error"){
-      info <- try(solve(-hess, tol = tol), silent = T)
-      tol <- tol^(1.1)
-    }
+    info <- invPPT(hess, q)
 
     if(hessian == FALSE || null == 1){
       stanfit$hessian <- matrix(rep(NA, q^2), ncol = 1:q,
@@ -277,7 +271,7 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                  tau = tau)
   }
   else{   # bayes
-    output <- list()
+    output <- list(y = Y)
 
     if(dist == 0){
       output$stanfit <- rstan::sampling(stanmodels$spbp, data = standata,
@@ -294,7 +288,7 @@ spbp <- function(formula, degree = ceiling(sqrt(nrow(data))),
                                         verbose = verbose,
                                         chains = chains, ...)
       output$pmode <- rstan::optimizing(stanmodels$spbp_frailty, data = standata,
-                                      verbose = verbose)
+                                      verbose = verbose)$par[1:(q+degree)]
     }
     output$loo <- loo::loo(loo::extract_log_lik(output$stanfit))
     output$waic <- loo::waic(loo::extract_log_lik(output$stanfit))
@@ -361,4 +355,65 @@ terms.inner <- function (x)
     else terms.inner(x[[2]])
   }
   else (deparse(x))
+}
+####
+
+invPPT <- function(A, q){
+
+  if(!is.matrix(A))
+    stop("A is not a matrix")
+
+  if(!is.numeric(q) || length(q) > 1 || q%%1 != 0)
+    stop("q must be an integer")
+
+  if(nrow(A) != ncol(A))
+    stop("non square matrix")
+  if(q == 0) return(A)
+
+  n <- nrow(A)
+  r <- (q+1)
+
+  A11 <- A[1:q, 1:q];
+  A12 <- A[1:q, r:n];
+  A21 <- A[r:n,1:q];
+  A22 <- A[r:n, r:n];
+
+  S <- matrix(NA, nrow = nrow(A), ncol = ncol(A))
+
+  ## Schur complements
+  schur11 <- A22 -A21 %*% solveSVD(A11) %*% A12
+  schur22 <- A11 -A12 %*% solveSVD(A22) %*% A21
+
+  ##S11
+  S[1:q, 1:q] <- solveSVD(schur22);
+  ##S12
+  S[1:q, r:n] <- -solveSVD(A11) %*% A12 %*% solveSVD(schur11);
+  ##S21
+  S[r:n,1:q] <- -solveSVD(schur11) %*% A21 %*% solveSVD(A11);
+  ##S22
+  S[r:n, r:n] <- solveSVD(schur11)
+
+  return(S)
+}
+
+solveAny <- function(A){
+  tol <- .Machine$double.eps ## solve default tolerance
+  class(S) <- "try-error"
+  while(class(S) == "try-error"){
+    S <- try(qr.solve(A, tol = tol), silent = T)
+    tol <- tol^(1.00001)
+  }
+  return(S)
+}
+
+## Singular Value Decompositition
+solveSVD <- function(A){
+  svd <- svd(A)
+  v <- svd$v
+  u <- svd$u
+  zeros <- svd$d == 0
+  pseudod <- svd$d
+  pseudod[!zeros] <- svd$d[!zeros] <-  1/svd$d[!zeros]
+  S <- v %*% diag(pseudod) %*% t(u)
+  return(S)
 }

@@ -1,7 +1,6 @@
 #' Density plots method for fitted spbp models
 #'
 #' @export
-#' @method stan_dens spbp
 #' @description Posterior density of samples from a fitted \code{\link[spsurv]{spbp}} model.
 #' @param spbp the result of a \code{\link[spsurv]{spbp}} fit.
 #' @param ... arguments inherent from \code{\link[rstan]{stan_dens}}.

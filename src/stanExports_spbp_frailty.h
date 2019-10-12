@@ -37,7 +37,7 @@ stan::io::program_reader prog_reader__() {
     reader.add_event(1, 0, "start", "/include/loglikbp.stan");
     reader.add_event(126, 125, "end", "/include/loglikbp.stan");
     reader.add_event(126, 2, "restart", "model_spbp_frailty");
-    reader.add_event(192, 66, "end", "model_spbp_frailty");
+    reader.add_event(194, 68, "end", "model_spbp_frailty");
     return reader;
 }
 template <typename T0__, typename T1__, typename T2__, typename T3__, typename T4__, typename T5__, typename T9__>
@@ -483,6 +483,8 @@ private:
         double hyper_gamma;
         double mean_beta;
         double sd_beta;
+        double mean_nu;
+        double sd_nu;
 public:
     model_spbp_frailty(stan::io::var_context& context__,
         std::ostream* pstream__ = 0)
@@ -663,22 +665,35 @@ public:
             pos__ = 0;
             sd_beta = vals_r__[pos__++];
             check_greater_or_equal(function__, "sd_beta", sd_beta, 0);
+            current_statement_begin__ = 151;
+            context__.validate_dims("data initialization", "mean_nu", "double", context__.to_vec());
+            mean_nu = double(0);
+            vals_r__ = context__.vals_r("mean_nu");
+            pos__ = 0;
+            mean_nu = vals_r__[pos__++];
+            current_statement_begin__ = 152;
+            context__.validate_dims("data initialization", "sd_nu", "double", context__.to_vec());
+            sd_nu = double(0);
+            vals_r__ = context__.vals_r("sd_nu");
+            pos__ = 0;
+            sd_nu = vals_r__[pos__++];
+            check_greater_or_equal(function__, "sd_nu", sd_nu, 0);
             // initialize transformed data variables
             // execute transformed data statements
             // validate transformed data
             // validate, set parameter ranges
             num_params_r__ = 0U;
             param_ranges_i__.clear();
-            current_statement_begin__ = 155;
+            current_statement_begin__ = 157;
             validate_non_negative_index("beta", "q", q);
             num_params_r__ += q;
-            current_statement_begin__ = 156;
+            current_statement_begin__ = 158;
             validate_non_negative_index("nu", "m", m);
             num_params_r__ += m;
-            current_statement_begin__ = 157;
+            current_statement_begin__ = 159;
             validate_non_negative_index("z", "n", n);
             num_params_r__ += n;
-            current_statement_begin__ = 158;
+            current_statement_begin__ = 160;
             num_params_r__ += 1;
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(e, current_statement_begin__, prog_reader__());
@@ -697,7 +712,7 @@ public:
         (void) pos__; // dummy call to supress warning
         std::vector<double> vals_r__;
         std::vector<int> vals_i__;
-        current_statement_begin__ = 155;
+        current_statement_begin__ = 157;
         if (!(context__.contains_r("beta")))
             stan::lang::rethrow_located(std::runtime_error(std::string("Variable beta missing")), current_statement_begin__, prog_reader__());
         vals_r__ = context__.vals_r("beta");
@@ -714,7 +729,7 @@ public:
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(std::runtime_error(std::string("Error transforming variable beta: ") + e.what()), current_statement_begin__, prog_reader__());
         }
-        current_statement_begin__ = 156;
+        current_statement_begin__ = 158;
         if (!(context__.contains_r("nu")))
             stan::lang::rethrow_located(std::runtime_error(std::string("Variable nu missing")), current_statement_begin__, prog_reader__());
         vals_r__ = context__.vals_r("nu");
@@ -731,7 +746,7 @@ public:
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(std::runtime_error(std::string("Error transforming variable nu: ") + e.what()), current_statement_begin__, prog_reader__());
         }
-        current_statement_begin__ = 157;
+        current_statement_begin__ = 159;
         if (!(context__.contains_r("z")))
             stan::lang::rethrow_located(std::runtime_error(std::string("Variable z missing")), current_statement_begin__, prog_reader__());
         vals_r__ = context__.vals_r("z");
@@ -748,7 +763,7 @@ public:
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(std::runtime_error(std::string("Error transforming variable z: ") + e.what()), current_statement_begin__, prog_reader__());
         }
-        current_statement_begin__ = 158;
+        current_statement_begin__ = 160;
         if (!(context__.contains_r("kappa")))
             stan::lang::rethrow_located(std::runtime_error(std::string("Variable kappa missing")), current_statement_begin__, prog_reader__());
         vals_r__ = context__.vals_r("kappa");
@@ -786,28 +801,28 @@ public:
         try {
             stan::io::reader<local_scalar_t__> in__(params_r__, params_i__);
             // model parameters
-            current_statement_begin__ = 155;
+            current_statement_begin__ = 157;
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> beta;
             (void) beta;  // dummy to suppress unused var warning
             if (jacobian__)
                 beta = in__.vector_constrain(q, lp__);
             else
                 beta = in__.vector_constrain(q);
-            current_statement_begin__ = 156;
+            current_statement_begin__ = 158;
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> nu;
             (void) nu;  // dummy to suppress unused var warning
             if (jacobian__)
                 nu = in__.vector_constrain(m, lp__);
             else
                 nu = in__.vector_constrain(m);
-            current_statement_begin__ = 157;
+            current_statement_begin__ = 159;
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> z;
             (void) z;  // dummy to suppress unused var warning
             if (jacobian__)
                 z = in__.vector_constrain(n, lp__);
             else
                 z = in__.vector_constrain(n);
-            current_statement_begin__ = 158;
+            current_statement_begin__ = 160;
             local_scalar_t__ kappa;
             (void) kappa;  // dummy to suppress unused var warning
             if (jacobian__)
@@ -815,18 +830,18 @@ public:
             else
                 kappa = in__.scalar_lb_constrain(0);
             // transformed parameters
-            current_statement_begin__ = 162;
+            current_statement_begin__ = 164;
             local_scalar_t__ sigma;
             (void) sigma;  // dummy to suppress unused var warning
             stan::math::initialize(sigma, DUMMY_VAR__);
             stan::math::fill(sigma, DUMMY_VAR__);
             // transformed parameters block statements
-            current_statement_begin__ = 163;
+            current_statement_begin__ = 165;
             stan::math::assign(sigma, inv_sqrt(kappa));
             // validate transformed parameters
             const char* function__ = "validate transformed params";
             (void) function__;  // dummy to suppress unused var warning
-            current_statement_begin__ = 162;
+            current_statement_begin__ = 164;
             if (stan::math::is_uninitialized(sigma)) {
                 std::stringstream msg__;
                 msg__ << "Undefined transformed parameter: sigma";
@@ -834,24 +849,24 @@ public:
             }
             check_greater_or_equal(function__, "sigma", sigma, 0);
             // model body
-            current_statement_begin__ = 170;
-            lp_accum__.add(normal_log<propto__>(beta, mean_beta, sd_beta));
-            current_statement_begin__ = 171;
-            lp_accum__.add(normal_log<propto__>(nu, mean_beta, sd_beta));
             current_statement_begin__ = 172;
+            lp_accum__.add(normal_log<propto__>(beta, mean_beta, sd_beta));
+            current_statement_begin__ = 173;
+            lp_accum__.add(normal_log<propto__>(nu, mean_nu, sd_nu));
+            current_statement_begin__ = 174;
             lp_accum__.add(gamma_log<propto__>(kappa, hyper_gamma, hyper_gamma));
-            current_statement_begin__ = 175;
+            current_statement_begin__ = 177;
             if (as_bool(logical_eq(dist, 1))) {
-                current_statement_begin__ = 176;
+                current_statement_begin__ = 178;
                 lp_accum__.add(gamma_log<propto__>(z, kappa, kappa));
             } else if (as_bool(logical_eq(dist, 2))) {
-                current_statement_begin__ = 179;
+                current_statement_begin__ = 181;
                 lp_accum__.add(normal_log<propto__>(z, 0, sigma));
             } else if (as_bool(logical_eq(dist, 3))) {
-                current_statement_begin__ = 182;
+                current_statement_begin__ = 184;
                 lp_accum__.add(student_t_log<propto__>(z, 20, 0, sigma));
             } else {
-                current_statement_begin__ = 185;
+                current_statement_begin__ = 187;
                 lp_accum__.add(normal_log<propto__>(z, 0, 0.000001));
             }
         } catch (const std::exception& e) {
@@ -936,19 +951,19 @@ public:
         if (!include_tparams__ && !include_gqs__) return;
         try {
             // declare and define transformed parameters
-            current_statement_begin__ = 162;
+            current_statement_begin__ = 164;
             double sigma;
             (void) sigma;  // dummy to suppress unused var warning
             stan::math::initialize(sigma, DUMMY_VAR__);
             stan::math::fill(sigma, DUMMY_VAR__);
             // do transformed parameters statements
-            current_statement_begin__ = 163;
+            current_statement_begin__ = 165;
             stan::math::assign(sigma, inv_sqrt(kappa));
             if (!include_gqs__ && !include_tparams__) return;
             // validate transformed parameters
             const char* function__ = "validate transformed params";
             (void) function__;  // dummy to suppress unused var warning
-            current_statement_begin__ = 162;
+            current_statement_begin__ = 164;
             check_greater_or_equal(function__, "sigma", sigma, 0);
             // write transformed parameters
             if (include_tparams__) {

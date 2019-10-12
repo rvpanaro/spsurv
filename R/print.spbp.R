@@ -4,9 +4,9 @@
 #' @method print spbp
 
 print.spbp <-
-  function(spbp, digits = max(getOption('digits')-3, 3),
+  function(spbp, digits = max(getOption('digits')-4, 3),
            signif.stars = getOption("show.signif.stars"), ...){
-print("yo")
+
   savedig <- options(digits = digits)
   on.exit(options(savedig))
 
@@ -53,18 +53,19 @@ print("yo")
     }
   }
   else{
-    cat("\n")
     summarise <- rstan::summary(spbp$stanfit, pars = "beta")$summary
     Coef <- cbind(summarise[, 1],
-                  exp(summarise[,1]),
                   coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta")$beta)),
                   summarise[, -c(1, 5, 7, 9, 10)])
     rownames(Coef) <-  colnames(model.matrix(spbp))
-    colnames(Coef) <- c("mean", "exp(mean)", "lowerHPD", "upperHPD", colnames(summarise[, -c(1, 5, 7, 9, 10)]))
-    print(Coef)
+    colnames(Coef) <- c("mean", "lowerHPD", "upperHPD", colnames(summarise[, -c(1, 5, 7, 9, 10)]))
+    print(Coef, digits = digits)
 
     cat("---\n")
-    print(cbind(t(spbp$waic$estimates), t(spbp$loo$estimates)))
+    cat("\n WAIC Estimate= ", sprintf('%.3f', spbp$waic$estimates[3,1]))
+    cat("      WAIC SE= ", sprintf('%.3f', spbp$waic$estimates[3,2], "\n"))
+    cat("\n LOOIC Estimate= ", sprintf('%.3f', spbp$loo$estimates[3,1]))
+    cat("      LOOIC SE= ", sprintf('%.3f', spbp$loo$estimates[3,2], "\n"))
   }
 }
 
