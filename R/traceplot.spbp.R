@@ -1,7 +1,6 @@
 #' Traceplot method for fitted spbp models
 #'
 #' @export
-#' @method traceplot spbp
 #' @description Traceplot samples from a fitted \code{\link[spsurv]{spbp}} model.
 #' @param spbp the result of a \code{\link[spsurv]{spbp}} fit.
 #' @param ... arguments inherent from \code{\link[rstan]{traceplot}}.

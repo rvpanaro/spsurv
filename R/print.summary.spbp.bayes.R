@@ -5,7 +5,7 @@
 #'
 
 print.summary.spbp.bayes <- ## summary printings
-  function(x, digits = max(getOption('digits')-3, 3)) {
+  function(x, digits = max(getOption('digits')-4, 3)){
     if (!is.null(x$call)) {
       cat("Call:\n")
       dput(x$call)
@@ -19,10 +19,10 @@ print.summary.spbp.bayes <- ## summary printings
     else cat("\n")
 
     cat("\n")
-    print(x$Coefmat)
+    print(x$summary_chain)
 
     cat("---\n")
-    print(x$Coefmat2)
+    print(x$summary_exp)
 
     cat("---\n")
     print(x$waic)

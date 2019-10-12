@@ -57,33 +57,33 @@ summary.spbp <- function(spbp, interval = 0.95, ...){
     }
     else{
         status <- eval(spbp$call$data)$status
-        output <- list(nevent = sum(status),
+        output <- list(call = spbp$call,
                        n = length(status),
-                       call = spbp$call)
+                       loglik = rstan::extract(spbp$stanfit, "log_lik")$log_lik,
+                       nevent = sum(status)
+                       )
 
         output$coef_names <- colnames(model.matrix(spbp))
-        output$summarise <- rstan::summary(spbp$stanfit,
+        aux <- rstan::summary(spbp$stanfit,
                                   probs = c((1-interval)/2, .5, interval + (1-interval)/2), pars = "beta")$summary
         exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta")$beta))
 
-        output$Coefmat <- cbind(spbp$pmode$par[1:length( output$coef_names)],
+        output$summary_chain <- cbind(spbp$pmode[1:length( output$coef_names)],
                                 coda::HPDinterval(log(exp_samp), prob = interval),
-                                output$summarise)
+                                output$aux)
 
-        colnames(output$Coefmat) <- c("mode", "lowerHPD", "upperHPD",
-                                      colnames(output$summarise))
-        rownames(output$Coefmat) <- output$coef_names
+        colnames(output$summary_chain) <- c("mode", "lowerHPD", "upperHPD",
+                                      colnames(output$aux))
+        rownames(output$summary_chain) <- output$coef_names
         #####
 
-        output$Coefmat2 <- cbind(exp(output$Coefmat[,1]),
-                                 exp(output$Coefmat[,2]),
-                                 apply(exp_samp, 2, mean),
+        output$summary_exp <- cbind(apply(exp_samp, 2, mean),
                                  apply(exp_samp, 2, median),
                                  apply(exp_samp, 2, sd),
                                  coda::HPDinterval(exp_samp, prob = interval)
                                  )
-        rownames(output$Coefmat2) <- rownames(output$Coefmat)
-        colnames(output$Coefmat2) <-  c("exp(mode)", "exp(mean)", "mean_exp", "median_exp", "sd_exp",
+        rownames(output$summary_exp) <- rownames(output$summary_chain)
+        colnames(output$summary_exp) <-  c("mean_exp", "median_exp", "sd_exp",
                                         "lowerHPD_exp", "upperHPD_exp")
 
         output$waic <- spbp$waic

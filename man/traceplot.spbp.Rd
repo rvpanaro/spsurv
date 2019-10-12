@@ -4,7 +4,7 @@
 \alias{traceplot.spbp}
 \title{Traceplot method for fitted spbp models}
 \usage{
-\method{traceplot}{spbp}(spbp, ...)
+traceplot.spbp(spbp, ...)
 }
 \arguments{
 \item{spbp}{the result of a \code{\link[spsurv]{spbp}} fit.}

@@ -24,6 +24,8 @@ data{
   real<lower=0> hyper_gamma;
   real mean_beta;
   real<lower=0> sd_beta;
+  real mean_nu;
+  real<lower=0> sd_nu;
 }
 
 // Parametes block (important).
@@ -44,7 +46,7 @@ model{
 
 	  //priors
 	  beta ~ normal(mean_beta, sd_beta);
-	  nu ~ normal(mean_beta, sd_beta);
+	  nu ~ normal(mean_nu, sd_nu);
     kappa ~ gamma(hyper_gamma, hyper_gamma);
 
 	  //frailty

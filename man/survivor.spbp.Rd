@@ -4,7 +4,7 @@
 \alias{survivor.spbp}
 \title{Survivor function calculations for an spbp object outcome}
 \usage{
-\method{survivor}{spbp}(spbp, time = spbp$y[, 1])
+\method{survivor}{spbp}(spbp, newdata)
 }
 \arguments{
 \item{n}{integer; sample size.}
@@ -16,7 +16,7 @@ data.frame of `ncol(x) +2` columns in which the
   are appended to the next columns.
 }
 \description{
-A method to ease survivor function computation.
+A method to call survivor.default.
 }
 \details{
 sim_surv returns weibull (log-logistic) randomly

@@ -4,8 +4,8 @@
 \alias{sim_surv}
 \title{Inverse transform sampling from parametric models}
 \usage{
-sim_surv(n, beta = c(2, -1), scaleT = 2, scaleC = 3,
-  x = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)), shape = 2,
+sim_surv(n, beta = c(2, -1), scaleT = 8, scaleC = 3,
+  features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)), shape = 2,
   model = c("ph", "po", "aft"), dist = c("weibull", "llogis"),
   censor = TRUE)
 }
@@ -16,8 +16,6 @@ sim_surv(n, beta = c(2, -1), scaleT = 2, scaleC = 3,
 
 \item{scaleT, scaleC}{event and censoring scale parameters.}
 
-\item{x}{matrix of features (columns).}
-
 \item{shape}{event and censoring distribution shape.}
 
 \item{model}{either "ph" (default) or "aft" for weibull and
@@ -25,6 +23,8 @@ sim_surv(n, beta = c(2, -1), scaleT = 2, scaleC = 3,
 
 \item{censor}{logical; if `TRUE`, censoring is required, that is
 mean(status) > 0.}
+
+\item{x}{matrix of features (columns).}
 }
 \value{
 data.frame of `ncol(x) +2` columns in which the

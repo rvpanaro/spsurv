@@ -4,7 +4,7 @@
 \alias{extract.spbp}
 \title{Extract method for fitted spbp models}
 \usage{
-\method{extract}{spbp}(spbp, ...)
+extract.spbp(spbp, ...)
 }
 \arguments{
 \item{spbp}{the result of a \code{\link[spsurv]{spbp}} fit.}

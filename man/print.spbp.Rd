@@ -4,7 +4,7 @@
 \alias{print.spbp}
 \title{Bernstein Polynomial based Regression Object}
 \usage{
-\method{print}{spbp}(spbp, digits = max(getOption("digits") - 3, 3),
+\method{print}{spbp}(spbp, digits = max(getOption("digits") - 4, 3),
   signif.stars = getOption("show.signif.stars"), ...)
 }
 \description{

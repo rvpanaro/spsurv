@@ -6,9 +6,9 @@
 \usage{
 spbp(formula, degree = ceiling(sqrt(nrow(data))), tau = max(time),
   data, approach = c("mle", "bayes"), model = c("ph", "po", "aft"),
-  priors = list(hyper_gamma = 0.1, mean_beta = 0, sd_beta = sqrt(10)),
-  hessian = TRUE, verbose = FALSE, init = 0, algorithm = "LBFGS",
-  chains = 1, ...)
+  priors = list(hyper_gamma = 0.1, mean_beta = 0, sd_beta = sqrt(10),
+  mean_nu = 0, sd_nu = 10), hessian = TRUE, verbose = FALSE,
+  init = 0, algorithm = "LBFGS", chains = 1, ...)
 }
 \arguments{
 \item{formula}{a Surv object with time to event, status and explanatory terms.}
@@ -31,22 +31,18 @@ spbp(formula, degree = ceiling(sqrt(nrow(data))), tau = max(time),
 An object of class `stanfit` returned by `rstan::stan`.
 }
 \description{
-Semiparametric survival analysis using Bernstein Polynomials
+Fits Bernstein Polynomial based Proportional Odds model to lung cancer data.
 }
 \examples{
-library(KMsurv)
-data("larynx")
 
-#Fit a Proportional Odds BP based model to the veteran cancer data set
-library ("survival")
-data("veteran")
-
+data("veteran") ## imports from survival package
 library("spsurv")
 
-fitmle <− spbp(Surv(time, delta) ~ karno + factor(celltype),
-data = veteran, approach =  "mle", model = "po")
+fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
+data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
 
-print(fitmle)
+print(fit)
+summary(fit)
 }
 \references{
 Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
