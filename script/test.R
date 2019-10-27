@@ -1,19 +1,36 @@
+getwd()
+setwd("../MC")
+# source('script/load.R')
+
 rm(list = ls())
-?spbp
+dev.off()
+?spsurv
+
+library(spsurv)
 library("data.table")
-dat <- fread("../MC/ph_weibull/data_ph_weibull_128.txt")
+dat <- fread("../MC/po_weibull/data_po_weibull_111.txt")
+head(dat)
+mean(dat$status)
 
-fitmle <- spbp(Surv(y, status)~., data = dat, approach = "mle")
-print(fitmle)
+fitmle <- spbp(Surv(y, status)~ ., data = dat,
+               approach = "mle", model = "po", scale = F)
 
-fitbe <- spbp(Surv(y, status)~., data = dat, approach = "bayes")
-print(fitbe)
+summary(fitmle)
 
-class(fitmle$coefficients)
-class(c(1,colMeans(extract(fitbe$stanfit)$beta)))
+# coxph(Surv(y, status)~., data = dat)
+library("timereg")
+prop.odds(Event(y, status)~., data = dat)
 
-cox <- coxph(Surv(y, status)~., data = dat)
+fitbe1 <- spbp(Surv(y, status)~., data = dat,
+              approach = "bayes", model = "ph",
+              priors = list(beta = c("normal(0,4)", "normal(0,4)"),
+                            gamma = "lognormal(0,4)")
+              )
+summary(fitbe1)
 
-plot(survfit(cox)$surv, col = 1)
-points(survivor(fitmle), col = 2)
-points(survivor(fitbe), col = 4)
+X11()
+traceplot(fitbe1$stanfit, pars = c("beta", "gamma"))
+
+X11()
+stan_dens(fitbe1$stanfit, pars = c("beta", "gamma"))
+

@@ -53,9 +53,9 @@ print.spbp <-
     }
   }
   else{
-    summarise <- rstan::summary(spbp$stanfit, pars = "beta")$summary
+    summarise <- rstan::summary(spbp$stanfit, pars = "beta_std")$summary
     Coef <- cbind(summarise[, 1],
-                  coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta")$beta)),
+                  coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta_std")$beta_std)),
                   summarise[, -c(1, 5, 7, 9, 10)])
     rownames(Coef) <-  colnames(model.matrix(spbp))
     colnames(Coef) <- c("mean", "lowerHPD", "upperHPD", colnames(summarise[, -c(1, 5, 7, 9, 10)]))
