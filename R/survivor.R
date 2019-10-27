@@ -18,7 +18,7 @@
 #' @references
 #'
 #' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
-survivor <- function(spbp ...) {
+survivor <- function(spbp, ...) {
   UseMethod("survivor", spbp)
 }
 #' @return Returns the probabilities that a subject will survive beyond any given times.
