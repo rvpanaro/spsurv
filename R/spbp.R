@@ -1,11 +1,8 @@
-spbp <- function(formula, ...){
-  UseMethod("spbp")
-}
-
 #' Semiparametric survival analysis using Bernstein Polynomials
 #'
-#' @export
-#' @description Fits Bernstein Polynomial based Proportional Odds model to lung cancer data.
+#' Fits Bernstein Polynomial based Proportional regression to survival data.
+#'
+#' @title spbp: The BP based semiparametric survival analysis function
 #' @param formula a Surv object with time to event, status and explanatory terms.
 #' @param degree Bernstein Polynomial degree.
 #' @param tau Real valued number greater than any time observed.
@@ -14,8 +11,6 @@ spbp <- function(formula, ...){
 #' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph".
 #' @param priors Prior settings for the Bayesian approach.
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
-#' @return An object of class `stanfit` returned by `rstan::stan`.
-#' @seealso \url{https://mc-stan.org/users/documentation/}
 #' @examples
 #'
 #' data("veteran") ## imports from survival package
@@ -29,7 +24,17 @@ spbp <- function(formula, ...){
 #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
+#' @rdname spbp
+#' @export spbp
+#' @seealso \url{https://mc-stan.org/users/documentation/}
+spbp <- function(formula, ...) {
+  UseMethod("spbp", formula)
+}
 
+#' @return An object of class \code{spbp}
+#' @rdname spbp
+#' @method spbp default
+#' @S3method spbp default
 spbp.default <-
   function(formula, degree, data,
             approach = c("mle", "bayes"),
