@@ -1,38 +1,30 @@
-survivor <- function(spbp, ...){
-  UseMethod("survivor")
-}
-
 #' Survivor function calculations for Bernstein Polynomial based regression models
 #'
 #' @export
 #' @description A method to ease survivor function computation.
-#' @param n integer; sample size.
+#' @param spbp
 #'
-#' @details sim_surv returns weibull (log-logistic) randomly
-#' generated survival times. According to Collett (2003), the
-#' Accelerated Failure Time emcompasses a wide variety of parametric
-#' models, including weibull and log-logistic models.
+#' @details
+#' @examples
+#' data("veteran") ## imports from survival package
+#' library("spsurv")
 #'
-#' @return data.frame of `ncol(x) +2` columns in which the
-#'  survival times are the response variable denoted by `y`,
-#'   `status` indicates failure (0 = failure) and the features
-#'   are appended to the next columns.
+#' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
 #'
-#'@examples
-#'library(spsurv)
-#'
-#' db <- sim_surv(100, model = "aft")
-#' fitmle <- spbp(Surv(y,status) ~ x1 + x2,  model = "aft",
-#'           approach = "mle", data = db)
-#'
-#' curve(survivor(time = x, spbp = fitmle), ylim = c(0,1), xlim = c(0,fit1$tau))
-#'
-#' points(x = 2, y = survivor(time = 2, fit1), pch = 19, col = 3)
+#' survivor(fit)
 #'
 #' @seealso  \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{sim_surv}}
 #' @references
 #'
 #' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
+survivor <- function(spbp ...) {
+  UseMethod("survivor", spbp)
+}
+#' @return Returns the probabilities that a subject will survive beyond any given times.
+#' @rdname survivor
+#' @method survivor default
+#' @S3method survivor default
 
 survivor.default <- function(time,
                              arg = list(beta = NULL, gamma = NULL),
@@ -87,38 +79,10 @@ survivor.default <- function(time,
   return(exp(-H))
 }
 
-#' Survivor function calculations for an spbp object outcome
-#'
-#' @export
-#' @description A method to call survivor.default.
-#' @param n integer; sample size.
-#'
-#' @details sim_surv returns weibull (log-logistic) randomly
-#' generated survival times. According to Collett (2003), the
-#' Accelerated Failure Time emcompasses a wide variety of parametric
-#' models, including weibull and log-logistic models.
-#'
-#' @return data.frame of `ncol(x) +2` columns in which the
-#'  survival times are the response variable denoted by `y`,
-#'   `status` indicates failure (0 = failure) and the features
-#'   are appended to the next columns.
-#'
-#'@examples
-#'library(spsurv)
-#'
-#' db <- sim_surv(100, model = "aft")
-#' fit1 <- spbp(Surv(y,status) ~ x1 + x2,  model = "aft",
-#'           approach = "mle", data = db)
-#'
-#' curve(survivor(time = x, spbp = fit1),
-#' ylim = c(0,1), xlim = c(0,fit1$tau))
-#'
-#'points(x = 2, y = survivor.spbp(time = 2, fit1), pch = 19, col = 3)
-#'
-#' @seealso \code{\link[spsurv]{sim_llogis}}, \code{\link[spsurv]{spbp}}
-#' @references
-#'
-#' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
+#' @return Returns the probabilities that a subject will survive beyond any given times.
+#' @rdname survivor
+#' @method survivor spbp
+#' @S3method survivor spbp
 
 survivor.spbp <- function(spbp, newdata){
   design <- model.matrix(spbp)
