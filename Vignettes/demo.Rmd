@@ -1,0 +1,87 @@
+---
+title: "An introduction to `spsurv` package"
+author: "Renato Panaro"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    highlight: tango
+bibliography: references.bib
+vignette: >
+  %\VignetteIndexEntry{Using sim_ functions to generate random survival times from parametric models}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+# Laryngeal Cancer Data
+
+The Proportional Hazards model was fitted on data from 90 male patients diagnosed with laryngeal cancer to test whether same age patients survival differ in distinct stages. In accordance with @Osman:2012, the BP degree is set to be $m = \sqrt{90} \approx 10$ and $\tau = 10.7$ is the largest time observed. Following the settings assumed by @Klein:2006, the model covariates are age of the patient and indicators of stage II, III and IV. Hypothetically, zero aged patients in stage I refer to baseline group such that $h(t \mid \mathbf{0})=h_0(t)$. The `spsurv::spbp` function is used to show the results according to ML and Bayesian inferential approaches. This data is provided in `KMsurv` package.
+
+```{r, eval = F}
+## Data
+library(KMsurv)
+data("larynx")
+
+## Fit
+fitmle <- spbp(Surv(time, delta) ~ age + factor(stage), data = larynx, scale = T)
+
+summary(fitmle)
+
+```
+## An alternative approach
+
+An alternative approach to MLE is to attribute priors to the interest quantities and draw conclusions from the posterior densities obtained. All MCMC calculations are based on the state-of-art probabilistic software `Stan`, with `spbp` function is possible to switch to bayesian just using `approach = "bayes"`.
+
+```{r, eval = F}
+fitbe <- spbp(Surv(time, delta) ~age + factor(stage),
+               approach = "bayes", scale = T, data = larynx)
+ 
+traceplot(fitbe$stanfit, pars = "beta")
+```
+
+Make use of `rstan` inherent library in order to visualize diagnosis plots.
+
+```{r, eval = F}
+traceplot(fitbe$stanfit, pars = c("beta", "gamma"))
+stan_dens(fitbe$stanfit, pars = c("beta", "gamma"))
+```
+One could also use [shinystan](https://mc-stan.org/users/interfaces/shinystan) to interpret the outcomes.
+
+```{r, eval = F}
+library(shinystan)
+shinystan(fitbe$stanfit, pars = c("beta", "gamma"))
+```
+
+## Scaling the feature variables
+It may occur non satisfactory results due to the overflow in the argument of the exponential function of the survival models (PH, PO or AFT). An efficient way to solve this problem is to reescale the variables. However, this alternative results in important changes to the inference procedure (explained in the last [section](#rescaling-variables)). 
+
+```{r, eval = F}
+ fitbe <- spbp(Surv(time, delta) ~ age + factor(stage),
+               approach = "bayes", scale = T, data = larynx)
+ 
+ summary(fitbe)
+```
+
+# Rescaling variables 
+
+For instance, suppose there are two observed feature variables $x_1$ and $x_2$, such that an eventual rescaling (centering and scaling) gives us $x^*_1 = \frac{x_1 - \bar x_1}{s}$ and $x^*_2 = \frac{x_2 - \bar x_2}{s}$, in which $\bar x = \sum \limits_{i = 1}^n \frac{x_i}{n}$ and $s = \sqrt{ \sum \limits_{i = 1}^n\frac{ (x_i- \bar x)^2}{n-1}}$.
+
+> How these new variables $x^*_1$ and $x^*_2$ are interpreted from the inferencial point of view?
+
+The techniques used in this package depends on a fully specified likelihood in terms of the hazard and survivor functions. Thus, it is enough to note what happens to these quantities in each of the modelling propositions when the feature variables are scaled. 
+
+## Proportional Hazards model
+$$
+
+$$
+## Proportional Odds model
+$$
+$$
+## Accelerated Failure Time model
+$$
+$$
+# References {-}
+

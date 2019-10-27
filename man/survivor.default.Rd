@@ -4,9 +4,8 @@
 \alias{survivor.default}
 \title{Survivor function calculations for Bernstein Polynomial based regression models}
 \usage{
-\method{survivor}{default}(time, arg = list(beta = NULL, loggamma =
-  NULL), newdata, model = c("ph", "po", "aft"), approach = c("mle",
-  "bayes"))
+\method{survivor}{default}(time, arg = list(beta = NULL, gamma = NULL),
+  newdata, model = c("ph", "po", "aft"), approach = c("mle", "bayes"))
 }
 \arguments{
 \item{n}{integer; sample size.}

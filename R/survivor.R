@@ -34,24 +34,26 @@ survivor <- function(spbp, ...){
 #'
 #' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
 
-survivor.default <- function(time, arg = list(beta = NULL, loggamma = NULL), newdata,
-                          model = c("ph", "po", "aft"), approach = c("mle", "bayes")){
+survivor.default <- function(time,
+                             arg = list(beta = NULL, gamma = NULL),
+                             newdata,
+                             model = c("ph", "po", "aft"),
+                             approach = c("mle", "bayes")){
 
-  if(sum(names(arg) %in% c("beta", "loggamma")) != 2)
+  if(sum(names(arg) %in% c("beta", "gamma")) != 2)
     stop('`args` names do not match')
 
   ## CALL EXCEPTION HANDLING
   approach <- match.arg(approach)
   model <- match.arg(model)
   beta <- arg$beta
-  loggamma <- arg$loggamma
+  gamma <- arg$gamma
 
   if(!is.vector(time))
     stop("time is not a vector")
 
-
-  if(!is.vector(loggamma))
-    stop("loggamma is not a vector")
+  if(!is.vector(gamma))
+    stop("gamma is not a vector")
 
   if(!is.vector(beta))
     stop("beta is not a vector")
@@ -60,7 +62,7 @@ survivor.default <- function(time, arg = list(beta = NULL, loggamma = NULL), new
       stop("newdata is not a data.frame")
 
   x <- newdata
-  degree <- length(loggamma)
+  degree <- length(gamma)
   k <- 1:degree
   y <- time[order(time)]
   tau <- max(y)
@@ -68,11 +70,11 @@ survivor.default <- function(time, arg = list(beta = NULL, loggamma = NULL), new
   eta <- as.matrix(x) %*% matrix(beta, ncol = 1)
 
   if(model == "ph"){
-    H0 <- apply(B, 1, function(x){exp(loggamma) %*% x})
+    H0 <- apply(B, 1, function(x){gamma %*% x})
     H <- as.vector(exp(eta)) * H0
   }
   else if(model == "po"){
-    R0 <- apply(B, 1, function(x){exp(loggamma)  %*% x})
+    R0 <- apply(B, 1, function(x){gamma  %*% x})
     R <- as.vector(exp(eta)) * R0
     H <- -log(1 + R)
   }
@@ -80,7 +82,7 @@ survivor.default <- function(time, arg = list(beta = NULL, loggamma = NULL), new
     y_aft <- y / exp(eta)
     tau_aft <- max(y_aft)
     B <- matrix(sapply(k, function(k) pbeta(y_aft / tau_aft, k, degree - k + 1)), ncol = degree)
-    H <- apply(B, 1, function(x){exp(loggamma) %*% x})
+    H <- apply(B, 1, function(x){gamma %*% x})
   }
   return(exp(-H))
 }
@@ -126,12 +128,12 @@ survivor.spbp <- function(spbp, newdata){
   }
   if(!is.data.frame(newdata))
     stop("newdata is not a data.frame object")
-  if(sum(colnames(newdata) %in% colnames(design))!= ncol(design))
-    stop("colnames do not match with `model.matrix(spbp)`")
+  if(ncol(newdata) != ncol(design))
+    stop("cols must match with `model.matrix(spbp)`")
 
   if(spbp$call$approach == "bayes"){
-    beta <- rstan::extract(spbp$stanfit, pars = "beta")$beta
-    loggamma <- rstan::extract(spbp$stanfit, pars = "nu")$nu
+    beta <- rstan::extract(spbp$stanfit, pars = "beta_std")$beta
+    gamma <- rstan::extract(spbp$stanfit, pars = "gamma_std")$gamma_std
     iter <- nrow(beta)
     ####
 
@@ -139,21 +141,20 @@ survivor.spbp <- function(spbp, newdata){
     for(i in 1:iter){
       s[i, ] <- survivor.default(time = spbp$y[,1],
                                     arg = list(beta = beta[i,],
-                                               loggamma = loggamma[i,]),
+                                               gamma = gamma[i,]),
                                     newdata = newdata,
                                     model = spbp$call$model,
                                     approach = spbp$call$approach)
     }
-    s <- colMeans(s)
   }
   else{
     beta <- spbp$coefficients[1:spbp$q]
-    loggamma <- spbp$coefficients[(spbp$q+1):length(spbp$coefficients)]
+    gamma <- spbp$coefficients[(spbp$q+1):length(spbp$coefficients)]
     ####
 
         s <- survivor.default(time = spbp$y[,1],
                      arg = list(beta = beta,
-                                loggamma = loggamma),
+                                gamma = gamma),
                      newdata = newdata,
                      model = spbp$call$model,
                      approach = spbp$call$approach)

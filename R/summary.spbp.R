@@ -64,16 +64,14 @@ summary.spbp <- function(spbp, interval = 0.95, ...){
                        )
 
         output$coef_names <- colnames(model.matrix(spbp))
-        aux <- rstan::summary(spbp$stanfit,
-                                  probs = c((1-interval)/2, .5, interval + (1-interval)/2), pars = "beta")$summary
-        exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta")$beta))
+        aux <- rstan::summary(spbp$stanfit, probs = .5, pars = "beta_std")$summary
+        exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta_std")$beta_std))
 
         output$summary_chain <- cbind(spbp$pmode[1:length( output$coef_names)],
-                                coda::HPDinterval(log(exp_samp), prob = interval),
-                                output$aux)
+                                      aux,
+                                coda::HPDinterval(log(exp_samp), prob = interval))
 
-        colnames(output$summary_chain) <- c("mode", "lowerHPD", "upperHPD",
-                                      colnames(output$aux))
+        colnames(output$summary_chain) <- c("mode", colnames(aux), "lowerHPD", "upperHPD")
         rownames(output$summary_chain) <- output$coef_names
         #####
 
