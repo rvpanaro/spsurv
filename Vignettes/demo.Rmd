@@ -20,13 +20,14 @@ vignette: >
 
 The Proportional Hazards model was fitted on data from 90 male patients diagnosed with laryngeal cancer to test whether same age patients survival differ in distinct stages. In accordance with @Osman:2012, the BP degree is set to be $m = \sqrt{90} \approx 10$ and $\tau = 10.7$ is the largest time observed. Following the settings assumed by @Klein:2006, the model covariates are age of the patient and indicators of stage II, III and IV. Hypothetically, zero aged patients in stage I refer to baseline group such that $h(t \mid \mathbf{0})=h_0(t)$. The `spsurv::spbp` function is used to show the results according to ML and Bayesian inferential approaches. This data is provided in `KMsurv` package.
 
-```{r, eval = F}
+```{r}
 ## Data
 library(KMsurv)
 data("larynx")
 
 ## Fit
-fitmle <- spbp(Surv(time, delta) ~ age + factor(stage), data = larynx, scale = T)
+library(spsurv)
+fitmle <- spsurv::spbp(Surv(time, delta) ~ age + factor(stage), data = larynx, scale = T)
 
 summary(fitmle)
 

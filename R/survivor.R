@@ -1,5 +1,5 @@
 survivor <- function(spbp, ...){
-  UseMethod("survivor", spbp)
+  UseMethod("survivor")
 }
 
 #' Survivor function calculations for Bernstein Polynomial based regression models

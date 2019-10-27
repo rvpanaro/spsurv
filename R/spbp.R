@@ -1,5 +1,5 @@
 spbp <- function(formula, ...){
-  UseMethod("spbp", formula)
+  UseMethod("spbp")
 }
 
 #' Semiparametric survival analysis using Bernstein Polynomials
