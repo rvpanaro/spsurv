@@ -128,19 +128,13 @@ spbp.default <-
 
   if(scale == T){
     X <- scale(X)
-    std <- attr(X, "scaled:scale")
-
     ## rescaled coefficients (correction)
-    if(model == 2){ ## AFT
-      wsum <- exp(sum(attr(X, "scaled:center")/ attr(X, "scaled:scale")))
-    }
-    else{
-      wsum <- exp(-sum(attr(X, "scaled:center")/ attr(X, "scaled:scale")))
-    }
+      means <- attr(X, "scaled:center")
+      std <- attr(X, "scaled:scale")
   }
   else{
     std <- rep(1, q)
-    wsum <- 1
+    means <- 1
   }
 
   ## base calculations
@@ -188,7 +182,7 @@ spbp.default <-
                    location_beta = as.numeric(location_beta),
                    scale_beta = as.numeric(scale_beta),
                    std  = std,
-                   wsum = wsum
+                   means = means
   )
 
   # --------------- Fit  ---------------

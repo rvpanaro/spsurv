@@ -37,7 +37,7 @@ stan::io::program_reader prog_reader__() {
     reader.add_event(1, 0, "start", "/include/loglikbp.stan");
     reader.add_event(126, 125, "end", "/include/loglikbp.stan");
     reader.add_event(126, 2, "restart", "model_spbp_frailty");
-    reader.add_event(265, 139, "end", "model_spbp_frailty");
+    reader.add_event(271, 145, "end", "model_spbp_frailty");
     return reader;
 }
 template <typename T0__, typename T1__, typename T2__, typename T3__, typename T4__, typename T5__, typename T9__>
@@ -486,7 +486,7 @@ private:
         std::vector<double> location_beta;
         std::vector<double> scale_beta;
         vector_d std;
-        double wsum;
+        vector_d means;
 public:
     model_spbp_frailty(stan::io::var_context& context__,
         std::ostream* pstream__ = 0)
@@ -721,12 +721,15 @@ public:
             }
             check_greater_or_equal(function__, "std", std, 0);
             current_statement_begin__ = 158;
-            context__.validate_dims("data initialization", "wsum", "double", context__.to_vec());
-            wsum = double(0);
-            vals_r__ = context__.vals_r("wsum");
+            validate_non_negative_index("means", "q", q);
+            context__.validate_dims("data initialization", "means", "vector_d", context__.to_vec(q));
+            means = Eigen::Matrix<double, Eigen::Dynamic, 1>(q);
+            vals_r__ = context__.vals_r("means");
             pos__ = 0;
-            wsum = vals_r__[pos__++];
-            check_greater_or_equal(function__, "wsum", wsum, 0);
+            size_t means_j_1_max__ = q;
+            for (size_t j_1__ = 0; j_1__ < means_j_1_max__; ++j_1__) {
+                means(j_1__) = vals_r__[pos__++];
+            }
             // initialize transformed data variables
             // execute transformed data statements
             // validate transformed data
@@ -908,28 +911,34 @@ public:
             current_statement_begin__ = 180;
             stan::math::assign(beta_std, elt_divide(beta, std));
             current_statement_begin__ = 181;
-            stan::math::assign(gamma_std, divide(gamma, wsum));
-            current_statement_begin__ = 183;
+            if (as_bool(logical_eq(M, 2))) {
+                current_statement_begin__ = 182;
+                stan::math::assign(gamma_std, multiply(gamma, stan::math::exp(sum(elt_divide(elt_multiply(beta, means), std)))));
+            } else {
+                current_statement_begin__ = 185;
+                stan::math::assign(gamma_std, multiply(gamma, stan::math::exp(-(sum(elt_divide(elt_multiply(beta, means), std))))));
+            }
+            current_statement_begin__ = 189;
             stan::math::assign(nu, stan::math::log(gamma));
-            current_statement_begin__ = 184;
+            current_statement_begin__ = 190;
             stan::math::assign(sigma, inv_sqrt(kappa));
-            current_statement_begin__ = 186;
+            current_statement_begin__ = 192;
             if (as_bool(logical_eq(null, 1))) {
-                current_statement_begin__ = 187;
+                current_statement_begin__ = 193;
                 for (int i = 1; i <= n; ++i) {
-                    current_statement_begin__ = 188;
+                    current_statement_begin__ = 194;
                     stan::math::assign(log_lik, loglik_null(beta, gamma, status, X, b, B, M, dist, id, z, pstream__));
                 }
             } else {
-                current_statement_begin__ = 192;
+                current_statement_begin__ = 198;
                 if (as_bool(logical_eq(M, 0))) {
-                    current_statement_begin__ = 193;
+                    current_statement_begin__ = 199;
                     stan::math::assign(log_lik, loglik_po(beta, gamma, status, X, b, B, dist, id, z, pstream__));
                 } else if (as_bool(logical_eq(M, 1))) {
-                    current_statement_begin__ = 196;
+                    current_statement_begin__ = 202;
                     stan::math::assign(log_lik, loglik_ph(beta, gamma, status, X, b, B, dist, id, z, pstream__));
                 } else {
-                    current_statement_begin__ = 199;
+                    current_statement_begin__ = 205;
                     stan::math::assign(log_lik, loglik_aft(time, beta, gamma, status, X, b, B, dist, id, z, pstream__));
                 }
             }
@@ -981,9 +990,9 @@ public:
             }
             check_greater_or_equal(function__, "gamma_std", gamma_std, 0);
             // model body
-            current_statement_begin__ = 208;
+            current_statement_begin__ = 214;
             for (int i = 1; i <= q; ++i) {
-                current_statement_begin__ = 209;
+                current_statement_begin__ = 215;
                 if (pstream__) {
                     stan_print(pstream__,"location = ");
                     stan_print(pstream__,get_base1(location_beta, i, "location_beta", 1));
@@ -991,16 +1000,16 @@ public:
                     stan_print(pstream__,get_base1(scale_beta, i, "scale_beta", 1));
                     *pstream__ << std::endl;
                 }
-                current_statement_begin__ = 211;
+                current_statement_begin__ = 217;
                 if (as_bool(logical_eq(get_base1(priordist_beta, i, "priordist_beta", 1), 0))) {
-                    current_statement_begin__ = 212;
+                    current_statement_begin__ = 218;
                     lp_accum__.add(normal_log<propto__>(beta, get_base1(location_beta, i, "location_beta", 1), get_base1(scale_beta, i, "scale_beta", 1)));
                 } else {
-                    current_statement_begin__ = 215;
+                    current_statement_begin__ = 221;
                     lp_accum__.add(cauchy_log<propto__>(beta, get_base1(location_beta, i, "location_beta", 1), get_base1(scale_beta, i, "scale_beta", 1)));
                 }
             }
-            current_statement_begin__ = 219;
+            current_statement_begin__ = 225;
             if (pstream__) {
                 stan_print(pstream__,"h1 = ");
                 stan_print(pstream__,get_base1(priorpars, 1, "priorpars", 1));
@@ -1008,49 +1017,49 @@ public:
                 stan_print(pstream__,get_base1(priorpars, 2, "priorpars", 1));
                 *pstream__ << std::endl;
             }
-            current_statement_begin__ = 220;
+            current_statement_begin__ = 226;
             if (as_bool(logical_eq(get_base1(priordist, 1, "priordist", 1), 1))) {
-                current_statement_begin__ = 221;
+                current_statement_begin__ = 227;
                 lp_accum__.add(gamma_log<propto__>(gamma, get_base1(priorpars, 1, "priorpars", 1), get_base1(priorpars, 2, "priorpars", 1)));
             } else if (as_bool(logical_eq(get_base1(priordist, 1, "priordist", 1), 2))) {
-                current_statement_begin__ = 224;
+                current_statement_begin__ = 230;
                 lp_accum__.add(inv_gamma_log<propto__>(gamma, get_base1(priorpars, 1, "priorpars", 1), get_base1(priorpars, 2, "priorpars", 1)));
             } else {
-                current_statement_begin__ = 227;
+                current_statement_begin__ = 233;
                 lp_accum__.add(lognormal_log<propto__>(gamma, get_base1(priorpars, 1, "priorpars", 1), get_base1(priorpars, 2, "priorpars", 1)));
             }
-            current_statement_begin__ = 232;
+            current_statement_begin__ = 238;
             if (as_bool(logical_eq(dist, 1))) {
-                current_statement_begin__ = 233;
+                current_statement_begin__ = 239;
                 lp_accum__.add(gamma_log<propto__>(z, kappa, kappa));
             } else if (as_bool(logical_eq(dist, 2))) {
-                current_statement_begin__ = 236;
+                current_statement_begin__ = 242;
                 lp_accum__.add(normal_log<propto__>(z, 0, sigma));
             } else if (as_bool(logical_eq(dist, 3))) {
-                current_statement_begin__ = 239;
+                current_statement_begin__ = 245;
                 lp_accum__.add(cauchy_log<propto__>(z, 0, sigma));
             } else {
-                current_statement_begin__ = 243;
+                current_statement_begin__ = 249;
                 lp_accum__.add(normal_log<propto__>(z, 0, 0.000001));
             }
-            current_statement_begin__ = 246;
+            current_statement_begin__ = 252;
             if (as_bool(logical_gt(dist, 0))) {
-                current_statement_begin__ = 247;
+                current_statement_begin__ = 253;
                 if (as_bool(logical_eq(get_base1(priordist, 2, "priordist", 1), 0))) {
-                    current_statement_begin__ = 248;
+                    current_statement_begin__ = 254;
                     lp_accum__.add(normal_log<propto__>(kappa, get_base1(priorpars, 3, "priorpars", 1), get_base1(priorpars, 4, "priorpars", 1)));
                 } else if (as_bool(logical_eq(get_base1(priordist, 2, "priordist", 1), 1))) {
-                    current_statement_begin__ = 251;
+                    current_statement_begin__ = 257;
                     lp_accum__.add(gamma_log<propto__>(kappa, get_base1(priorpars, 3, "priorpars", 1), get_base1(priorpars, 4, "priorpars", 1)));
                 } else if (as_bool(logical_eq(get_base1(priordist, 2, "priordist", 1), 2))) {
-                    current_statement_begin__ = 254;
+                    current_statement_begin__ = 260;
                     lp_accum__.add(inv_gamma_log<propto__>(kappa, get_base1(priorpars, 3, "priorpars", 1), get_base1(priorpars, 4, "priorpars", 1)));
                 } else {
-                    current_statement_begin__ = 257;
+                    current_statement_begin__ = 263;
                     lp_accum__.add(lognormal_log<propto__>(kappa, get_base1(priorpars, 3, "priorpars", 1), get_base1(priorpars, 4, "priorpars", 1)));
                 }
             }
-            current_statement_begin__ = 260;
+            current_statement_begin__ = 266;
             lp_accum__.add(sum(log_lik));
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(e, current_statement_begin__, prog_reader__());
@@ -1179,28 +1188,34 @@ public:
             current_statement_begin__ = 180;
             stan::math::assign(beta_std, elt_divide(beta, std));
             current_statement_begin__ = 181;
-            stan::math::assign(gamma_std, divide(gamma, wsum));
-            current_statement_begin__ = 183;
+            if (as_bool(logical_eq(M, 2))) {
+                current_statement_begin__ = 182;
+                stan::math::assign(gamma_std, multiply(gamma, stan::math::exp(sum(elt_divide(elt_multiply(beta, means), std)))));
+            } else {
+                current_statement_begin__ = 185;
+                stan::math::assign(gamma_std, multiply(gamma, stan::math::exp(-(sum(elt_divide(elt_multiply(beta, means), std))))));
+            }
+            current_statement_begin__ = 189;
             stan::math::assign(nu, stan::math::log(gamma));
-            current_statement_begin__ = 184;
+            current_statement_begin__ = 190;
             stan::math::assign(sigma, inv_sqrt(kappa));
-            current_statement_begin__ = 186;
+            current_statement_begin__ = 192;
             if (as_bool(logical_eq(null, 1))) {
-                current_statement_begin__ = 187;
+                current_statement_begin__ = 193;
                 for (int i = 1; i <= n; ++i) {
-                    current_statement_begin__ = 188;
+                    current_statement_begin__ = 194;
                     stan::math::assign(log_lik, loglik_null(beta, gamma, status, X, b, B, M, dist, id, z, pstream__));
                 }
             } else {
-                current_statement_begin__ = 192;
+                current_statement_begin__ = 198;
                 if (as_bool(logical_eq(M, 0))) {
-                    current_statement_begin__ = 193;
+                    current_statement_begin__ = 199;
                     stan::math::assign(log_lik, loglik_po(beta, gamma, status, X, b, B, dist, id, z, pstream__));
                 } else if (as_bool(logical_eq(M, 1))) {
-                    current_statement_begin__ = 196;
+                    current_statement_begin__ = 202;
                     stan::math::assign(log_lik, loglik_ph(beta, gamma, status, X, b, B, dist, id, z, pstream__));
                 } else {
-                    current_statement_begin__ = 199;
+                    current_statement_begin__ = 205;
                     stan::math::assign(log_lik, loglik_aft(time, beta, gamma, status, X, b, B, dist, id, z, pstream__));
                 }
             }

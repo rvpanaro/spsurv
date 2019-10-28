@@ -13,6 +13,6 @@
 
 
 model.matrix.spbp <-
-  function(spbp, data = eval(spbp$call$data)){
+  function(spbp, data = eval(spbp$call$data, envir = parent.frame())){
     model.matrix(as.formula(spbp$call$formula), data = data)[, -1]
 }

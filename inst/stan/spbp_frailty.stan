@@ -31,7 +31,7 @@ data{
 
   // Standard quantities
   vector<lower=0>[q] std; // feature standard deviatons
-  real <lower=0> wsum; // weighted sum of stds
+  vector[q] means; // feature means
 }
 
 // Parametes block (important).
@@ -54,7 +54,13 @@ transformed parameters{
     vector<lower=0>[m] gamma_std; // standardized BP basis effect
 
     beta_std = beta ./ std;
-    gamma_std = gamma / wsum;
+    if(M == 2){
+        gamma_std = gamma * exp(sum(beta .* means ./ std));
+    }
+    else{
+        gamma_std = gamma * exp(-sum(beta .* means ./ std));
+    }
+
 
     nu = log(gamma);
     sigma = inv_sqrt(kappa);
