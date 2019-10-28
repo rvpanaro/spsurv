@@ -11,7 +11,7 @@ fitmle
 fitbe <- spbp(Surv(time, delta)~ age + factor(stage), scale = T,
                data = larynx, approach  = "bayes")
 
-fitbe
+
 
 traceplot(fitbe$stanfit, pars = c("beta_std", "gamma_std"))
 stan_dens(fitbe$stanfit, pars = c("gamma_std", "gamma_std"))

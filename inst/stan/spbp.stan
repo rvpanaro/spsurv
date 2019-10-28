@@ -33,7 +33,7 @@ data{
 
   // Standard quantities
   vector<lower=0>[q] std; // feature standard deviatons
-  real <lower=0> wsum; // weighted sum of stds
+  vector[q] means; // feature means
 }
 
 // Parametes block (important).
@@ -46,11 +46,17 @@ transformed parameters{
     vector[n] log_lik; // log likelihood
     vector[m] nu; // exp of the BP basis effect
 
-    vector[q] beta_std; // standardized feature effect
-    vector<lower=0>[m] gamma_std; // standardized BP basis effect
+    vector[q] beta_std; // standard beta
+    vector<lower=0>[m] gamma_std; // standard BP gamma
 
     beta_std = beta ./ std;
-    gamma_std = gamma * wsum;
+
+    if(M == 2){
+        gamma_std = gamma * exp(sum(beta .* means ./ std));
+    }
+    else{
+        gamma_std = gamma * exp(-sum(beta .* means ./ std));
+    }
 
     nu = log(gamma);
 

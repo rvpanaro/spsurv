@@ -16,6 +16,10 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
+$~~~~$The first example consists of a comparison between estimates obtained from the PH partial ML results from \texttt{survival::coxph}, which is the classic regression model, and the proposed BP based PH modeling discussed in previous sections, either using already available \texttt{stats:optim} or \texttt{HI:arms} \texttt{R} routines and \texttt{spsurv::spbp} interface to \texttt{Stan}. In the second example,  the assumption of proportional risks is violated thus a comparison between semiparametric PO model estimates were also done. The results obtained by maximizing the modified partial likelihood implemented in \texttt{timereg::prop.odds} were compared to the proposed BP modeling available at the \texttt{spsurv} package. 
+
+$~~~~$For instance, consider reports on male larynx-cancer patients diagnosed during 1970s at a hospital in the Netherlands \citep{Kardaun:1983}, the data is available in Appendix A (Table \oldref{data:larynx}). In addition, also consider the trials conducted by the United States veterans administration  on advanced lung-cancer \citep{Prentice:1973} patients from differential effects of therapy on tumour cell patients; Table \oldref{data:lung} Appendix A shows the dataset. In order to investigate the proposed Bernstein polynomial regression, the Relative Difference (RD) is defined by RD $=(\hat \beta_c - \hat\beta_r)/\mid\hat \beta_r \mid$, where $\hat\beta_r$ is the estimate of an equivalent reference model already implemented in \texttt{R} and $\hat\beta_c$ is the estimate of the coefficient in the model being evaluated. At the end of this section, the guidelines on how to fit these data using \texttt{spsurv} in \texttt{R} are outlined.
+
 # Laryngeal Cancer Data
 
 The Proportional Hazards model was fitted on data from 90 male patients diagnosed with laryngeal cancer to test whether same age patients survival differ in distinct stages. In accordance with @Osman:2012, the BP degree is set to be $m = \sqrt{90} \approx 10$ and $\tau = 10.7$ is the largest time observed. Following the settings assumed by @Klein:2006, the model covariates are age of the patient and indicators of stage II, III and IV. Hypothetically, zero aged patients in stage I refer to baseline group such that $h(t \mid \mathbf{0})=h_0(t)$. The `spsurv::spbp` function is used to show the results according to ML and Bayesian inferential approaches. This data is provided in `KMsurv` package.
@@ -27,25 +31,25 @@ data("larynx")
 
 ## Fit
 library(spsurv)
-fitmle <- spsurv::spbp(Surv(time, delta) ~ age + factor(stage), data = larynx, scale = T)
+fitmle <- spsurv::spbp(Surv(time, delta) ~ age + factor(stage), data = larynx)
 
-summary(fitmle)
-
+fitmle
 ```
 ## An alternative approach
 
-An alternative approach to MLE is to attribute priors to the interest quantities and draw conclusions from the posterior densities obtained. All MCMC calculations are based on the state-of-art probabilistic software `Stan`, with `spbp` function is possible to switch to bayesian just using `approach = "bayes"`.
+An alternative approach to MLE is to attribute priors to the interest quantities in order to draw conclusions from the posterior densities obtained. All MCMC calculations are based on the state-of-art probabilistic software `Stan`. Again, using `spbp` function, it is possible to fit survival data, just switch to bayesian just using `approach = "bayes"`.
 
-```{r, eval = F}
+```{r}
 fitbe <- spbp(Surv(time, delta) ~age + factor(stage),
-               approach = "bayes", scale = T, data = larynx)
- 
-traceplot(fitbe$stanfit, pars = "beta")
+               approach = "bayes", data = larynx)
+
+fitbe 
 ```
 
 Make use of `rstan` inherent library in order to visualize diagnosis plots.
 
-```{r, eval = F}
+```{r}
+library(rstan)
 traceplot(fitbe$stanfit, pars = c("beta", "gamma"))
 stan_dens(fitbe$stanfit, pars = c("beta", "gamma"))
 ```
@@ -59,11 +63,11 @@ shinystan(fitbe$stanfit, pars = c("beta", "gamma"))
 ## Scaling the feature variables
 It may occur non satisfactory results due to the overflow in the argument of the exponential function of the survival models (PH, PO or AFT). An efficient way to solve this problem is to reescale the variables. However, this alternative results in important changes to the inference procedure (explained in the last [section](#rescaling-variables)). 
 
-```{r, eval = F}
+```{r}
  fitbe <- spbp(Surv(time, delta) ~ age + factor(stage),
                approach = "bayes", scale = T, data = larynx)
  
- summary(fitbe)
+ fitbe
 ```
 
 # Rescaling variables 
