@@ -33,81 +33,84 @@ data{
 
   // Standard quantities
   vector<lower=0>[q] std; // feature standard deviatons
-  vector[q] means; // feature means
+  vector[q] means;        // feature means
 }
 
 // Parametes block (important).
 parameters{
-  vector[q] beta; // feature effect
-  vector<lower=0>[m] gamma; //BP basis effect
+  vector[q] beta_scaled;           // feature effect
+  vector<lower=0>[m] gamma_scaled; //BP basis effect
 }
 
 transformed parameters{
-    vector[n] log_lik; // log likelihood
-    vector[m] nu; // exp of the BP basis effect
+    //// Declare statement
+      vector[n] log_lik;              // declare log likelihood
+      vector[m] nu;      // declare log of the BP coefficient
+    // scaled coefficients
+      vector[q] beta;                 // declare scaled beta
+      vector<lower=0>[m] gamma;       // declare scaled BP gamma
 
-    vector[q] beta_std; // standard beta
-    vector<lower=0>[m] gamma_std; // standard BP gamma
+    // reparametrized beta (due to HM dynamics)
+      vector[q] beta_std = (beta_scaled - to_vector(location_beta)) ./ to_vector(scale_beta);                 // declare standard beta
 
-    beta_std = beta ./ std;
+    //// Define declared variables
+      beta = beta_scaled ./ std;      // define beta to original scale
 
-    if(M == 2){
-        gamma_std = gamma * exp(sum(beta .* means ./ std));
-    }
-    else{
-        gamma_std = gamma * exp(-sum(beta .* means ./ std));
-    }
-
-    nu = log(gamma);
-
-    if(null == 1){
-      for(i in 1:n){
-        log_lik = loglik_null(beta, gamma, status, X, b, B, M, dist, id, z);
-      }
-    }
-    else{
-      if(M == 0){
-          log_lik = loglik_po(beta, gamma, status, X, b, B, dist, id, z);
-      }
-      else if( M == 1){
-          log_lik = loglik_ph(beta, gamma, status, X, b, B, dist, id, z);
-      }
+       // definition if model is AFT
+      if(M == 2){
+          gamma = gamma_scaled * exp(sum(beta_scaled .* means ./ std));
+      }// if model is PO or PH
       else{
-          log_lik = loglik_aft(time, beta, gamma, status, X, b, B, dist, id, z);
+          gamma = gamma_scaled * exp(-sum(beta_scaled .* means ./ std));
       }
-    }
-}
+      nu = log(gamma);
+
+        // definition if model is null
+      if(null == 1){
+        for(i in 1:n){
+          log_lik = loglik_null(beta_scaled, gamma_scaled, status, X, b, B, M, dist, id, z);
+        }
+      } // definition if model is P0
+      else{
+        if(M == 0){
+            log_lik = loglik_po(beta_scaled, gamma_scaled, status, X, b, B, dist, id, z);
+        } // definition if model PH
+        else if( M == 1){
+            log_lik = loglik_ph(beta_scaled, gamma_scaled, status, X, b, B, dist, id, z);
+        } // definition if model is AFT
+        else{
+            log_lik = loglik_aft(time, beta_scaled, gamma_scaled, status, X, b, B, dist, id, z);
+        }
+      }
+  }
 
 // Model block (important).
 model{
 
-if(approach == 1){ // priors
-////// Beta Prior
-    for(i in 1:q){
-      // print("location = ", location_beta[i], " scale = ", scale_beta[i]);
+  if(approach == 1){ // priors
+  ////// Beta Prior
+      for(i in 1:q){
 
-      if(priordist_beta[i] == 0){
-        beta ~ normal(location_beta[i], scale_beta[i]);
+        if(priordist_beta[i] == 0){
+          beta_std ~ normal(0, 1);
+        }
+        else{
+          beta_std ~ cauchy(0, 1);
+        }
+      }
+  ////// Gamma Prior
+      if(priordist[1] == 1){
+        gamma_scaled ~ gamma(priorpars[1], priorpars[2]);
+      }
+      else if(priordist[1] == 2){
+        gamma_scaled ~ inv_gamma(priorpars[1], priorpars[2]);
       }
       else{
-        beta ~ cauchy(location_beta[i], scale_beta[i]);
+        gamma_scaled ~ lognormal(priorpars[1], priorpars[2]);
       }
-    }
-////// Gamma Prior
-    // print("h1 = ", priorpars[1], " h2 = ", priorpars[2]);
-    if(priordist[1] == 1){
-      gamma ~ gamma(priorpars[1], priorpars[2]);
-    }
-    else if(priordist[1] == 2){
-      gamma ~ inv_gamma(priorpars[1], priorpars[2]);
-    }
-    else{
-      gamma ~ lognormal(priorpars[1], priorpars[2]);
-    }
-}
-
-   target += sum(log_lik);
-}
+   }
+     target += sum(log_lik);
+ }
 
 // Final line empty to avoid warnings.
 

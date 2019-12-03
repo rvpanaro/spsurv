@@ -129,19 +129,18 @@ spbp.default <-
   if(scale == T){
     X <- scale(X)
     ## rescaled coefficients (correction)
-      means <- attr(X, "scaled:center")
-      std <- attr(X, "scaled:scale")
+      means <- array(attr(X, "scaled:center"), dim = q)
+      std <- array(attr(X, "scaled:scale"), dim = q)
   }
   else{
-    std <- rep(1, q)
-    means <- 1
+    std <- array(1, dim = q)
+    means <- array(0, dim = q)
   }
 
   ## base calculations
   base <- bp.basis(time, degree = degree, tau = tau)
 
   ## priors to num
-
   priordist <- sapply(priordist,
                       function(x){
                         switch(x,
@@ -154,8 +153,7 @@ spbp.default <-
                           function(x){switch(x,
                           "normal" = 0,
                           "cauchy" = 1)})
-  ## Recycling
-
+  ## Recycling the prior specs
   priordist_beta <- array(priordist_beta, dim = q)
   location_beta <- array(location_beta, dim = q)
   scale_beta <- array(scale_beta, dim = q)
@@ -186,7 +184,6 @@ spbp.default <-
   )
 
   # --------------- Fit  ---------------
-
   output <- list()
   if(approach == 0){
     spbp.mle(standata = standata, ...)
@@ -204,21 +201,11 @@ spbp.mle <-
            ...){
 
   e <- parent.frame()
-  approach_flag <- get("approach_flag", envir = e)
-  model_flag <- get("model_flag", envir = e)
-  features <- get("features", envir = e)
-  X <- get("X", envir = e)
-  Y <- get("Y", envir = e)
-  q <- get("q", envir = e)
-  degree <- get("degree", envir = e)
-  frailty_idx <- get("frailty_idx", envir = e)
-  null <- get("null", envir = e)
-  data.n <- get("data.n", envir = e)
-  status <- get("status", envir = e)
-  Terms <- get("Terms", envir = e)
-  xlevels <- get("xlevels", envir = e)
-  tau <- get("tau", envir = e)
-  Call <- get("Call", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
 
   if(!is.null(frailty_idx)){
     standata$X <- X[, -frailty_idx]
@@ -252,7 +239,10 @@ spbp.mle <-
   #   stop("Optimizing hesssian matrix is singular!")
 
   ## rescaled fisher info
-  info <- blockSolve(hess, q)
+
+  correction <- c(std, rep( exp(((model_flag == "aft")*2-1)* sum(means)), degree), q+degree)
+
+  info <- diag(1/correction, q + degree) %*%  blockSolve(hess, q) %*%  diag(1/correction, q + degree)
   diag(info) <- abs(diag(info))
 
   if(hessian == FALSE || null == 1){
@@ -291,7 +281,7 @@ spbp.mle <-
   output$call$model <- model_flag
 
   class(output) <- "spbp"
-  message('Priors are ignored due to mle approach .')
+  message('Priors are ignored due to mle approach.')
 
   return(output)
 }
@@ -302,16 +292,11 @@ spbp.bayes <- function(standata,
                        chains = 1,
                        ...){
   e <- parent.frame()
-  approach_flag <- get("approach_flag", envir = e)
-  model_flag <- get("model_flag", envir = e)
-  Call <- get("Call", envir = e)
-  features <- get("features", envir = e)
-  q <- get("q", envir = e)
-  degree <- get("degree", envir = e)
-  frailty_idx <- get("frailty_idx", envir = e)
-  X <- get("X", envir = e)
-  Y <- get("Y", envir = e)
-  dist <- get("dist", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
 
   # bayes
   output <- list(y = Y)
@@ -323,22 +308,19 @@ spbp.bayes <- function(standata,
                                       chains = chains,
                                       ...)
 
-    output$pmode <- rstan::optimizing(stanmodels$spbp,
-                                      data = standata,
-                                      verbose = verbose)$par[1:(q+degree)]
+    samp <- rstan::extract(output$stanfit, pars = c("beta", "gamma"))
+    output$pmode <- apply(X = cbind(samp[[1]], samp[[2]]), MARGIN = 2, FUN = mode)
+    # output$pmode <- apply(X = samp, MARGIN = 2, FUN = mode)
   }
   else{
     standata$X <- X[, -frailty_idx]
-
     output$stanfit <- rstan::sampling(stanmodels$spbp_frailty,
                                       data = standata,
                                       verbose = verbose,
                                       chains = chains,
                                       ...)
 
-    output$pmode <- rstan::optimizing(stanmodels$spbp_frailty,
-                                      data = standata,
-                                      verbose = verbose)$par[1:(q+degree)]
+    output$pmode <- apply(rstan::extract(output$stanfit, c("beta", "gamma")), 2, mode)
   }
   output$loo <- loo::loo(loo::extract_log_lik(output$stanfit))
   output$waic <- loo::waic(loo::extract_log_lik(output$stanfit))

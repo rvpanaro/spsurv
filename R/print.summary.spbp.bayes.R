@@ -7,6 +7,7 @@
 print.summary.spbp.bayes <- ## summary printings
   function(x, digits = max(getOption('digits')-4, 3)){
     if (!is.null(x$call)) {
+      cat("\n")
       cat("Call:\n")
       dput(x$call)
       cat("\n")
