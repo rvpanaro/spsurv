@@ -7,9 +7,16 @@
 \usage{
 spbp(formula, ...)
 
-\method{spbp}{default}(formula, degree, data, approach = c("mle",
-  "bayes"), model = c("ph", "po", "aft"), priors = list(beta =
-  c("normal(0,4)"), gamma = "lognormal(0,4)"), scale = TRUE, ...)
+\method{spbp}{default}(
+  formula,
+  degree,
+  data,
+  approach = c("mle", "bayes"),
+  model = c("ph", "po", "aft"),
+  priors = list(beta = c("normal(0,4)"), gamma = "lognormal(0,4)"),
+  scale = TRUE,
+  ...
+)
 }
 \arguments{
 \item{formula}{a Surv object with time to event, status and explanatory terms.}

@@ -49,4 +49,4 @@ LazyData: true
 VignetteBuilder: knitr
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.1

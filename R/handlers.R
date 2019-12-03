@@ -1,8 +1,11 @@
 ## --------------- Degree error handling ---------------
 handler1 <- function(){
   e <- parent.frame()
-  degree <- get("degree", envir = e)
-  Call <- get("Call", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
 
   if(!(degree %% 1 == 0))
     stop('Polynomial degree must be integer.')
@@ -18,7 +21,11 @@ handler1 <- function(){
 ## --------------- Frailty handling ---------------
 handler2 <- function(){
   e <- parent.frame()
-  temp <- get("temp", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
 
   id <- NULL
   if (!is.null(attr(temp$formula, "specials")$frailty)) {
@@ -53,7 +60,12 @@ handler2 <- function(){
 ## --------------- Priors handling ---------------
 handler3 <- function(){
   e <- parent.frame()
-  priors <- get("priors", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
+
   betap <- try(lapply(priors$beta, read_prior), silent = T)
   # locationp <- list()
   # scalep <- list()
@@ -97,11 +109,11 @@ handler3 <- function(){
                    frailty = frailtyp[1]
                    )
 
-  e$priorpars <- c(hyper1 = gammap[2],
+  e$priorpars <- as.numeric(c(hyper1 = gammap[2],
                    hyper2 = gammap[3],
                    frailty1 = frailtyp[2],
                    frailty2 = frailtyp[3]
-                   )
+                   ))
 }
 
 ## --------------- Extra args error handling ---------------
@@ -110,8 +122,11 @@ handler3 <- function(){
 handler4 <- function(){
   ## stan arguments
   e <- parent.frame()
-  stanArgs <- get("stanArgs", envir = e)
-  approach <- get("approach", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
 
   if (length(stanArgs)) {
     ifelse(approach == 0,
@@ -133,10 +148,11 @@ handler4 <- function(){
   ## --------------- Model Frame error handling ---------------
 handler5 <- function(){
   e <- parent.frame()
-  mf <- get("mf", envir = e)
-  Y <- get("Y", envir = e)
-  type <- get("type", envir = e)
-  Terms <- get("Terms", envir = e)
+  #variable names in parent frame
+
+  vnames <- objects(, envir = e)
+  # "sourcing" the parent.frame
+  for(n in vnames) assign(n, get(n, e))
 
   if (nrow(mf) == 0) stop("Only missing observations")
   if (!inherits(Y, "Surv")) stop("Response must be a survival object")

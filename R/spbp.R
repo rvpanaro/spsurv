@@ -155,8 +155,8 @@ spbp.default <-
                           "cauchy" = 1)})
   ## Recycling the prior specs
   priordist_beta <- array(priordist_beta, dim = q)
-  location_beta <- array(location_beta, dim = q)
-  scale_beta <- array(scale_beta, dim = q)
+  location_beta <- array(as.numeric(location_beta), dim = q)
+  scale_beta <- array(as.numeric(scale_beta), dim = q)
 
   ## standata
   standata <- list(time = time,
@@ -174,11 +174,11 @@ spbp.default <-
                    id = rep(1, data.n),
                    dist = dist,
                    z = rep(0, data.n),
-                   priordist = as.numeric(priordist),
-                   priorpars = as.numeric(priorpars),
-                   priordist_beta = as.numeric(priordist_beta),
-                   location_beta = as.numeric(location_beta),
-                   scale_beta = as.numeric(scale_beta),
+                   priordist = priordist,
+                   priorpars = priorpars,
+                   priordist_beta = priordist_beta,
+                   location_beta = location_beta,
+                   scale_beta = scale_beta,
                    std  = std,
                    means = means
   )
@@ -221,9 +221,9 @@ spbp.mle <-
                              ...)
   len <- length(stanfit$par)
   ## stanfit coefficients (beta, nu)
-  coef <- stanfit$par[(len-q - degree+1):len]
+  coef <- array(stanfit$par[(len-q - degree+1):len], degree + q)
   ## regression estimates
-  beta <- coef[1:q]
+  beta <- array(coef[1:q], q)
 
   ## rescaled hessian matrix
   hess <- stanfit$hessian

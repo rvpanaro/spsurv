@@ -24,12 +24,12 @@ data{
 
   // setting hyperparameters:
   int<lower=0> priordist [2];
-  real priorpars [4];
+  vector [4] priorpars;
 
   // beta (vector)
   int<lower=0> priordist_beta [q];
-  real location_beta [q];
-  real<lower=0> scale_beta [q];
+  vector [q] location_beta;
+  vector<lower=0> [q] scale_beta;
 
   // Standard quantities
   vector<lower=0>[q] std; // feature standard deviatons
