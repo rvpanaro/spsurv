@@ -11,6 +11,7 @@ print.spbp <-
   on.exit(options(savedig))
 
   if (!is.null(spbp$call)) {
+    cat("\n---")
     cat("\n")
     cat("Call:\n")
     dput(spbp$call)
@@ -19,8 +20,8 @@ print.spbp <-
 
   if(spbp$call$approach == "mle"){
 
-    coef <- spbp$coefficients[1:spbp$q]
-    var <- spbp$var[1:spbp$q, 1:spbp$q]
+    coef <- as.array(spbp$coefficients[1:spbp$q])
+    var <- as.array(spbp$var[1:spbp$q, 1:spbp$q])
 
     ### Error handling ###
     # Null model
@@ -29,7 +30,7 @@ print.spbp <-
     coef2 <- coef[!(is.na(coef))] #non-missing coefs
     if(is.null(coef) | is.null(var )) stop("Input is not valid")
 
-    se <- suppressWarnings(sqrt(diag(spbp$var[1:spbp$q, 1:spbp$q])))
+    se <- as.array(suppressWarnings(sqrt(diag(spbp$var)[1:spbp$q])))
 
     Coefmat  <- cbind(coef, exp(coef), se, coef/se,
                                   pchisq((coef/ se)^2, 1, lower.tail=FALSE))
@@ -55,11 +56,14 @@ print.spbp <-
   }
   else{
     summarise <- rstan::summary(spbp$stanfit, pars = "beta_std")$summary
-    Coef <- cbind(summarise[, 1],
-                  coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta_std")$beta_std)),
-                  summarise[, -c(1, 5, 7, 9, 10)])
-    rownames(Coef) <-  colnames(model.matrix(spbp))
-    colnames(Coef) <- c("mean", "lowerHPD", "upperHPD", colnames(summarise[, -c(1, 5, 7, 9, 10)]))
+    design <- as.matrix(model.matrix(spbp))
+    p <- ncol(design)
+    Coef <- cbind(matrix(summarise[, 1], nrow = p),
+                  matrix(coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta_std")$beta_std)), nrow = p),
+                  matrix(summarise[, -c(1, 5, 7, 9, 10)], nrow = p))
+
+    rownames(Coef) <-  colnames(design)
+    colnames(Coef) <- c("mean", "lowerHPD", "upperHPD", colnames(summarise)[-c(1, 5, 7, 9, 10)])
     print(Coef, digits = digits)
 
     cat("---\n")
@@ -67,6 +71,8 @@ print.spbp <-
     cat("      WAIC SE= ", sprintf('%.3f', spbp$waic$estimates[3,2], "\n"))
     cat("\n LOOIC Estimate= ", sprintf('%.3f', spbp$loo$estimates[3,1]))
     cat("      LOOIC SE= ", sprintf('%.3f', spbp$loo$estimates[3,2], "\n"))
+    cat("\n---\n")
+    cat("\n")
   }
 }
 
