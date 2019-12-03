@@ -11,6 +11,7 @@ print.spbp <-
   on.exit(options(savedig))
 
   if (!is.null(spbp$call)) {
+    cat("\n")
     cat("Call:\n")
     dput(spbp$call)
     cat("\n")
