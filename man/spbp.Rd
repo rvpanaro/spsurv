@@ -5,23 +5,14 @@
 \alias{spbp.default}
 \title{spbp: The BP based semiparametric survival analysis function}
 \usage{
-spbp(formula, ...)
+spbp(formula)
 
-\method{spbp}{default}(
-  formula,
-  degree,
-  data,
-  approach = c("mle", "bayes"),
-  model = c("ph", "po", "aft"),
-  priors = list(beta = c("normal(0,4)"), gamma = "lognormal(0,4)"),
-  scale = TRUE,
-  ...
-)
+\method{spbp}{default}(formula, degree, data, approach = c("mle",
+  "bayes"), model = c("ph", "po", "aft"), priors = list(beta =
+  c("normal(0,4)"), gamma = "lognormal(0,4)"), scale = TRUE, ...)
 }
 \arguments{
 \item{formula}{a Surv object with time to event, status and explanatory terms.}
-
-\item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
 
 \item{degree}{Bernstein Polynomial degree.}
 
@@ -32,6 +23,8 @@ spbp(formula, ...)
 \item{model}{Proportional Hazards or Proportional Odds BP based regression, default is model = "ph".}
 
 \item{priors}{Prior settings for the Bayesian approach.}
+
+\item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
 
 \item{tau}{Real valued number greater than any time observed.}
 }
@@ -45,15 +38,16 @@ Semiparametric survival analysis using Bernstein Polynomials
 Fits Bernstein Polynomial based Proportional regression to survival data.
 }
 \examples{
-
-data("veteran") ## imports from survival package
 library("spsurv")
+data("veteran") ## imports from survival package
 
 fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
 data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
 
 print(fit)
+
 summary(fit)
+
 }
 \references{
 Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.

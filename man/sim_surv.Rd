@@ -4,17 +4,10 @@
 \alias{sim_surv}
 \title{Inverse transform sampling from parametric models}
 \usage{
-sim_surv(
-  n,
-  beta = c(2, -1),
-  scaleT = 8,
-  scaleC = 3,
-  features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)),
-  shape = 2,
-  model = c("ph", "po", "aft"),
-  dist = c("weibull", "llogis"),
-  censor = TRUE
-)
+sim_surv(n, beta = c(2, -1), scaleT = 8, scaleC = 3,
+  features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)), shape = 2,
+  model = c("ph", "po", "aft"), dist = c("weibull", "llogis"),
+  censor = TRUE)
 }
 \arguments{
 \item{n}{integer; sample size.}
