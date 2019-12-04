@@ -4,7 +4,8 @@
 \alias{print.summary.spbp.bayes}
 \title{Bernstein Polynomial based Regression Object}
 \usage{
-\method{print}{summary.spbp.bayes}(x, digits = max(getOption("digits") - 4, 3))
+\method{print}{summary.spbp.bayes}(x, digits = max(getOption("digits") -
+  4, 3))
 }
 \description{
 Bernstein Polynomial based Regression Object

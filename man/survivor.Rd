@@ -8,13 +8,8 @@
 \usage{
 survivor(spbp, ...)
 
-\method{survivor}{default}(
-  time,
-  arg = list(beta = NULL, gamma = NULL),
-  newdata,
-  model = c("ph", "po", "aft"),
-  approach = c("mle", "bayes")
-)
+\method{survivor}{default}(time, arg = list(beta = NULL, gamma = NULL),
+  newdata, model = c("ph", "po", "aft"), approach = c("mle", "bayes"))
 
 \method{survivor}{spbp}(spbp, newdata)
 }

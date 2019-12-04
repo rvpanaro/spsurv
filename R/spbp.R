@@ -12,29 +12,33 @@
 #' @param priors Prior settings for the Bayesian approach.
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
 #' @examples
-#'
-#' data("veteran") ## imports from survival package
 #' library("spsurv")
+#' data("veteran") ## imports from survival package
 #'
 #' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
 #' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
 #'
 #' print(fit)
+#'
 #' summary(fit)
+#'
 #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 #' @rdname spbp
 #' @export spbp
 #' @seealso \url{https://mc-stan.org/users/documentation/}
-spbp <- function(formula, ...) {
-  UseMethod("spbp", formula)
+#'
+
+spbp <- function(formula) {
+  UseMethod("spbp", formula, ...)
 }
 
 #' @return An object of class \code{spbp}
 #' @rdname spbp
 #' @method spbp default
 #' @S3method spbp default
+#'
 spbp.default <-
   function(formula, degree, data,
             approach = c("mle", "bayes"),
