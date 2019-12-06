@@ -55,11 +55,11 @@ print.spbp <-
     }
   }
   else{
-    summarise <- rstan::summary(spbp$stanfit, pars = "beta_std")$summary
+    summarise <- rstan::summary(spbp$stanfit, pars = "beta")$summary
     design <- as.matrix(model.matrix(spbp))
     p <- ncol(design)
     Coef <- cbind(matrix(summarise[, 1], nrow = p),
-                  matrix(coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta_std")$beta_std)), nrow = p),
+                  matrix(coda::HPDinterval(coda::mcmc(rstan::extract(spbp$stanfit, "beta")$beta)), nrow = p),
                   matrix(summarise[, -c(1, 5, 7, 9, 10)], nrow = p))
 
     rownames(Coef) <-  colnames(design)

@@ -1,10 +1,9 @@
 #' The 'spsurv' package.
 #'
-#' @description A set of reliable routines to ease semiparametric
+#' @description A set of flexible routines to allow semiparametric
 #' survival regression modeling based on Bernstein Polynomials.
-#' \code{spsurv::spbp()} includes Proportional Hazards, Proportional Odds and
-#' Accelerated Failure Time frameworks for right censored data, it
-#' also includes bayesian frailty modeling.
+#' \code{spsurv::spbp()} includes Proportional Hazards (BPPH), Proportional Odds (BPPO) and
+#' Accelerated Failure Time (BPAFT) frameworks for right-censored data.
 #'
 #' @docType package
 #' @name spsurv-package
@@ -17,16 +16,13 @@
 #'
 #' @references
 #'
-#' Collett, D. (2003). Modelling survival data in medical research. Chapman and Hall/CRC.
+#' Demarqui, F. N., & Mayrink, V. D. (2019). A fully likelihood-based approach to model survival data with crossing survival curves. arXiv preprint arXiv:1910.02406.
 #'
-#' Colosimo, E., & Giolo S. R. (2006). Análise de sobrevivência aplicada. Editora Edgard Blucher Ltda.
+#' Demarqui, F. N., Mayrink, V. D., & Ghosh, S. K. (2019). An Unified Semiparametric Approach to Model Lifetime Data with Crossing Survival Curves. arXiv preprint arXiv:1910.04475.
 #'
-#' Ibrahim, J. G., Chen, M. H., & Sinha, D. (2001). Bayesian Survival Analysis. Wiley StatsRef: Statistics Reference Online.
-#'
-#' Klein, J. P., & Moeschberger, M. L. (1997). Survival analysis: techniques for censored and truncated data. Springer Science & Business Media.
+#' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
 #'
 #' Lorentz, G. G. (1953). Bernstein polynomials. American Mathematical Society.
 #'
-#' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
 #'
 NULL

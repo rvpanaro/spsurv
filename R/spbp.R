@@ -30,14 +30,13 @@
 #' @seealso \url{https://mc-stan.org/users/documentation/}
 #'
 
-spbp <- function(formula) {
-  UseMethod("spbp", formula, ...)
+spbp <- function(formula, ...) {
+  UseMethod("spbp", formula)
 }
 
 #' @return An object of class \code{spbp}
-#' @rdname spbp
 #' @method spbp default
-#' @S3method spbp default
+#' @export
 #'
 spbp.default <-
   function(formula, degree, data,
@@ -89,7 +88,6 @@ spbp.default <-
   handler4()
 
   ## Model Frame
-
   mf <- eval(temp, parent.frame())
   Terms <- terms(mf)
   Y <- model.extract(mf, "response") # time-to-event response
@@ -225,7 +223,8 @@ spbp.mle <-
                              ...)
   len <- length(stanfit$par)
   ## stanfit coefficients (beta, nu)
-  coef <- array(stanfit$par[(len-q - degree+1):len], degree + q)
+  aux <- stanfit$par
+  coef <- aux[names(aux) %in% c(paste0("beta[", 1:q, "]"), paste0("gamma[", 1:degree, "]"))]; rm(aux)
   ## regression estimates
   beta <- array(coef[1:q], q)
 

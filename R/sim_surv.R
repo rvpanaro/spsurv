@@ -43,8 +43,8 @@
 
 sim_surv <- function(n,
   beta = c(2, -1),
-  scaleT = 8, # baseline hazard
-  scaleC = 3, # hazard of censoring
+  scaleT = 10, # baseline hazard
+  scaleC = 4, # hazard of censoring
   features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)),
   shape = 2,
   model = c("ph", "po", "aft"),
@@ -69,10 +69,10 @@ sim_surv <- function(n,
     }
     else{
       if(model == "ph"){     #proportional hazards
-        scale <- (scaleT * exp(eta) ^ (-1 / shape))
+        scale <- (scaleT * exp(eta) ^ (-1/shape))
       }
       else if(model == "aft"){    #accelerated failure time
-        scale <- scaleT * exp(-shape * eta) ^ (-1 / shape)
+        scale <- scaleT * exp(-shape * eta) ^ (-1/shape)
       }
       t <- rweibull(n, scale = scale, shape = shape) #event time
     }
