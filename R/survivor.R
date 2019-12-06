@@ -1,12 +1,10 @@
 #' Survivor function calculations for Bernstein Polynomial based regression models
 #'
-#' @export
-#' @description A method to ease survivor function computation.
+#' @description A method to allow survivor function computation.
 #' @param spbp
+#'#' @examples
+#' data("veteran") ## imports veteran dataset from survival package
 #'
-#' @details
-#' @examples
-#' data("veteran") ## imports from survival package
 #' library("spsurv")
 #'
 #' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
@@ -14,17 +12,19 @@
 #'
 #' survivor(fit)
 #'
-#' @seealso  \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{sim_surv}}
+#' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{sim_surv}}
+#' @export survivor
 #' @references
 #'
 #' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
 survivor <- function(spbp, ...) {
   UseMethod("survivor", spbp)
 }
+
 #' @return Returns the probabilities that a subject will survive beyond any given times.
-#' @rdname survivor
 #' @method survivor default
-#' @S3method survivor default
+#' @export
+
 survivor.default <- function(time,
                              arg = list(beta = NULL, gamma = NULL),
                              newdata,
@@ -44,9 +44,8 @@ survivor.default <- function(time,
 }
 
 #' @return Returns the probabilities that a subject will survive beyond any given times.
-#' @rdname survivor
 #' @method survivor spbp
-#' @S3method survivor spbp
+#' @export
 
 survivor.spbp <- function(spbp, newdata){
   if(missing(newdata)){

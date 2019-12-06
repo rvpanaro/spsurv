@@ -64,8 +64,8 @@ summary.spbp <- function(spbp, interval = 0.95, ...){
                        )
 
         output$coef_names <- colnames(model.matrix(spbp))
-        aux <- rstan::summary(spbp$stanfit, probs = .5, pars = "beta_std")$summary
-        exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta_std")$beta_std))
+        aux <- rstan::summary(spbp$stanfit, probs = .5, pars = "beta")$summary
+        exp_samp <- coda::mcmc(exp(rstan::extract(spbp$stanfit, "beta")$beta))
 
         output$summary_chain <- cbind(spbp$pmode[1:length( output$coef_names)],
                                       aux,
