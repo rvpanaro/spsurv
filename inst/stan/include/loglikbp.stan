@@ -97,7 +97,7 @@ functions{
   matrix[n, m] b2;
   matrix[n, m] B2;
 
-    for(i in 1:m){
+    for(j in 1:m){
       for(i in 1:n){
         b2[i, j] = exp(beta_lpdf(y_alt[i]| j, m - j + 1)) ./ tau_aft;
         B2[i, j] = beta_cdf(y_alt[i], j, m - j + 1);

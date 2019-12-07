@@ -14,4 +14,5 @@ devtools::document()
 devtools::install()
 devtools::load_all(".")
 devtools::build()
-?spsurv
+?spsurv::spbp
+

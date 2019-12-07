@@ -46,6 +46,7 @@ spbp.default <-
                          gamma = "lognormal(0,4)"),
            scale = TRUE,
            ...){
+    cores <- parallel::detectCores() - 1
 
   # ---------------Definitions + error handling  ---------------
   ## tau degree
@@ -58,8 +59,8 @@ spbp.default <-
   Call <- match.call();
 
   ## model
-  if(length(model) == 3){model_flag = "ph";}
-  else{model_flag <- model;}
+  if(length(model) == 3){model_flag = "ph"}
+  else{model_flag <- model}
 
   model <- ifelse(match.arg(model) == "po", 0,
                   ifelse(match.arg(model) == "ph", 1, 2))
@@ -308,7 +309,7 @@ spbp.bayes <- function(standata,
     output$stanfit <- rstan::sampling(stanmodels$spbp,
                                       data = standata,
                                       verbose = verbose,
-                                      chains = chains,
+                                      chains = chains, cores = cores,
                                       ...)
 
     samp <- rstan::extract(output$stanfit, pars = c("beta", "gamma"))
@@ -325,8 +326,8 @@ spbp.bayes <- function(standata,
 
     output$pmode <- apply(rstan::extract(output$stanfit, c("beta", "gamma")), 2, mode)
   }
-  output$loo <- loo::loo(loo::extract_log_lik(output$stanfit))
-  output$waic <- loo::waic(loo::extract_log_lik(output$stanfit))
+  output$loo <- loo::loo(loo::extract_log_lik(output$stanfit), cores = cores)
+  output$waic <- loo::waic(loo::extract_log_lik(output$stanfit), cores = cores)
   output$call <- Call
   output$call$approach <- approach_flag
   output$call$model <- model_flag

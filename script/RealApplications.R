@@ -1,37 +1,64 @@
 rm(list = ls())
 
+library("spsurv")
+
+## 1. Larynx
 library("KMsurv")
 data("larynx")
 
-library("spsurv")
+# BPPH
+bpphmle1 <- spbp(formula = Surv(time, delta) ~ age + factor(stage),
+     data = larynx,
+     approach = "mle",
+     model = "ph")
 
-## BPPH
-fitmle <- spsurv::(formula = Surv(time, delta)~ age + factor(stage),
-     data = larynx, approach = "mle", model = "ph")
+summary(bpphmle1)
 
-fitmle
+bpphbe1 <- spbp(Surv(time, delta)~ age + factor(stage),
+               data = larynx,
+               approach  = "bayes",
+               model = "ph")
+summary(bpphbe1)
 
-fitbe <- spbp(Surv(time, delta)~ age + factor(stage), scale = T,
-               data = larynx, approach  = "bayes")
+# BPPO
+bppomle1 <- spsurv::spbp(formula = Surv(time, delta)~ age + factor(stage),
+                         data = larynx,
+                         approach = "mle",
+                         model = "po")
+summary(bppomle1)
 
+bppobe1 <- spbp(Surv(time, delta)~ age + factor(stage), scale = T,
+                data = larynx,
+                approach  = "bayes",
+                model = "po")
+summary(bppobe1)
 
+# BPAFT
+bpaftmle1 <- spsurv::spbp(formula = Surv(time, delta)~ age + factor(stage),
+                         data = larynx,
+                         approach = "mle",
+                         model = "aft")
+summary(bpaftmle1)
 
-traceplot(fitbe$stanfit, pars = c("beta_std", "gamma_std"))
-stan_dens(fitbe$stanfit, pars = c("gamma_std", "gamma_std"))
+bpaftbe1 <- spbp(Surv(time, delta)~ age + factor(stage), scale = T,
+                data = larynx,
+                approach  = "bayes",
+                model = "aft")
+summary(bpaftbe1)
 
-smle1 <- survivor(fitmle, newdata = data.frame(77, 0, 0, 0))
-sbe1 <- survivor(fitbe, newdata = data.frame(77, 0, 0, 0))
-cbind(smle1, sbe1)
+## 2. Lung
+data("veteran")
+attach(veteran)
 
-smle1 <- survivor(fitmle, newdata = data.frame(77, 1, 0, 0))
-sbe1 <- survivor(fitbe, newdata = data.frame(77, 1, 0, 0))
+veteran$celltype <- factor(celltype, c("large", "adeno", "smallcell", "squamous"))
+fitmle2 <- spsurv::spbp(formula = Surv(time, status) ~ karno + celltype,
+                       data = veteran, approach = "mle", model = "po", scale = T)
+summary(fitmle2)
 
-smle2 <- survivor(fitmle, newdata = data.frame(77, 0, 1, 0))
-sbe2 <- survivor(fitbe, newdata = data.frame(77, 0, 1, 0))
+fitbe2 <- spsurv::spbp(formula = Surv(time, status) ~ karno + celltype,
+                        data = veteran, approach = "bayes", model = "po")
+summary(fitbe2)
 
-smle3 <- survivor(fitmle, newdata = data.frame(77, 0, 0, 1))
-sbe3 <- survivor(fitbe, newdata = data.frame(77, 0, 0, 1))
-
-plot(smle3, col = 2)
-points(sbe3, col = 4)
-
+library("timereg")
+prop.odds(formula = Event(time, status) ~ karno + celltype,
+           data = veteran)
