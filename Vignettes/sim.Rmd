@@ -119,8 +119,8 @@ $$
 @Bennett:1983 defined the odds on ocurrence time $y$ as
 $$
 \begin{aligned}
-\frac{F(y_i)}{1-F(y_i)}
-&=\frac{1-S(y_i)}{S(y_i)} =\frac{1-(1+\lambda y_i^\alpha)^{-1}}{(1+\lambda y_i^\alpha)^{-1}} = \lambda y_i^\alpha.\\
+  \frac{F(y_i)}{1-F(y_i)}
+  &=\frac{1-S(y_i)}{S(y_i)} =\frac{1-(1+\lambda y_i^\alpha)^{-1}}{(1+\lambda y_i^\alpha)^{-1}} = \lambda y_i^\alpha.\\
 \end{aligned}
 $$
 
@@ -154,7 +154,7 @@ As described above, the odds on the event occurring at time $y$ can be rewritten
 
 $$
 \begin{aligned}
-\frac{1-S(y_i \mid \boldsymbol{x_i})}{S(y_i\mid \boldsymbol{x_i})} &= \color{red}{\frac{1-S_0(y_i)}{S_0(y_i)}} e^{\boldsymbol{\eta_i}}=\color{red}{\lambda y_i^\alpha} e^{\boldsymbol{\eta_i}}= (\lambda e^{\boldsymbol{\eta_i}}) y_i^\alpha.
+  \frac{1-S(y_i \mid \boldsymbol{x_i})}{S(y_i\mid \boldsymbol{x_i})} &= \color{red}{\frac{1-S_0(y_i)}{S_0(y_i)}} e^{\boldsymbol{\eta_i}}=\color{red}{\lambda y_i^\alpha} e^{\boldsymbol{\eta_i}}= (\lambda e^{\boldsymbol{\eta_i}}) y_i^\alpha.
 \end{aligned}
 $$
 Inevitably, $Y_i$ follows a Log logistic distribution with scale parameter $\lambda^* = \lambda e^{\boldsymbol{\eta_i}}$ and shape parameter $\alpha$, i.e, $$Y_i \sim llogis(\lambda e^{\boldsymbol{\eta_i}}, \alpha).$$
