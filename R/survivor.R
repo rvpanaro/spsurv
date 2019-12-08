@@ -58,10 +58,10 @@ survivor.spbp <- function(spbp, newdata){
 
   if(spbp$call$approach == "bayes"){
 
-    beta <- rstan::extract(spbp$stanfit, pars = "beta_std")$beta_std
+    beta <- rstan::extract(spbp$stanfit, pars = "beta")$beta
     if(ncol(newdata) != ncol(beta))
       stop("cols must match with `model.matrix(spbp)`")
-    gamma <- rstan::extract(spbp$stanfit, pars = "gamma_std")$gamma_std
+    gamma <- rstan::extract(spbp$stanfit, pars = "gamma")$gamma
     iter <- nrow(beta)
     ####
 

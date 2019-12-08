@@ -52,7 +52,7 @@ attach(veteran)
 
 veteran$celltype <- factor(celltype, c("large", "adeno", "smallcell", "squamous"))
 fitmle2 <- spsurv::spbp(formula = Surv(time, status) ~ karno + celltype,
-                       data = veteran, approach = "mle", model = "po", scale = T)
+                       data = veteran, approach = "mle", model = "aft", scale = T)
 summary(fitmle2)
 
 fitbe2 <- spsurv::spbp(formula = Surv(time, status) ~ karno + celltype,
@@ -62,3 +62,10 @@ summary(fitbe2)
 library("timereg")
 prop.odds(formula = Event(time, status) ~ karno + celltype,
            data = veteran)
+
+library("survival")
+svg <- survreg(formula = Surv(time, status) ~ karno + celltype,
+          data = veteran, dist = "loglogistic")
+summary(svg)
+
+confint(svg)
