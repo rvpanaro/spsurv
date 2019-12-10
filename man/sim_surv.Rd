@@ -7,8 +7,8 @@
 sim_surv(
   n,
   beta = c(2, -1),
-  scaleT = 10,
-  scaleC = 4,
+  event_scale = 10,
+  censor_scale = 4,
   features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)),
   shape = 2,
   model = c("ph", "po", "aft"),
@@ -21,7 +21,7 @@ sim_surv(
 
 \item{beta}{vector of regression coefficients.}
 
-\item{scaleT, scaleC}{event and censoring scale parameters.}
+\item{event_scale, censor_scale}{event and censoring scale parameters.}
 
 \item{shape}{event and censoring distribution shape.}
 
