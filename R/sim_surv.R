@@ -5,7 +5,7 @@
 #'  log-logistic distibutions with parameters `scale` and `shape`.
 #' @param n integer; sample size.
 #' @param beta vector of regression coefficients.
-#' @param scaleT,scaleC  event and censoring scale parameters.
+#' @param event_scale,censor_scale  event and censoring scale parameters.
 #' @param x matrix of features (columns).
 #' @param shape event and censoring distribution shape.
 #' @param model either "ph" (default) or "aft" for weibull and
@@ -43,8 +43,8 @@
 
 sim_surv <- function(n,
   beta = c(2, -1),
-  scaleT = 10, # baseline hazard
-  scaleC = 4, # hazard of censoring
+  event_scale = 10, # baseline hazard
+  censor_scale = 4, # hazard of censoring
   features = data.frame(x1 = rnorm(n, 0), x2 = rnorm(n, 0)),
   shape = 2,
   model = c("ph", "po", "aft"),
@@ -64,35 +64,35 @@ sim_surv <- function(n,
 
   if(dist == "weibull"){
     if(model == "po"){
-      U <- runif(n)
-      t <- log((1/U - 1) * exp(-eta) + 1)/(shape * scaleT)
+      stop("no method available, try another dist or model.")
     }
     else{
       if(model == "ph"){     #proportional hazards
-        scale <- (scaleT * exp(eta) ^ (-1/shape))
+        scale <- (event_scale * exp(eta) ^ (-1/shape))
       }
       else if(model == "aft"){    #accelerated failure time
-        scale <- scaleT * exp(-shape * eta) ^ (-1/shape)
+        scale <- event_scale * exp(-shape * eta) ^ (-1/shape)
       }
       t <- rweibull(n, scale = scale, shape = shape) #event time
     }
-    c <- rweibull(n, scale = scaleC, shape = shape) #censoring time
+    c <- rweibull(n, scale = censor_scale, shape = shape) #censoring time
   }
   else{
     if(model == "ph"){
-      U <- runif(n)
-      t <- ((U^(exp(eta)) - 1)/ scaleT) ^ (-shape)
+      stop("no method available, try another dist or model.")
     }
     else{
       if(model == "po"){      #proportional odds
-        location = log(scaleT) + eta ## logis location parameter
+        location = log(event_scale) + eta ## logis location parameter
+        scale <- exp(location)
       }
       else if(model == "aft"){    #accelerated failure time
-        location = log(scaleT) - shape * eta ## logis location parameter
+        location = log(event_scale) - shape * eta ## logis location parameter
+        scale <- exp(location)
       }
       t <- exp(rlogis(n, location = -location/shape, scale = 1/shape)) #event time
     }
-    c <- exp(rlogis(n, location = -log(scaleC)/shape, scale = 1/shape)) #censoring time
+    c <- exp(rlogis(n, location = -log(censor_scale)/shape, scale = 1/shape)) #censoring time
   }
 
   y <- pmin(t,c)   #response
@@ -110,5 +110,7 @@ sim_surv <- function(n,
   attr(db, "censoring") <- mean(status)
   attr(db, "model") <- model
   attr(db, "dist") <- dist
+  attr(db, "scale") <- scale
+  attr(db, "shape") <- shape
   return(db)
 }
