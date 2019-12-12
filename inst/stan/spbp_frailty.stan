@@ -61,14 +61,11 @@ transformed parameters{
         gamma_std = gamma * exp(-sum(beta .* means ./ std));
     }
 
-
     nu = log(gamma);
     sigma = inv_sqrt(kappa);
 
     if(null == 1){
-      for(i in 1:n){
         log_lik = loglik_null(beta, gamma, status, X, b, B, M, dist, id, z);
-      }
     }
     else{
       if(M == 0){
