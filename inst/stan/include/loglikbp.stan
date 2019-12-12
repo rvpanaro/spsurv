@@ -1,6 +1,19 @@
 // Functions block (optional).
 // Here we implement a likelihood function and other useful functions.
 functions{
+  vector dbeta(vector x, real shape1, real shape2){
+    real K = lbeta(shape1, shape2);
+    vector[num_elements(x)] prob = K + (shape1 - 1) *log(x) + (shape2 - 1) *log(1-x);
+    return exp(prob);
+  }
+
+  vector pbeta(vector q, real shape1, real shape2){
+    vector[num_elements(q)] prob;
+    for(i in 1:num_elements(q)){
+      prob[i] = inc_beta(q[i], shape1, shape2);
+    }
+    return prob;
+  }
 
  vector loglik_null(vector beta, vector gamma, vector status, matrix X,
    matrix b, matrix B, int M, int dist, int [] id, vector z){
@@ -91,18 +104,22 @@ functions{
   vector[n] h0;
   vector[n] H0;
   vector[n] theta = exp(X * beta);
-  real tau_aft = max(time ./ exp(X * beta)) + 0.000001;
+  real tau_aft = max(time ./ theta) + 0.000001;
   vector[n] y = time ./theta;
   vector[n] y_alt = y ./tau_aft;
-  matrix[n, m] b2;
-  matrix[n, m] B2;
+  matrix [n, m] b2;
+  matrix [n, m] B2;
 
+    // for(j in 1:m){
+    //   for(i in 1:n){
+    //     b2[i, j] = exp(beta_lpdf(y_alt[i]| j, m - j + 1))/ tau_aft;
+    //     B2[i, j] = exp(beta_lcdf(y_alt[i]| j, m - j + 1));
+    //   }
+    // }
     for(j in 1:m){
-      for(i in 1:n){
-        b2[i, j] = exp(beta_lpdf(y_alt[i]| j, m - j + 1)) ./ tau_aft;
-        B2[i, j] = beta_cdf(y_alt[i], j, m - j + 1);
+        b2[, j] = dbeta(y_alt, j, m - j + 1) ./ tau_aft;
+        B2[, j] = pbeta(y_alt, j, m - j + 1);
       }
-    }
 
     if(dist == 0){
       h0 = b2 * gamma;
