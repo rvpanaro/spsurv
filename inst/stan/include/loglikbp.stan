@@ -96,13 +96,17 @@ functions{
   vector[n] y_alt = y ./tau_aft;
   matrix[n, m] b2;
   matrix[n, m] B2;
+  int j = 1;
 
-    for(j in 1:m){
+    while(j < m +1){
       for(i in 1:n){
-        b2[i, j] = exp(beta_lpdf(y_alt[i] | j, (m - j + 1)))/tau_aft;
-        B2[i, j] = beta_cdf(y_alt[i], j, (m - j + 1));
+        b2[i, j] = beta_lpdf(y_alt[i] | j, (m - j + 1));
+        B2[i, j] = beta_lcdf(y_alt[i]| j, (m - j + 1));
       }
+      j = j+1;
     }
+    b2 = exp(b2) ./ tau_aft;
+    B2 = exp(B2);
 
     if(dist == 0){
       h0 = b2 * gamma;
