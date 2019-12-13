@@ -1,12 +1,10 @@
-library(spsurv)
+devtools::install()
+devtools::load_all(".")
 
-dt <- sim_surv(n = 200, model = "aft")
+data("veteran") ## imports from survival package
 
-fit <- survreg(Surv(y, status)~ x1 + x2, data = dt)
-fit
 
-dt <- sim_surv(n = 200, scaleC = 42, model = "aft",
-               dist = "llogis")
-
-fit <- survreg(Surv(y, status)~ x1 + x2, data = dt)
-fit
+fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
+            data = veteran, approach = "bayes", model = "po", chains = 1, iter = 1000)
+print(fit)
+summary(fit)
