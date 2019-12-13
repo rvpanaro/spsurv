@@ -101,7 +101,7 @@ model{
         gamma_scaled ~ inv_gamma(priorpars[1], priorpars[2]);
       }
       else{
-        gamma_scaled ~ lognormal(priorpars[1], priorpars[2]);
+        nu_scaled ~ normal(priorpars[1], priorpars[2]);
       }
    }
      target += sum(log_lik);
