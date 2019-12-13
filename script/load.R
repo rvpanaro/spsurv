@@ -15,4 +15,3 @@ devtools::install()
 devtools::load_all(".")
 devtools::build()
 ?spsurv::spbp
-

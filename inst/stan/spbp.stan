@@ -45,11 +45,10 @@ parameters{
 transformed parameters{
     //// Declare statement
       vector[n] log_lik;              // declare log likelihood
-      vector[m] nu_scaled;      // declare log of the BP coefficient
     // scaled coefficients
       vector[q] beta;                 // declare scaled beta
       vector<lower=0>[m] gamma;       // declare scaled BP gamma
-
+      vector[m] nu_scaled = log(gamma_scaled);      // declare log of the BP coefficient
     // reparametrized beta (due to HM dynamics)
       vector[q] beta_std = (beta_scaled - to_vector(location_beta)) ./ to_vector(scale_beta);
 
@@ -58,12 +57,11 @@ transformed parameters{
 
        // definition if model is AFT
       if(M == 2){
-          gamma = gamma_scaled * exp(sum(beta_scaled .* means ./ std));
+          gamma = gamma_scaled * exp(sum(beta .* means));
       }// if model is PO or PH
       else{
-          gamma = gamma_scaled * exp(-sum(beta_scaled .* means ./ std));
+          gamma = gamma_scaled * exp(-sum(beta .* means));
       }
-      nu_scaled = log(gamma_scaled);
 
         // definition if model is null
       if(null == 1){
@@ -88,7 +86,6 @@ model{
   if(approach == 1){ // priors
   ////// Beta Prior
       for(i in 1:q){
-
         if(priordist_beta[i] == 0){
           beta_std ~ normal(0, 1);
         }
