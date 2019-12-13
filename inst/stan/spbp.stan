@@ -52,8 +52,6 @@ transformed parameters{
 
     // reparametrized beta (due to HM dynamics)
       vector[q] beta_std = (beta_scaled - to_vector(location_beta)) ./ to_vector(scale_beta);
-      vector[q] nu_std = (nu_scaled - priorpars[1]) / priorpars[2];
-    // declare standard beta
 
     //// Define declared variables
       beta = beta_scaled ./ std;      // define beta to original scale
@@ -106,11 +104,10 @@ model{
         gamma_scaled ~ inv_gamma(priorpars[1], priorpars[2]);
       }
       else{
-        nu_std ~ normal(0, 1);
+        gamma_scaled ~ lognormal(priorpars[1], priorpars[2]);
       }
    }
      target += sum(log_lik);
  }
 
 // Final line empty to avoid warnings.
-
