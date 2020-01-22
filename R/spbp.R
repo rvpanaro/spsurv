@@ -225,10 +225,10 @@ spbp.mle <-
   len <- length(stanfit$par)
   ## stanfit coefficients (beta, nu)
   aux <- stanfit$par
-  coef <- aux[names(aux) %in% c(paste0("beta[", 1:q, "]"), paste0("gamma[", 1:degree, "]"))]; rm(aux)
+  coef <- aux[names(aux) %in% c(paste0("beta[", 1:q, "]"), paste0("gamma[", 1:degree, "]"))]
   ## regression estimates
   beta <- array(coef[1:q], q)
-  gamma <- array(coef[(q+1):(q+degree)], degree)
+  gamma_std <- aux[names(aux) %in% paste0("gamma_std[", 1:degree, "]")]
 
   ## rescaled hessian matrix
   info <- -stanfit$hessian
@@ -243,10 +243,10 @@ spbp.mle <-
   #   stop("Optimizing hesssian matrix is singular!")
 
   ## rescaled fisher info
-  jacob <- diag(c(1/std, rep( exp(((model_flag == "aft")*2-1)* sum(means)), degree), q+degree), q+degree)
+  jacob <- diag(c(1/std, rep( exp(((model_flag == "aft")*2-1)* sum(beta*means)), degree), q+degree), q+degree)
   for(i in (q+1):(q+degree)){
     for(j in 1:q){
-      jacob[i,j] <- gamma[i-q]*((model_flag == "aft")*2-1)*means[j]/std[j]*exp(((model_flag == "aft")*2-1)* sum(means))
+      jacob[i,j] <- gamma_std[i-q]*((model_flag == "aft")*2-1)*means[j]/std[j]*exp(((model_flag == "aft")*2-1)* sum(beta*means))
     }
   }
   var <- jacob %*% blockSolve(info, q) %*% t(jacob)
