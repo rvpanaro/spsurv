@@ -80,15 +80,15 @@ blockSolve <- function(M, q){
   S <- matrix(NA, nrow = nrow(M), ncol = ncol(M))
 
   ## aux op
-  invA <- solve(A)
+  invA <- MASS::ginv(A)
   invPsis <-  MASS::ginv(D - C %*% invA %*% B)
 
   ##S11
-  S[1:q, 1:q] <- invA + invA %*% B %*% invPsis %*% C %*% invA
+  S[1:q, 1:q] <- invA + (invA %*% B %*% invPsis %*% C %*% invA)
   ##S12
-  S[1:q, r:n] <- (-invA) %*% B %*% invPsis
+  S[1:q, r:n] <- -(invA %*% B %*% invPsis)
   ##S21
-  S[r:n,1:q] <- (-invPsis) %*% C %*% invA
+  S[r:n,1:q] <- -(invPsis %*% C %*% invA)
   ##S22
   S[r:n, r:n] <- invPsis
 
