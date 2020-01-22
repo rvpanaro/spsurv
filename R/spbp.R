@@ -228,10 +228,10 @@ spbp.mle <-
   coef <- aux[names(aux) %in% c(paste0("beta[", 1:q, "]"), paste0("gamma[", 1:degree, "]"))]; rm(aux)
   ## regression estimates
   beta <- array(coef[1:q], q)
+  gamma <- array(coef[(q+1):(q+degree)], degree)
 
   ## rescaled hessian matrix
-  hess <- stanfit$hessian
-  hess[1:q, 1:q] <- stanfit$hessian[1:q, 1:q]
+  info <- -stanfit$hessian
 
   names(beta) <- colnames(X)
   names(coef) <- c(names(beta),
@@ -239,15 +239,17 @@ spbp.mle <-
   )
 
   ## singular matrices handler
-  # if(det(-hess) == 0)
+  #   if(det(-hess) == 0)
   #   stop("Optimizing hesssian matrix is singular!")
 
   ## rescaled fisher info
-
-  correction <- c(std, rep( exp(((model_flag == "aft")*2-1)* sum(means)), degree), q+degree)
-
-  info <- diag(1/correction, q + degree) %*%  blockSolve(hess, q) %*%  diag(1/correction, q + degree)
-  diag(info) <- abs(diag(info))
+  jacob <- diag(c(1/std, rep( exp(((model_flag == "aft")*2-1)* sum(means)), degree), q+degree), q+degree)
+  for(i in (q+1):(q+degree)){
+    for(j in 1:q){
+      jacob[i,j] <- gamma[i-q]*((model_flag == "aft")*2-1)*means[j]/std[j]*exp(((model_flag == "aft")*2-1)* sum(means))
+    }
+  }
+  var <- jacob %*% blockSolve(info, q) %*% t(jacob)
 
   if(hessian == FALSE || null == 1){
     stanfit$hessian <- matrix(rep(NA, q^2),
@@ -261,9 +263,8 @@ spbp.mle <-
                                init = init,
                                hessian = hessian,
                                ...)
-
   output <- list(coefficients = coef,
-                 var = info,
+                 var = var,
                  loglik = c(nullfit$value, stanfit$value),
                  linear.predictors = c(features %*% beta),
                  means = colMeans(features),
@@ -273,7 +274,7 @@ spbp.mle <-
                  q = q,
                  terms = Terms,
                  assign = assign,
-                 wald.test = coxph.wtest(info[1:q, 1:q], beta)$test,
+                 wald.test = coxph.wtest(var[1:q, 1:q], beta)$test,
                  y = Y,
                  formula = formula,
                  xlevels = xlevels,
