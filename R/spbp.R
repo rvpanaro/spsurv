@@ -43,7 +43,7 @@ spbp.default <-
             approach = c("mle", "bayes"),
             model = c("ph", "po", "aft"),
             priors = list(beta = c("normal(0,4)"),
-                         gamma = "lognormal(0,4)"),
+                         gamma = "lognormal(0,10)"),
            scale = TRUE,
            ...){
     cores <- parallel::detectCores() - 1
@@ -264,7 +264,7 @@ spbp.mle <-
                                hessian = hessian,
                                ...)
   output <- list(coefficients = coef,
-                 var = var,
+                 var = var[1:q, 1:q],
                  loglik = c(nullfit$value, stanfit$value),
                  linear.predictors = c(features %*% beta),
                  means = colMeans(features),

@@ -1,8 +1,8 @@
-#' Bernstein Polynomials basis calculations
+#' Bernstein basis polynomials calculations
 #' @export
-#' @param time a vector of times to events.
-#' @param degree Bernstein Polynomial degree
-#' @param tau must be greater than times maximum value observed, this value is used for correction purposes.
+#' @param time a vector of times.
+#' @param degree Bernstein polynomial degree
+#' @param tau must be greater than times maximum value observed.
 #' @param data a data.frame with variables named in the formula.
 #' @return A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.
 
@@ -105,17 +105,17 @@ solveAny <- function(A){
   return(S)
 }
 
-## Singular Value Decompositition
-solveSVD <- function(A){
-  svd <- svd(A)
-  v <- svd$v
-  u <- svd$u
-  zeros <- svd$d == 0
-  pseudod <- svd$d
-  pseudod[!zeros] <- svd$d[!zeros] <-  1/svd$d[!zeros]
-  S <- v %*% diag(pseudod) %*% t(u)
-  return(S)
-}
+# ## Singular Value Decompositition
+# solveSVD <- function(A){
+#   svd <- svd(A)
+#   v <- svd$v
+#   u <- svd$u
+#   zeros <- svd$d == 0
+#   pseudod <- svd$d
+#   pseudod[!zeros] <- svd$d[!zeros] <-  1/svd$d[!zeros]
+#   S <- v %*% diag(pseudod) %*% t(u)
+#   return(S)
+# }
 
 read_prior <- function(prior){
   aux <- unlist(strsplit(prior, "\\("))

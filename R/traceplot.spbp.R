@@ -1,8 +1,9 @@
 #' Traceplot method for fitted spbp models
 #'
 #' @export
+#' @method traceplot spbp
 #' @description Traceplot samples from a fitted \code{\link[spsurv]{spbp}} model.
-#' @param spbp the result of a \code{\link[spsurv]{spbp}} fit.
+#' @param spbp an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
 #' @param ... arguments inherent from \code{\link[rstan]{traceplot}}.
 #' @return see \code{\link[rstan]{traceplot}}.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{stan_dens.spbp}}, \code{\link[spsurv]{extract.spbp}}

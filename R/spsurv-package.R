@@ -1,9 +1,17 @@
 #' The 'spsurv' package.
 #'
 #' @description A set of flexible routines to allow semiparametric
-#' survival regression modeling based on Bernstein Polynomials.
-#' \code{spsurv::spbp()} includes Proportional Hazards (BPPH), Proportional Odds (BPPO) and
-#' Accelerated Failure Time (BPAFT) frameworks for right-censored data.
+#' survival regression modeling based on Bernstein polynomial, including Bernstein based proportinal hazards model (BPPH), Bernstein polynomial based proportional odds model (BPPO) and
+#' Bernstein based accelerated failure time model (BPAFT) for right-censored data.
+#'
+#' @details \code{\link[spsurv]{spbp}} fits semi-parametric models for time-to-event survival data.
+#' Non-informative right-censoring assumption is available. Any user-defined Bernstein polynomial can
+#' be user-defined using an arbitrary degree, i.e. highest basis polynomials order.
+#'
+#' The framework takes advantage of fully likelihood methods since the polynomial parameters are used
+#' to estimate the baseline functions. Even so, this is said to be semi-parametric since this approach
+#' does not rely on any distribution. Unlike the Cox model, the BP based models provide smooth hazard and survival curve estimates.
+#'
 #'
 #' @docType package
 #' @name spsurv-package
@@ -13,7 +21,7 @@
 #' @import Rcpp
 #' @import survival
 #' @importFrom rstan stan sampling optimizing
-#'
+#' @author Renato Valladares Panaro (\url{renatovp@id.uff.br}).
 #' @references
 #'
 #' Demarqui, F. N., & Mayrink, V. D. (2019). A fully likelihood-based approach to model survival data with crossing survival curves. arXiv preprint arXiv:1910.02406.
