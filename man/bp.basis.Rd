@@ -2,16 +2,16 @@
 % Please edit documentation in R/tools.R
 \name{bp.basis}
 \alias{bp.basis}
-\title{Bernstein Polynomials basis calculations}
+\title{Bernstein basis polynomials calculations}
 \usage{
 bp.basis(time, degree, tau = max(time))
 }
 \arguments{
-\item{time}{a vector of times to events.}
+\item{time}{a vector of times.}
 
-\item{degree}{Bernstein Polynomial degree}
+\item{degree}{Bernstein polynomial degree}
 
-\item{tau}{must be greater than times maximum value observed, this value is used for correction purposes.}
+\item{tau}{must be greater than times maximum value observed.}
 
 \item{data}{a data.frame with variables named in the formula.}
 }
@@ -19,5 +19,5 @@ bp.basis(time, degree, tau = max(time))
 A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.
 }
 \description{
-Bernstein Polynomials basis calculations
+Bernstein basis polynomials calculations
 }

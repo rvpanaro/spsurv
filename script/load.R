@@ -9,6 +9,7 @@ try(remove.packages("spsurv", lib="~/R/x86_64-pc-linux-gnu-library/3.6"),
     silent = T)
 try(roxygen2::roxygenize(clean = T), silent = T)
 
+devtools::test()
 pkgbuild::compile_dll()
 devtools::document()
 devtools::install()
