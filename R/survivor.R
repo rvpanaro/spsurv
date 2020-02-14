@@ -1,8 +1,8 @@
 #' Survivor function calculations for Bernstein Polynomial based regression models
 #'
-#' @description A method to allow survivor function computation.
+#' @description A method to allow survivor estimates computation.
 #' @param spbp
-#'#' @examples
+#' @examples
 #' data("veteran") ## imports veteran dataset from survival package
 #'
 #' library("spsurv")
@@ -30,6 +30,9 @@ survivor.default <- function(time,
                              newdata,
                              model = c("ph", "po", "aft"),
                              approach = c("mle", "bayes")){
+  e <- parent.frame()
+  assign("design", get("design", envir = e))
+
   if(nrow(newdata)>1){
     res <- apply(newdata, 1, survivor.calc,
                  time = time, arg = arg,
@@ -48,8 +51,8 @@ survivor.default <- function(time,
 #' @export
 
 survivor.spbp <- function(spbp, newdata){
+  design <- model.matrix(spbp)
   if(missing(newdata)){
-    design <- model.matrix(spbp)
     newdata <- data.frame(t(matrix(colMeans(design))))
     colnames(newdata) <- colnames(design)
   }
@@ -68,11 +71,11 @@ survivor.spbp <- function(spbp, newdata){
     s <- matrix(NA, ncol = length(spbp$y[,1]), nrow = iter)
     for(i in 1:iter){
       s[i, ] <- survivor.default(time = spbp$y[,1],
-                                    arg = list(beta = beta[i,],
-                                               gamma = gamma[i,]),
-                                    newdata = matrix(newdata, nrow = 1),
-                                    model = spbp$call$model,
-                                    approach = spbp$call$approach)
+                                 arg = list(beta = beta[i,],
+                                            gamma = gamma[i,]),
+                                 newdata = matrix(newdata, nrow = 1),
+                                 model = spbp$call$model,
+                                 approach = spbp$call$approach)
     }
   }
   else{
@@ -82,21 +85,23 @@ survivor.spbp <- function(spbp, newdata){
     gamma <- spbp$coefficients[(spbp$q+1):length(spbp$coefficients)]
     ####
 
-        s <- survivor.default(time = spbp$y[,1],
-                     arg = list(beta = beta,
-                                gamma = gamma),
-                     newdata = newdata,
-                     model = spbp$call$model,
-                     approach = spbp$call$approach)
+    s <- survivor.default(time = spbp$y[,1],
+                          arg = list(beta = beta,
+                                     gamma = gamma),
+                          newdata = newdata,
+                          model = spbp$call$model,
+                          approach = spbp$call$approach)
   }
   return(s)
 }
 
 survivor.calc <- function(time,
-                             arg = list(beta = NULL, gamma = NULL),
-                             newdata,
-                             model = c("ph", "po", "aft"),
-                             approach = c("mle", "bayes")){
+                          arg = list(beta = NULL, gamma = NULL),
+                          newdata,
+                          model = c("ph", "po", "aft"),
+                          approach = c("mle", "bayes")){
+  e <- parent.frame()
+  assign("design", get("design", envir = e))
 
   if(sum(names(arg) %in% c("beta", "gamma")) != 2)
     stop('`args` names do not match')
@@ -139,9 +144,32 @@ survivor.calc <- function(time,
   }
   else{
     y_aft <- as.matrix(y) / as.vector(exp(eta))
-    tau_aft <- max(y_aft)
+    tau_aft <- max(as.matrix(y)/exp(design %*% beta))
     B <- matrix(sapply(k, function(k) pbeta(y_aft / tau_aft, k, degree - k + 1)), ncol = degree)
     H <- apply(B, 1, function(x){gamma %*% x})
   }
   return(exp(-H))
+}
+
+
+#' @export
+#' @method residuals spbp
+#' @description Residuals for a fitted \code{\link[spsurv]{spbp}} model.
+#' @param spbp an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
+#' @param type type of residuals, default is "cox-snell".
+#' @seealso \code{\link[spsurv]{spbp}}.
+#' @examples
+#'
+#' data("veteran") ## imports veteran dataset from survival package
+#'
+#' library("spsurv")
+#'
+#' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
+#'
+#' residuals(fit)
+#'
+
+residuals.spbp <- function(spbp, type=c("cox-snell")){
+  -log(survivor(spbp))
 }

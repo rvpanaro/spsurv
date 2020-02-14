@@ -3,9 +3,9 @@
 #' @export
 #' @method model.matrix spbp
 #' @description Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
-#' @param object the result of a \code{\link[spsurv]{spbp}} fit.
+#' @param object an object of class `spbp`, see \code{\link[spsurv]{spbp}}.
 #' @param ... arguments inherent from \code{\link[stats]{model.matrix}}.
-#' @return The model matrix for the fit.
+#' @return The explanatory variables matrix.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[stats]{model.matrix}}
 #' @examples
 #' fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
