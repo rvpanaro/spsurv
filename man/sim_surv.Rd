@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_surv.R
 \name{sim_surv}
 \alias{sim_surv}
-\title{Inverse transform sampling from parametric models}
+\title{Inverse transform sampling to generate time-to-event data from parametric models}
 \usage{
 sim_surv(
   n,
@@ -41,12 +41,12 @@ data.frame of `ncol(x) +2` columns in which the
 }
 \description{
 Random survival times generation for the weibull or
- log-logistic distibutions with parameters `scale` and `shape`.
+ log-logistic distributions with parameters `scale` and `shape`.
 }
 \details{
 sim_surv returns weibull (log-logistic) randomly
 generated survival times. According to Collett (2003), the
-Accelerated Failure Time emcompasses a wide variety of parametric
+accelerated failure time model emcompasses a wide variety of parametric
 models, including weibull and log-logistic models.
 }
 \examples{
