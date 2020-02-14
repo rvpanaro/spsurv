@@ -4,7 +4,7 @@
 \alias{stan_dens.spbp}
 \title{Density plots method for fitted spbp models}
 \usage{
-stan_dens.spbp(spbp, ...)
+\method{stan_dens}{spbp}(spbp, ...)
 }
 \arguments{
 \item{spbp}{the result of a \code{\link[spsurv]{spbp}} fit.}
