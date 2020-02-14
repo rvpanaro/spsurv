@@ -4,10 +4,10 @@
 \alias{extract.spbp}
 \title{Extract method for fitted spbp models}
 \usage{
-extract.spbp(spbp, ...)
+\method{extract}{spbp}(spbp, ...)
 }
 \arguments{
-\item{spbp}{the result of a \code{\link[spsurv]{spbp}} fit.}
+\item{spbp}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
 
 \item{...}{arguments inherent from \code{\link[rstan]{extract}}.}
 }

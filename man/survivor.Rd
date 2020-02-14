@@ -6,8 +6,10 @@
 \usage{
 survivor(spbp, ...)
 }
-\arguments{
-\item{spbp}{#' @examples
+\description{
+A method to allow survivor estimates computation.
+}
+\examples{
 data("veteran") ## imports veteran dataset from survival package
 
 library("spsurv")
@@ -15,10 +17,8 @@ library("spsurv")
 fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
 data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
 
-survivor(fit)}
-}
-\description{
-A method to allow survivor function computation.
+survivor(fit)
+
 }
 \references{
 Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.

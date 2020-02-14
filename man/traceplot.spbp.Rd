@@ -4,10 +4,10 @@
 \alias{traceplot.spbp}
 \title{Traceplot method for fitted spbp models}
 \usage{
-traceplot.spbp(spbp, ...)
+\method{traceplot}{spbp}(spbp, ...)
 }
 \arguments{
-\item{spbp}{the result of a \code{\link[spsurv]{spbp}} fit.}
+\item{spbp}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
 
 \item{...}{arguments inherent from \code{\link[rstan]{traceplot}}.}
 }

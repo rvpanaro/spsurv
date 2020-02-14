@@ -7,12 +7,12 @@
 \method{model.matrix}{spbp}(spbp, data = eval(spbp$call$data, envir = parent.frame()))
 }
 \arguments{
-\item{object}{the result of a \code{\link[spsurv]{spbp}} fit.}
+\item{object}{an object of class `spbp`, see \code{\link[spsurv]{spbp}}.}
 
 \item{...}{arguments inherent from \code{\link[stats]{model.matrix}}.}
 }
 \value{
-The model matrix for the fit.
+The explanatory variables matrix.
 }
 \description{
 Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
