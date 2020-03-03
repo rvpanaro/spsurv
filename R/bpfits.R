@@ -20,18 +20,21 @@
 #'
 #' summary(fit)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+  #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
 
-bpph <- function(formula, degree, data, approach = "mle", ...){
-  spbp.default(formula = formula,
+bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
+  fit <- spbp.default(formula = formula,
                degree = degree,
                data = data,
                model = "ph",
-               approach = approach,
+               approach = match.arg(approach),
                ...)
+  fit$call$formula <- match.call()$formula
+  fit$call$data <- match.call()$data
+  return(fit)
 }
 
 #' Bernstein polynomial based proportional odds model
@@ -60,16 +63,19 @@ bpph <- function(formula, degree, data, approach = "mle", ...){
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
-bppo <- function(formula, degree, data, approach = "mle", ...){
-  spbp.default(formula = formula,
+bppo <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
+  fit <- spbp.default(formula = formula,
                degree = degree,
                data = data,
                model = "po",
-               approach = approach,
+               approach = match.arg(approach),
                ...)
+  fit$call$formula <- match.call()$formula
+  fit$call$data <- match.call()$data
+  return(fit)
 }
 
-#' Bernstein Polynomials based Accelerated Failure Time
+#' Bernstein polynomial based Accelerated Failure Time
 #'
 #' @export
 #' @description Fits the BPAFT model to time-to-event data.
@@ -95,11 +101,14 @@ bppo <- function(formula, degree, data, approach = "mle", ...){
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
-bpaft <- function(formula, degree, data, approach = "mle", ...){
-  spbp.default(formula = formula,
+bpaft <- function(formula, degree, data, approach = c("mle", "bayes"), ...){
+  fit <- spbp.default(formula =  formula,
                degree = degree,
                data = data,
                model = "aft",
-               approach = approach,
+               approach = match.arg(approach),
                ...)
+  fit$call$formula <- match.call()$formula
+  fit$call$data <- match.call()$data
+  return(fit)
 }

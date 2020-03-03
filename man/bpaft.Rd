@@ -2,9 +2,9 @@
 % Please edit documentation in R/bpfits.R
 \name{bpaft}
 \alias{bpaft}
-\title{Bernstein Polynomials based Accelerated Failure Time}
+\title{Bernstein polynomial based Accelerated Failure Time}
 \usage{
-bpaft(formula, degree, data, approach = "mle", ...)
+bpaft(formula, degree, data, approach = c("mle", "bayes"), ...)
 }
 \arguments{
 \item{formula}{a Surv object with time to event observations, right censoring status and explanatory terms.}

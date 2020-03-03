@@ -2,7 +2,7 @@
 #'
 #' Fits Bernstein Polynomial based Proportional regression to survival data.
 #'
-#' @title spbp: The BP based semiparametric survival analysis function
+#' @title spbp: The BP based survival analysis function
 #' @param formula a Surv object with time to event, status and explanatory terms.
 #' @param degree Bernstein Polynomial degree.
 #' @param tau Real valued number greater than any time observed.
@@ -33,7 +33,7 @@
 spbp <- function(formula, ...) {
   UseMethod("spbp", formula)
 }
-
+#' @title spbp: The BP based semiparametric survival analysis function
 #' @return An object of class \code{spbp}
 #' @method spbp default
 #' @export
@@ -231,7 +231,7 @@ spbp.mle <-
   gamma_std <- aux[names(aux) %in% paste0("gamma_std[", 1:degree, "]")]
 
   ## rescaled hessian matrix
-  info <- -stanfit$hessian
+  info <- - stanfit$hessian
 
   names(beta) <- colnames(X)
   names(coef) <- c(names(beta),
@@ -243,13 +243,10 @@ spbp.mle <-
   #   stop("Optimizing hesssian matrix is singular!")
 
   ## rescaled fisher info
-  jacob <- diag(c(1/std, rep( exp(((model_flag == "aft")*2-1)* sum(beta*means)), degree), q+degree), q+degree)
-  for(i in (q+1):(q+degree)){
-    for(j in 1:q){
-      jacob[i,j] <- gamma_std[i-q]*((model_flag == "aft")*2-1)*means[j]/std[j]*exp(((model_flag == "aft")*2-1)* sum(beta*means))
-    }
-  }
-  var <- jacob %*% blockSolve(info, q) %*% t(jacob)
+  jac <- diag(1/std, q)
+  var <- jac %*% blockSolve(info, q)[1:q, 1:q] %*% t(jac)
+  rownames(var) <- names(beta)
+  colnames(var) <- names(beta)
 
   if(hessian == FALSE || null == 1){
     stanfit$hessian <- matrix(rep(NA, q^2),
@@ -263,6 +260,7 @@ spbp.mle <-
                                init = init,
                                hessian = hessian,
                                ...)
+
   output <- list(coefficients = coef,
                  var = var[1:q, 1:q],
                  loglik = c(nullfit$value, stanfit$value),

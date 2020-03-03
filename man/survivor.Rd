@@ -2,12 +2,12 @@
 % Please edit documentation in R/survivor.R
 \name{survivor}
 \alias{survivor}
-\title{Survivor function calculations for Bernstein Polynomial based regression models}
+\title{A method to allow survivor estimates computation.}
 \usage{
 survivor(spbp, ...)
 }
 \description{
-A method to allow survivor estimates computation.
+Survivor function calculations for Bernstein Polynomial based regression models
 }
 \examples{
 data("veteran") ## imports veteran dataset from survival package

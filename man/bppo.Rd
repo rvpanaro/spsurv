@@ -4,7 +4,7 @@
 \alias{bppo}
 \title{Bernstein polynomial based proportional odds model}
 \usage{
-bppo(formula, degree, data, approach = "mle", ...)
+bppo(formula, degree, data, approach = c("mle", "bayes"), ...)
 }
 \arguments{
 \item{formula}{a Surv object with time-to-event observations, right censoring status and explanatory terms.}

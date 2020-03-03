@@ -2,7 +2,7 @@
 % Please edit documentation in R/spbp.R
 \name{spbp}
 \alias{spbp}
-\title{spbp: The BP based semiparametric survival analysis function}
+\title{spbp: The BP based survival analysis function}
 \usage{
 spbp(formula, ...)
 }
