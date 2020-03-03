@@ -4,7 +4,7 @@
 \alias{bpph}
 \title{Bernstein polynomial based proportional hazards model}
 \usage{
-bpph(formula, degree, data, approach = "mle", ...)
+bpph(formula, degree, data, approach = c("mle", "bayes"), ...)
 }
 \arguments{
 \item{formula}{a Surv object with time to event observations, right censoring status and explanatory terms.}

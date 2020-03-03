@@ -1,4 +1,5 @@
 setwd("~/Documents/spsurv")
+
 if(!require(roxygen2)) install.packages('roxygen2')
 if(!require(rstan)) install.packages('rstan')
 if(!require(pkgbuild)) install.packages('pkgbuild')
@@ -9,7 +10,6 @@ try(remove.packages("spsurv", lib="~/R/x86_64-pc-linux-gnu-library/3.6"),
     silent = T)
 try(roxygen2::roxygenize(clean = T), silent = T)
 
-devtools::test()
 pkgbuild::compile_dll()
 devtools::document()
 devtools::install()

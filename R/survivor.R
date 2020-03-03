@@ -1,6 +1,5 @@
 #' Survivor function calculations for Bernstein Polynomial based regression models
-#'
-#' @description A method to allow survivor estimates computation.
+#' @title A method to allow survivor estimates computation.
 #' @param spbp
 #' @examples
 #' data("veteran") ## imports veteran dataset from survival package
@@ -154,6 +153,7 @@ survivor.calc <- function(time,
 
 #' @export
 #' @method residuals spbp
+#' @title BP based models residuals.
 #' @description Residuals for a fitted \code{\link[spsurv]{spbp}} model.
 #' @param spbp an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
 #' @param type type of residuals, default is "cox-snell".
@@ -171,5 +171,5 @@ survivor.calc <- function(time,
 #'
 
 residuals.spbp <- function(spbp, type=c("cox-snell")){
-  -log(survivor(spbp))
+  return(-log(survivor(spbp)))
 }
