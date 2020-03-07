@@ -9,6 +9,8 @@
 \arguments{
 \item{spbp}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
 
+\item{pars}{parameters to be selected.}
+
 \item{...}{arguments inherent from \code{\link[rstan]{traceplot}}.}
 }
 \value{
@@ -18,8 +20,15 @@ see \code{\link[rstan]{traceplot}}.
 Traceplot of a Bayesian fit \code{\link[spsurv]{spbp}}.
 }
 \examples{
-fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+
+library("spsurv")
+data("veteran")
+
+fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+data = veteran)
+
 traceplot(fit)
+
 }
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{stan_dens.spbp}}, \code{\link[spsurv]{extract.spbp}}

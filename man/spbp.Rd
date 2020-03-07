@@ -10,35 +10,28 @@ spbp(formula, ...)
 \item{formula}{a Surv object with time to event, status and explanatory terms.}
 
 \item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
-
-\item{degree}{Bernstein Polynomial degree.}
-
-\item{tau}{Real valued number greater than any time observed.}
-
-\item{data}{a data.frame object.}
-
-\item{approach}{Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes".}
-
-\item{model}{Proportional Hazards or Proportional Odds BP based regression, default is model = "ph".}
-
-\item{priors}{Prior settings for the Bayesian approach.}
 }
 \description{
-Semiparametric survival analysis using Bernstein Polynomials
+Semiparametric survival analysis using Bernstein Polynomial
 }
 \details{
 Fits Bernstein Polynomial based Proportional regression to survival data.
 }
 \examples{
+
 library("spsurv")
 data("veteran") ## imports from survival package
 
-fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
+fit_mle <- spbp(Surv(time, status) ~ karno + factor(celltype),
+ data = veteran, model = "po")
+summary(fit_mle)
 
-print(fit)
-
-summary(fit)
+fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
+                  data = veteran, model = "po", approach = "bayes",
+                   cores = 1, iter = 1000,
+                    priors = list(beta = c("normal(0,4)"),
+                     gamma = "lognormal(0,10)"))
+summary(fit_bayes)
 
 }
 \references{

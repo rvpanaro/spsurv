@@ -6,6 +6,9 @@
 \usage{
 \method{print}{summary.bpph.mle}(...)
 }
+\arguments{
+\item{...}{further arguments passed to or from other methods}
+}
 \description{
 Bernstein Polynomial based Regression Object
 }

@@ -6,21 +6,20 @@
 #' @param degree Bernstein polynomial degree.
 #' @param data a data.frame object.
 #' @param approach Bayesian or maximum likelihood estimation methods, default is approach = "mle".
-#' @param priors Prior choice for the Bayesian analysis, see \code{\link[spsurv]{spbp}}.
+#' @param ... further arguments passed to or from other methods
 #' @return An object of class `spbp`.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bppo}} and \code{\link[spsurv]{bpaft}} for other BP based models.
 #' @examples
 #'
-#' library("KMsurv")
-#' data("larynx")
-#'
 #' library("spsurv")
-#' fit <- bpph(Surv(time, status) ~ age + factor(stage),
-#' data = larynx)
+#' data("veteran")
+#'
+#' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran)
 #'
 #' summary(fit)
 #'
-  #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
@@ -45,15 +44,14 @@ bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #' @param degree Bernstein polynomial degree.
 #' @param data a data.frame object.
 #' @param approach Bayesian or maximum likelihood estimation methods, default is approach = "mle".
-#' @param priors Prior choice for the Bayesian analysis, see \code{\link[spsurv]{spbp}}.
+#' @param ... further arguments passed to or from other methods
 #' @return An object of class `spbp`.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bpph}} and \code{\link[spsurv]{bpaft}} for other BP based models.
 #' @examples
 #'
-#' library("survival")
+#'library("spsurv")
 #' data("veteran")
 #'
-#' library("spsurv")
 #' fit <- bppo(Surv(time, status) ~ karno + celltype,
 #' data = veteran)
 #'
@@ -83,21 +81,20 @@ bppo <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #' @param degree Bernstein polynomial degree.
 #' @param data a data.frame object.
 #' @param approach Bayesian or maximum likelihood estimation methods, default is approach = "mle".
-#' @param priors Prior choice for the Bayesian analysis, see \code{\link[spsurv]{spbp}}.
+#' @param ... further arguments passed to or from other methods
 #' @return An object of class `spbp`.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bpph}} and \code{\link[spsurv]{bppo}} for other BP based models.
 #' @examples
 #'
-#' library("survival")
+#' library("spsurv")
 #' data("veteran")
 #'
-#' library("spsurv")
 #' fit <- bpaft(Surv(time, status) ~ karno + celltype,
 #' data = veteran)
 #'
 #' summary(fit)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 

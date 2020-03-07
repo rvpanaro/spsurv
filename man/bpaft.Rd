@@ -15,7 +15,7 @@ bpaft(formula, degree, data, approach = c("mle", "bayes"), ...)
 
 \item{approach}{Bayesian or maximum likelihood estimation methods, default is approach = "mle".}
 
-\item{priors}{Prior choice for the Bayesian analysis, see \code{\link[spsurv]{spbp}}.}
+\item{...}{further arguments passed to or from other methods}
 }
 \value{
 An object of class `spbp`.
@@ -25,10 +25,9 @@ Fits the BPAFT model to time-to-event data.
 }
 \examples{
 
-library("survival")
+library("spsurv")
 data("veteran")
 
-library("spsurv")
 fit <- bpaft(Surv(time, status) ~ karno + celltype,
 data = veteran)
 
@@ -36,7 +35,7 @@ summary(fit)
 
 }
 \references{
-Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 }
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bpph}} and \code{\link[spsurv]{bppo}} for other BP based models.

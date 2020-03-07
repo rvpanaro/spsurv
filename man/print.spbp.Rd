@@ -5,11 +5,20 @@
 \title{Bernstein Polynomial based Regression Object}
 \usage{
 \method{print}{spbp}(
-  spbp,
+  x,
   digits = max(getOption("digits") - 4, 3),
   signif.stars = getOption("show.signif.stars"),
   ...
 )
+}
+\arguments{
+\item{x}{an object of class spbp}
+
+\item{digits}{number of digits to display}
+
+\item{signif.stars}{see \code{\link{getOption}}}
+
+\item{...}{further arguments passed to or from other methods}
 }
 \description{
 Bernstein Polynomial based Regression Object

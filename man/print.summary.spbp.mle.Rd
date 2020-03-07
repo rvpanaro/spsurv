@@ -11,6 +11,15 @@
   ...
 )
 }
+\arguments{
+\item{x}{a summary.spbp.mle object}
+
+\item{digits}{number of digits to display.}
+
+\item{signif.stars}{see \code{\link{getOption}}}
+
+\item{...}{further arguments passed to or from other methods}
+}
 \description{
 Bernstein Polynomial based Regression Object
 }

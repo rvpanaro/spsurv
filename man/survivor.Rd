@@ -2,27 +2,21 @@
 % Please edit documentation in R/survivor.R
 \name{survivor}
 \alias{survivor}
-\title{A method to allow survivor estimates computation.}
+\title{Generic S3 method vcov}
 \usage{
 survivor(spbp, ...)
 }
-\description{
-Survivor function calculations for Bernstein Polynomial based regression models
+\arguments{
+\item{spbp}{an object of class spbp}
+
+\item{...}{further arguments passed to or from other methods}
 }
-\examples{
-data("veteran") ## imports veteran dataset from survival package
-
-library("spsurv")
-
-fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
-
-survivor(fit)
-
+\description{
+Generic S3 method vcov
 }
 \references{
-Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
+Ross, S. (2012),Simulation, Knovel Library, Elsevier Science.
 }
 \seealso{
-\code{\link[spsurv]{spbp}}, \code{\link[spsurv]{sim_surv}}
+\code{\link[spsurv]{spbp}}, \code{\link[spsurv]{itsamp}}
 }

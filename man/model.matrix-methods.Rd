@@ -4,10 +4,12 @@
 \alias{model.matrix.spbp}
 \title{Model.matrix method for fitted spbp models}
 \usage{
-\method{model.matrix}{spbp}(spbp, data = eval(spbp$call$data, envir = parent.frame()))
+\method{model.matrix}{spbp}(spbp, data = eval(spbp$call$data, envir = parent.frame()), ...)
 }
 \arguments{
-\item{object}{an object of class `spbp`, see \code{\link[spsurv]{spbp}}.}
+\item{spbp}{an object of class `spbp`, see \code{\link[spsurv]{spbp}}.}
+
+\item{data}{data.frame object.}
 
 \item{...}{arguments inherent from \code{\link[stats]{model.matrix}}.}
 }
@@ -18,8 +20,16 @@ The explanatory variables matrix.
 Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
 }
 \examples{
-fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+
+
+library("spsurv")
+data("veteran")
+
+fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+data = veteran)
+
 model.matrix(fit)
+
 }
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[stats]{model.matrix}}
