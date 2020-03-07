@@ -9,6 +9,8 @@
 \arguments{
 \item{spbp}{the result of a \code{\link[spsurv]{spbp}} fit.}
 
+\item{pars}{parameters to be selected.}
+
 \item{...}{arguments inherent from \code{\link[rstan]{stan_dens}}.}
 }
 \value{
@@ -18,8 +20,15 @@ see \code{\link[rstan]{stan_dens}}.
 Posterior density of samples from a fitted \code{\link[spsurv]{spbp}} model.
 }
 \examples{
-fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+
+library("spsurv")
+data("veteran")
+
+fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+data = veteran)
+
 stan_dens(fit)
+
 }
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{traceplot.spbp}}, \code{\link[spsurv]{extract.spbp}}

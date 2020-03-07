@@ -16,17 +16,26 @@ model.matrix <- function(spbp, ...) UseMethod("model.matrix")
 #' @export
 #' @export model.matrix
 #' @description Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
-#' @param object an object of class `spbp`, see \code{\link[spsurv]{spbp}}.
+#' @param spbp an object of class `spbp`, see \code{\link[spsurv]{spbp}}.
+#' @param data data.frame object.
 #' @param ... arguments inherent from \code{\link[stats]{model.matrix}}.
 #' @return The explanatory variables matrix.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[stats]{model.matrix}}
 #' @examples
-#' fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+#'
+#'
+#' library("spsurv")
+#' data("veteran")
+#'
+#' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran)
+#'
 #' model.matrix(fit)
+#'
 
 model.matrix.spbp <-
-  function(spbp, data = eval(spbp$call$data, envir = parent.frame())){
-    model.matrix(as.formula(spbp$call$formula), data = data)[, -1]
+  function(spbp, data = eval(spbp$call$data, envir = parent.frame()), ...){
+    model.matrix(as.formula(spbp$call$formula), data = data, ...)[, -1]
   }
 
 
@@ -49,18 +58,26 @@ traceplot <- function(spbp, ...) UseMethod("traceplot")
 #' @export traceplot
 #' @description Traceplot of a Bayesian fit \code{\link[spsurv]{spbp}}.
 #' @param spbp an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
+#' @param pars parameters to be selected.
 #' @param ... arguments inherent from \code{\link[rstan]{traceplot}}.
 #' @return see \code{\link[rstan]{traceplot}}.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{stan_dens.spbp}}, \code{\link[spsurv]{extract.spbp}}
 #' @examples
-#' fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+#'
+#' library("spsurv")
+#' data("veteran")
+#'
+#' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran)
+#'
 #' traceplot(fit)
+#'
 #' @importFrom rstan traceplot
 
 traceplot.spbp <-
   function(spbp, pars = c("beta", "gamma"), ...){
     if(spbp$call$approach == "bayes")
-      rstan:::traceplot(object = spbp$stanfit, pars = pars, ...)
+      rstan::traceplot(object = spbp$stanfit, pars = pars, ...)
     else{
       warning("not applicable, change approach to 'bayes' to get MCMC chains density plots")
     }
@@ -85,18 +102,26 @@ extract <- function(spbp, ...) UseMethod("extract")
 #' @export extract
 #' @description Extract samples from a fitted \code{\link[spsurv]{spbp}} model.
 #' @param spbp an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
+#' @param pars parameters to be selected.
 #' @param ... arguments inherent from \code{\link[rstan]{extract}}.
 #' @return see \code{\link[rstan]{extract}}.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{stan_dens.spbp}}, \code{\link[spsurv]{traceplot.spbp}}
 #' @examples
-#' fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+#'
+#' library("spsurv")
+#' data("veteran")
+#'
+#' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran)
+#'
 #' extract(fit)
+#'
 #' @importFrom rstan extract
 
 extract.spbp <-
   function(spbp, pars = c("beta", "gamma"), ...){
     if(spbp$call$approach == "bayes")
-      rstan:::extract(object = spbp$stanfit, pars = pars, ...)
+      rstan::extract(object = spbp$stanfit, pars = pars, ...)
     else{
       warning("not applicable, change approach to 'bayes' to get MCMC chains density plots")
     }
@@ -121,18 +146,26 @@ stan_dens <- function(spbp, ...) UseMethod("stan_dens")
 #' @export stan_dens
 #' @description Posterior density of samples from a fitted \code{\link[spsurv]{spbp}} model.
 #' @param spbp the result of a \code{\link[spsurv]{spbp}} fit.
+#' @param pars parameters to be selected.
 #' @param ... arguments inherent from \code{\link[rstan]{stan_dens}}.
 #' @return see \code{\link[rstan]{stan_dens}}.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{traceplot.spbp}}, \code{\link[spsurv]{extract.spbp}}
 #' @examples
-#' fit <- spbp(Surv(time, status) ~ age + sex, approach = "bayes", data = lung)
+#'
+#' library("spsurv")
+#' data("veteran")
+#'
+#' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran)
+#'
 #' stan_dens(fit)
+#'
 #' @importFrom rstan stan_dens
 #'
 stan_dens.spbp <-
   function(spbp, pars = c("beta", "gamma"), ...){
     if(spbp$call$approach == "bayes")
-      rstan:::stan_dens(object = spbp$stanfit, pars = pars, ...)
+      rstan::stan_dens(object = spbp$stanfit, pars = pars, ...)
     else{
       warning("not applicable, change approach to 'bayes' to get MCMC chains density plots")
     }

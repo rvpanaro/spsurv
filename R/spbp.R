@@ -1,30 +1,27 @@
-#' Semiparametric survival analysis using Bernstein Polynomials
+#' Semiparametric survival analysis using Bernstein Polynomial
 #'
 #' Fits Bernstein Polynomial based Proportional regression to survival data.
 #'
 #' @title spbp: The BP based survival analysis function
 #' @param formula a Surv object with time to event, status and explanatory terms.
-#' @param degree Bernstein Polynomial degree.
-#' @param tau Real valued number greater than any time observed.
-#' @param data a data.frame object.
-#' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes".
-#' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph".
-#' @param priors Prior settings for the Bayesian approach.
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
 #' @examples
+#'
 #' library("spsurv")
 #' data("veteran") ## imports from survival package
 #'
-#' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-#' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
+#' fit_mle <- spbp(Surv(time, status) ~ karno + factor(celltype),
+#'  data = veteran, model = "po")
+#' summary(fit_mle)
 #'
-#' print(fit)
-#'
-#' summary(fit)
+#' fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
+#'                   data = veteran, model = "po", approach = "bayes",
+#'                    cores = 1, iter = 1000,
+#'                     priors = list(beta = c("normal(0,4)"),
+#'                      gamma = "lognormal(0,10)"))
+#' summary(fit_bayes)
 #'
 #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
-#' @importFrom rstan stan sampling optimizing
-#' @importFrom survival Surv frailty
 #' @rdname spbp
 #' @export spbp
 #' @seealso \url{https://mc-stan.org/users/documentation/}
@@ -34,19 +31,34 @@ spbp <- function(formula, ...) {
   UseMethod("spbp", formula)
 }
 #' @title spbp: The BP based semiparametric survival analysis function
+#' @param formula a Surv object with time to event, status and explanatory terms
+#' @param degree Bernstein Polynomial degree
+#' @param data a data.frame object
+#' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"
+#' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"
+#' @param priors prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `gamma`, `inv_gamma` or `lognormal` for gamma (BP coefficients)
+#' @param scale logical; indicates whether to center and scale the data
+#' @param ... further arguments passed to or from other methods
+#' @param cores number of core threads to use
 #' @return An object of class \code{spbp}
 #' @method spbp default
 #' @export
+#' @importFrom rstan stan sampling optimizing
+#' @importFrom survival Surv frailty
+#' @importFrom MASS ginv
+#' @importFrom loo waic loo
+#' @importFrom coda  HPDinterval
+#' @importFrom stats .getXlevels as.formula contrasts dbeta density dist formula median model.extract pbeta pchisq printCoefmat qnorm rlogis rnorm rweibull sd terms
 #'
+
 spbp.default <-
   function(formula, degree, data,
             approach = c("mle", "bayes"),
             model = c("ph", "po", "aft"),
             priors = list(beta = c("normal(0,4)"),
                          gamma = "lognormal(0,10)"),
-           scale = TRUE,
+           scale = TRUE, cores =  parallel::detectCores(),
            ...){
-    cores <- parallel::detectCores() - 1
 
   # ---------------Definitions + error handling  ---------------
   ## tau degree

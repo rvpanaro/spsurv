@@ -12,8 +12,28 @@
   model = c("ph", "po", "aft"),
   priors = list(beta = c("normal(0,4)"), gamma = "lognormal(0,10)"),
   scale = TRUE,
+  cores = parallel::detectCores(),
   ...
 )
+}
+\arguments{
+\item{formula}{a Surv object with time to event, status and explanatory terms}
+
+\item{degree}{Bernstein Polynomial degree}
+
+\item{data}{a data.frame object}
+
+\item{approach}{Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"}
+
+\item{model}{Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"}
+
+\item{priors}{prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `gamma`, `inv_gamma` or `lognormal` for gamma (BP coefficients)}
+
+\item{scale}{logical; indicates whether to center and scale the data}
+
+\item{cores}{number of core threads to use}
+
+\item{...}{further arguments passed to or from other methods}
 }
 \value{
 An object of class \code{spbp}

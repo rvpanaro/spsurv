@@ -1,6 +1,10 @@
 #' Bernstein Polynomial based Regression Object
 #'
 #' @export
+#' @param x a summary.spbp.mle object
+#' @param digits number of digits to display.
+#' @param signif.stars see \code{\link{getOption}}
+#' @param ... further arguments passed to or from other methods
 #' @method print summary.spbp.mle
 #'
 

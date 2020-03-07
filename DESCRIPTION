@@ -1,12 +1,12 @@
 Package: spsurv
 Type: Package
 Title: Bernstein Polynomial based Semiparametric Survival Analysis
-Version: 1.0
+Version: 1.0.0
 Authors@R: 
     c(person(given = "Renato",
            family = "Panaro",
            role = c("aut", "cre"),
-           email = "renatovp@ufmg.br",
+           email = "renatovp@ime.usp.br",
            comment = c(ORCID = "0000-0002-1903-2091", URL= "https://rvpanaro.github.io/")),
 	person(given = "Fábio",
            family = "Demarqui",

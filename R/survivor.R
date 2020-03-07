@@ -1,34 +1,49 @@
+#---------------------------------------------
+#' Generic S3 method vcov
+#'
+#' @aliases survivor
+#' @export
+#' @param spbp an object of class spbp
+#' @param ... further arguments passed to or from other methods
+#' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{itsamp}}
+#' @references  Ross, S. (2012),Simulation, Knovel Library, Elsevier Science.
+#'
+
+survivor <- function(spbp, ...) UseMethod("survivor")
+
 #' Survivor function calculations for Bernstein Polynomial based regression models
-#' @title A method to allow survivor estimates computation.
-#' @param spbp
+#'
+#' @aliases survivor.default
+#' @rdname survivor-methods
+#' @method survivor default
+#' @export
+#' @export survivor
+#' @description Default function to allow survival estimates
+#' @param time survival times
+#' @param arg point estimates or chain values
+#' @param newdata set of features referring to a specific population
+#' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"
+#' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"
+#' @param ... further arguments passed to or from other methods
+#' @return Returns the probabilities that a subject will survive beyond any given times
+#' @export
 #' @examples
+#'
 #' data("veteran") ## imports veteran dataset from survival package
 #'
 #' library("spsurv")
-#'
 #' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-#' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
+#' data = veteran, approach =  "bayes", model = "po", chains = 1,
+#' iter = 1000, cores = 1)
 #'
-#' survivor(fit)
+#' #survivor(fit)
 #'
-#' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{sim_surv}}
-#' @export survivor
-#' @references
-#'
-#' Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-censored data using Bernstein polynomials. Computational Statistics & Data Analysis, 56(3), 559-573.
-survivor <- function(spbp, ...) {
-  UseMethod("survivor", spbp)
-}
-
-#' @return Returns the probabilities that a subject will survive beyond any given times.
-#' @method survivor default
-#' @export
 
 survivor.default <- function(time,
                              arg = list(beta = NULL, gamma = NULL),
                              newdata,
                              model = c("ph", "po", "aft"),
-                             approach = c("mle", "bayes")){
+                             approach = c("mle", "bayes"), ...){
   e <- parent.frame()
   assign("design", get("design", envir = e))
 
@@ -45,11 +60,18 @@ survivor.default <- function(time,
   return(res)
 }
 
-#' @return Returns the probabilities that a subject will survive beyond any given times.
+#' @aliases survivor.spbp
+#' @rdname survivor-methods
 #' @method survivor spbp
 #' @export
+#' @export survivor
+#' @description A method to allow survivor estimates for a spbp fit
+#' @param spbp an object of the class spbp
+#' @param newdata set of features referring to a specific population
+#' @return Returns the probabilities that a subject will survive beyond any given times
+#' @export
 
-survivor.spbp <- function(spbp, newdata){
+survivor.spbp <- function(spbp, newdata, ...){
   design <- model.matrix(spbp)
   if(missing(newdata)){
     newdata <- data.frame(t(matrix(colMeans(design))))
@@ -150,26 +172,25 @@ survivor.calc <- function(time,
   return(exp(-H))
 }
 
-
 #' @export
 #' @method residuals spbp
 #' @title BP based models residuals.
 #' @description Residuals for a fitted \code{\link[spsurv]{spbp}} model.
-#' @param spbp an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
-#' @param type type of residuals, default is "cox-snell".
+#' @param object an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
+#' @param type type of residuals, default is "cox-snell"
+#' @param ... further arguments passed to or from other methods
 #' @seealso \code{\link[spsurv]{spbp}}.
 #' @examples
 #'
-#' data("veteran") ## imports veteran dataset from survival package
-#'
 #' library("spsurv")
+#' data("veteran")
 #'
-#' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-#' data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
+#' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+#' data = veteran)
 #'
 #' residuals(fit)
 #'
 
-residuals.spbp <- function(spbp, type=c("cox-snell")){
-  return(-log(survivor(spbp)))
+residuals.spbp <- function(object, type=c("cox-snell"), ...){
+  return(-log(survivor(object)))
 }

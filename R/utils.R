@@ -100,7 +100,6 @@ confint.spbp <- function(spbp, level=0.95, ...){
 #' @param time a vector of times.
 #' @param degree Bernstein polynomial degree
 #' @param tau must be greater than times maximum value observed.
-#' @param data a data.frame with variables named in the formula.
 #' @return A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.
 
 bp.basis <- function(time, degree,  tau = max(time)){

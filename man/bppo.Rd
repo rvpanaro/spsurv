@@ -15,7 +15,7 @@ bppo(formula, degree, data, approach = c("mle", "bayes"), ...)
 
 \item{approach}{Bayesian or maximum likelihood estimation methods, default is approach = "mle".}
 
-\item{priors}{Prior choice for the Bayesian analysis, see \code{\link[spsurv]{spbp}}.}
+\item{...}{further arguments passed to or from other methods}
 }
 \value{
 An object of class `spbp`.
@@ -25,10 +25,9 @@ Fits the BPPO model to time-to-event data.
 }
 \examples{
 
-library("survival")
+library("spsurv")
 data("veteran")
 
-library("spsurv")
 fit <- bppo(Surv(time, status) ~ karno + celltype,
 data = veteran)
 

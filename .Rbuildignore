@@ -1,2 +1,11 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.travis\.yml$
+^cran-comments\.md$
+^inst/script_development\.R$
+^revdep$
+^script_development\.R$
+^_config\.yml$
+^script$
+^inst/dev\.R$
+^CRAN-RELEASE$

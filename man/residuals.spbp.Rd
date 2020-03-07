@@ -4,24 +4,25 @@
 \alias{residuals.spbp}
 \title{BP based models residuals.}
 \usage{
-\method{residuals}{spbp}(spbp, type = c("cox-snell"))
+\method{residuals}{spbp}(object, type = c("cox-snell"), ...)
 }
 \arguments{
-\item{spbp}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
+\item{object}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
 
-\item{type}{type of residuals, default is "cox-snell".}
+\item{type}{type of residuals, default is "cox-snell"}
+
+\item{...}{further arguments passed to or from other methods}
 }
 \description{
 Residuals for a fitted \code{\link[spsurv]{spbp}} model.
 }
 \examples{
 
-data("veteran") ## imports veteran dataset from survival package
-
 library("spsurv")
+data("veteran")
 
-fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-data = veteran, approach =  "bayes", model = "po", chains = 1, iter = 1000)
+fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
+data = veteran)
 
 residuals(fit)
 

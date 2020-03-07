@@ -12,8 +12,6 @@ bp.basis(time, degree, tau = max(time))
 \item{degree}{Bernstein polynomial degree}
 
 \item{tau}{must be greater than times maximum value observed.}
-
-\item{data}{a data.frame with variables named in the formula.}
 }
 \value{
 A list containing matrices b and B corresponding BP basis and corresponding tau value used to compute them.

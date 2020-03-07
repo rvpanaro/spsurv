@@ -1,11 +1,14 @@
 #' Bernstein Polynomial based Regression Object
 #'
 #' @export
+#' @param x a summary.spbp.bayes object
+#' @param digits number of digits to display.
+#' @param ... further arguments passed to or from other methods
 #' @method print summary.spbp.bayes
 #'
 
 print.summary.spbp.bayes <- ## summary printings
-  function(x, digits = max(getOption('digits')-4, 3)){
+  function(x, digits = max(getOption('digits')-4, 3), ...){
     if (!is.null(x$call)) {
       cat("\n")
       cat("Call:\n")
