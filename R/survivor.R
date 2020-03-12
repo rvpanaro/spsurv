@@ -9,63 +9,15 @@
 #' @references  Ross, S. (2012),Simulation, Knovel Library, Elsevier Science.
 #'
 
+#' Spbp Object Observed Survival
 survivor <- function(spbp, ...) UseMethod("survivor")
-
-#' Survivor function calculations for Bernstein Polynomial based regression models
-#'
-#' @aliases survivor.default
-#' @rdname survivor-methods
-#' @method survivor default
-#' @export
-#' @export survivor
-#' @description Default function to allow survival estimates
-#' @param time survival times
-#' @param arg point estimates or chain values
-#' @param newdata set of features referring to a specific population
-#' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"
-#' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"
-#' @param ... further arguments passed to or from other methods
-#' @return Returns the probabilities that a subject will survive beyond any given times
-#' @export
-#' @examples
-#'
-#' data("veteran") ## imports veteran dataset from survival package
-#'
-#' library("spsurv")
-#' fit <- spbp(Surv(time, status) ~ karno + factor(celltype),
-#' data = veteran, approach =  "bayes", model = "po", chains = 1,
-#' iter = 1000, cores = 1)
-#'
-#' #survivor(fit)
-#'
-
-survivor.default <- function(time,
-                             arg = list(beta = NULL, gamma = NULL),
-                             newdata,
-                             model = c("ph", "po", "aft"),
-                             approach = c("mle", "bayes"), ...){
-  e <- parent.frame()
-  assign("design", get("design", envir = e))
-
-  if(nrow(newdata)>1){
-    res <- apply(newdata, 1, survivor.calc,
-                 time = time, arg = arg,
-                 model = model, approach = approach)
-  }
-  else{
-    res <- survivor.calc(time = time, arg = arg,
-                         newdata = as.numeric(newdata), model = model,
-                         approach = approach)
-  }
-  return(res)
-}
 
 #' @aliases survivor.spbp
 #' @rdname survivor-methods
+#' @description A method to allow survivor estimates for a spbp fit
 #' @method survivor spbp
 #' @export
 #' @export survivor
-#' @description A method to allow survivor estimates for a spbp fit
 #' @param spbp an object of the class spbp
 #' @param newdata set of features referring to a specific population
 #' @return Returns the probabilities that a subject will survive beyond any given times
@@ -91,7 +43,7 @@ survivor.spbp <- function(spbp, newdata, ...){
 
     s <- matrix(NA, ncol = length(spbp$y[,1]), nrow = iter)
     for(i in 1:iter){
-      s[i, ] <- survivor.default(time = spbp$y[,1],
+      s[i, ] <- survivor.aux(time = spbp$y[,1],
                                  arg = list(beta = beta[i,],
                                             gamma = gamma[i,]),
                                  newdata = matrix(newdata, nrow = 1),
@@ -106,7 +58,7 @@ survivor.spbp <- function(spbp, newdata, ...){
     gamma <- spbp$coefficients[(spbp$q+1):length(spbp$coefficients)]
     ####
 
-    s <- survivor.default(time = spbp$y[,1],
+    s <- survivor.aux(time = spbp$y[,1],
                           arg = list(beta = beta,
                                      gamma = gamma),
                           newdata = newdata,
@@ -115,6 +67,28 @@ survivor.spbp <- function(spbp, newdata, ...){
   }
   return(s)
 }
+
+survivor.aux <- function(time,
+                         arg = list(beta = NULL, gamma = NULL),
+                         newdata,
+                         model = c("ph", "po", "aft"),
+                         approach = c("mle", "bayes"), ...){
+  e <- parent.frame()
+  assign("design", get("design", envir = e))
+
+  if(nrow(newdata)>1){
+    res <- apply(newdata, 1, survivor.calc,
+                 time = time, arg = arg,
+                 model = model, approach = approach)
+  }
+  else{
+    res <- survivor.calc(time = time, arg = arg,
+                         newdata = as.numeric(newdata), model = model,
+                         approach = approach)
+  }
+  return(res)
+}
+
 
 survivor.calc <- function(time,
                           arg = list(beta = NULL, gamma = NULL),

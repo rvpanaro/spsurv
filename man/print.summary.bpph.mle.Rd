@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.summary.bpph.mle.R
 \name{print.summary.bpph.mle}
 \alias{print.summary.bpph.mle}
-\title{Bernstein Polynomial based Regression Object}
+\title{Bernstein Polynomial Based Regression Object Summary BPPH MLE}
 \usage{
 \method{print}{summary.bpph.mle}(...)
 }
@@ -10,5 +10,5 @@
 \item{...}{further arguments passed to or from other methods}
 }
 \description{
-Bernstein Polynomial based Regression Object
+Bernstein Polynomial Based Regression Object Summary BPPH MLE
 }

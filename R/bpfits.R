@@ -1,4 +1,4 @@
-#' Bernstein polynomial based proportional hazards model
+#' Bernstein Polynomial Based Proportional Hazards Model
 #'
 #' @export
 #' @description Fits the BPPH model to time-to-event data.
@@ -36,7 +36,7 @@ bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
   return(fit)
 }
 
-#' Bernstein polynomial based proportional odds model
+#' Bernstein Polynomial Based Proportional Odds Model
 #'
 #' @export
 #' @description Fits the BPPO model to time-to-event data.
@@ -57,7 +57,7 @@ bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #'
 #' summary(fit)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
+#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
@@ -73,7 +73,7 @@ bppo <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
   return(fit)
 }
 
-#' Bernstein polynomial based Accelerated Failure Time
+#' Bernstein Polynomial Based Accelerated Failure Time Model
 #'
 #' @export
 #' @description Fits the BPAFT model to time-to-event data.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.spbp.R
 \name{print.spbp}
 \alias{print.spbp}
-\title{Bernstein Polynomial based Regression Object}
+\title{Bernstein Polynomial Based Regression Object Print}
 \usage{
 \method{print}{spbp}(
   x,
@@ -21,5 +21,5 @@
 \item{...}{further arguments passed to or from other methods}
 }
 \description{
-Bernstein Polynomial based Regression Object
+Bernstein Polynomial Based Regression Object Print
 }

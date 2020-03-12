@@ -2,7 +2,7 @@
 % Please edit documentation in R/bpfits.R
 \name{bpph}
 \alias{bpph}
-\title{Bernstein polynomial based proportional hazards model}
+\title{Bernstein Polynomial Based Proportional Hazards Model}
 \usage{
 bpph(formula, degree, data, approach = c("mle", "bayes"), ...)
 }

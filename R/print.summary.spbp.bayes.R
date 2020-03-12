@@ -1,4 +1,4 @@
-#' Bernstein Polynomial based Regression Object
+#' Bernstein Polynomial Based Regression Object Summary Bayes
 #'
 #' @export
 #' @param x a summary.spbp.bayes object

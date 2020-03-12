@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.summary.spbp.bayes.R
 \name{print.summary.spbp.bayes}
 \alias{print.summary.spbp.bayes}
-\title{Bernstein Polynomial based Regression Object}
+\title{Bernstein Polynomial Based Regression Object Summary Bayes}
 \usage{
 \method{print}{summary.spbp.bayes}(x, digits = max(getOption("digits") - 4, 3), ...)
 }
@@ -14,5 +14,5 @@
 \item{...}{further arguments passed to or from other methods}
 }
 \description{
-Bernstein Polynomial based Regression Object
+Bernstein Polynomial Based Regression Object Summary Bayes
 }

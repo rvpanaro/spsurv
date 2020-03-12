@@ -1,4 +1,4 @@
-#' Inverse transform sampling to generate time-to-event data from parametric models
+#' Inverse Transform Sampling To Generate Time-to-event Data From Parametric Models
 #'
 #' @export
 #' @description Random survival times generation for the weibull or

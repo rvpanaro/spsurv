@@ -21,7 +21,7 @@
 #' @import Rcpp
 #' @import survival
 #' @importFrom rstan stan sampling optimizing
-#' @author Renato Valladares Panaro (\url{renatovp@id.uff.br}).
+#' @author Renato Valladares Panaro (renatovp@ime.usp.br).
 #' @references
 #'
 #' Demarqui, F. N., & Mayrink, V. D. (2019). A fully likelihood-based approach to model survival data with crossing survival curves. arXiv preprint arXiv:1910.02406.
@@ -34,3 +34,14 @@
 #'
 #'
 NULL
+
+## quiets concerns of R CMD check re: the .'s that appear in pipelines
+if(getRversion() >= "2.15.1")  utils::globalVariables(c("Call", "Terms", "X", "Y",
+                                                         "approach", "approach_flag",
+                                                         "aux", "cores", "data.n", "degree",
+                                                         "features", "frailty_idx",
+                                                         "mf", "model_flag", "null",
+                                                         "priorpars", "priors",
+                                                         "stanArgs", "status", "std",
+                                                         "tau", "temp", "type",
+                                                         "xlevels"))

@@ -1,10 +1,11 @@
-#' Semiparametric survival analysis using Bernstein Polynomial
+#' Semiparametric Survival Analysis Using Bernstein Polynomial
 #'
 #' Fits Bernstein Polynomial based Proportional regression to survival data.
 #'
-#' @title spbp: The BP based survival analysis function
+#' @title spbp: The BP Based Survival Analysis Function
 #' @param formula a Surv object with time to event, status and explanatory terms.
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
+#' @seealso \code{\link[spsurv]{spbp.default}}
 #' @examples
 #'
 #' library("spsurv")
@@ -16,9 +17,10 @@
 #'
 #' fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
 #'                   data = veteran, model = "po", approach = "bayes",
-#'                    cores = 1, iter = 1000,
+#'                    cores = 1, iter = 300, chains = 1,
 #'                     priors = list(beta = c("normal(0,4)"),
-#'                      gamma = "lognormal(0,10)"))
+#'                      gamma = "lognormal(0,4)"))
+#'
 #' summary(fit_bayes)
 #'
 #' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
@@ -30,7 +32,7 @@
 spbp <- function(formula, ...) {
   UseMethod("spbp", formula)
 }
-#' @title spbp: The BP based semiparametric survival analysis function
+#' @title spbp: The BP Based Semiparametric Survival Analysis Function
 #' @param formula a Surv object with time to event, status and explanatory terms
 #' @param degree Bernstein Polynomial degree
 #' @param data a data.frame object

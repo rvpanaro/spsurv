@@ -2,7 +2,7 @@
 % Please edit documentation in R/spbp.R
 \name{spbp}
 \alias{spbp}
-\title{spbp: The BP based survival analysis function}
+\title{spbp: The BP Based Survival Analysis Function}
 \usage{
 spbp(formula, ...)
 }
@@ -12,7 +12,7 @@ spbp(formula, ...)
 \item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
 }
 \description{
-Semiparametric survival analysis using Bernstein Polynomial
+Semiparametric Survival Analysis Using Bernstein Polynomial
 }
 \details{
 Fits Bernstein Polynomial based Proportional regression to survival data.
@@ -28,9 +28,10 @@ summary(fit_mle)
 
 fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
                   data = veteran, model = "po", approach = "bayes",
-                   cores = 1, iter = 1000,
+                   cores = 1, iter = 300, chains = 1,
                     priors = list(beta = c("normal(0,4)"),
-                     gamma = "lognormal(0,10)"))
+                     gamma = "lognormal(0,4)"))
+
 summary(fit_bayes)
 
 }
@@ -38,5 +39,7 @@ summary(fit_bayes)
 Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 }
 \seealso{
+\code{\link[spsurv]{spbp.default}}
+
 \url{https://mc-stan.org/users/documentation/}
 }
