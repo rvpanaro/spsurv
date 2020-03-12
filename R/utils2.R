@@ -1,26 +1,14 @@
-#---------------------------------------------
-#' Generic S3 method model.matrix
-#' @aliases model.matrix
-#' @export
-#' @param spbp a fitted model object
-#' @param ... further arguments passed to or from other methods.
-#' @return the matrix of explanatory variables of a data set.
-#'
-model.matrix <- function(spbp, ...) UseMethod("model.matrix")
-
 #' Model.matrix method for fitted spbp models
 #'
-#' @aliases model.matrix.spbp
-#' @rdname model.matrix-methods
-#' @method model.matrix spbp
 #' @export
-#' @export model.matrix
+#' @param object an object of class `spbp`, see \code{\link[spsurv]{spbp}}.
+#' @method model.matrix spbp
 #' @description Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
-#' @param spbp an object of class `spbp`, see \code{\link[spsurv]{spbp}}.
 #' @param data data.frame object.
 #' @param ... arguments inherent from \code{\link[stats]{model.matrix}}.
 #' @return The explanatory variables matrix.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[stats]{model.matrix}}
+#' @importFrom stats model.matrix
 #' @examples
 #'
 #'
@@ -34,10 +22,9 @@ model.matrix <- function(spbp, ...) UseMethod("model.matrix")
 #'
 
 model.matrix.spbp <-
-  function(spbp, data = eval(spbp$call$data, envir = parent.frame()), ...){
-    model.matrix(as.formula(spbp$call$formula), data = data, ...)[, -1]
+  function(object, data = eval(object$call$data, envir = parent.frame()), ...){
+    model.matrix(as.formula(object$call$formula), data = data, ...)[, -1]
   }
-
 
 #---------------------------------------------
 #' Generic S3 method traceplot

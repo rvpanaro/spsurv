@@ -2,7 +2,7 @@
 % Please edit documentation in R/bpfits.R
 \name{bpaft}
 \alias{bpaft}
-\title{Bernstein polynomial based Accelerated Failure Time}
+\title{Bernstein Polynomial Based Accelerated Failure Time Model}
 \usage{
 bpaft(formula, degree, data, approach = c("mle", "bayes"), ...)
 }

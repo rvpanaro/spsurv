@@ -1,4 +1,4 @@
-#' Bernstein Polynomial based Regression Object
+#' Bernstein Polynomial Based Regression Object BPPO MLE
 #'
 #' @export
 #' @param ... further arguments passed to or from other methods

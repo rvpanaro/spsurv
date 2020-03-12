@@ -4,10 +4,14 @@
 \alias{model.matrix.spbp}
 \title{Model.matrix method for fitted spbp models}
 \usage{
-\method{model.matrix}{spbp}(spbp, data = eval(spbp$call$data, envir = parent.frame()), ...)
+\method{model.matrix}{spbp}(
+  object,
+  data = eval(object$call$data, envir = parent.frame()),
+  ...
+)
 }
 \arguments{
-\item{spbp}{an object of class `spbp`, see \code{\link[spsurv]{spbp}}.}
+\item{object}{an object of class `spbp`, see \code{\link[spsurv]{spbp}}.}
 
 \item{data}{data.frame object.}
 

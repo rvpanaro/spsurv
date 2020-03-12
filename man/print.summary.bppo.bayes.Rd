@@ -2,7 +2,7 @@
 % Please edit documentation in R/print.summary.bppo.bayes.R
 \name{print.summary.bppo.bayes}
 \alias{print.summary.bppo.bayes}
-\title{Bernstein Polynomial based Regression Object}
+\title{Bernstein Polynomial Based Regression Object Summary BPPO Bayes}
 \usage{
 \method{print}{summary.bppo.bayes}(...)
 }
@@ -10,5 +10,5 @@
 \item{...}{further arguments passed to or from other methods}
 }
 \description{
-Bernstein Polynomial based Regression Object
+Bernstein Polynomial Based Regression Object Summary BPPO Bayes
 }

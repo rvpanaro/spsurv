@@ -2,7 +2,7 @@
 % Please edit documentation in R/summary.spbp.R
 \name{summary.spbp}
 \alias{summary.spbp}
-\title{Bernstein Polynomial based Regression Object}
+\title{Bernstein Polynomial Based Regression Object Summary}
 \usage{
 \method{summary}{spbp}(object, interval = 0.95, ...)
 }
@@ -14,5 +14,5 @@
 \item{...}{further arguments passed to or from other methods}
 }
 \description{
-Bernstein Polynomial based Regression Object
+Bernstein Polynomial Based Regression Object Summary
 }

@@ -29,5 +29,5 @@ Osman, M., & Ghosh, S. K. (2012). Nonparametric regression models for right-cens
 Lorentz, G. G. (1953). Bernstein polynomials. American Mathematical Society.
 }
 \author{
-Renato Valladares Panaro (\url{renatovp@id.uff.br}).
+Renato Valladares Panaro (renatovp@ime.usp.br).
 }

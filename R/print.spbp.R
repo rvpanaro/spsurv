@@ -1,4 +1,4 @@
-#' Bernstein Polynomial based Regression Object
+#' Bernstein Polynomial Based Regression Object Print
 #'
 #' @export
 #' @param x an object of class spbp

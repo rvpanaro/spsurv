@@ -1,6 +1,7 @@
 ## --------------- Degree error handling ---------------
 handler1 <- function(){
   e <- parent.frame()
+
   #variable names in parent frame
 
   vnames <- objects(, envir = e)

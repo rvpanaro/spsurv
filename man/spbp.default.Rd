@@ -2,7 +2,7 @@
 % Please edit documentation in R/spbp.R
 \name{spbp.default}
 \alias{spbp.default}
-\title{spbp: The BP based semiparametric survival analysis function}
+\title{spbp: The BP Based Semiparametric Survival Analysis Function}
 \usage{
 \method{spbp}{default}(
   formula,
@@ -39,5 +39,5 @@
 An object of class \code{spbp}
 }
 \description{
-spbp: The BP based semiparametric survival analysis function
+spbp: The BP Based Semiparametric Survival Analysis Function
 }

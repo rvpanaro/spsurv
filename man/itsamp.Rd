@@ -2,7 +2,7 @@
 % Please edit documentation in R/itsamp.R
 \name{itsamp}
 \alias{itsamp}
-\title{Inverse transform sampling to generate time-to-event data from parametric models}
+\title{Inverse Transform Sampling To Generate Time-to-event Data From Parametric Models}
 \usage{
 itsamp(
   n,

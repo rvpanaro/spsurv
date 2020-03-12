@@ -16,6 +16,8 @@ Generic S3 method vcov
 }
 \references{
 Ross, S. (2012),Simulation, Knovel Library, Elsevier Science.
+
+Spbp Object Observed Survival
 }
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{itsamp}}
