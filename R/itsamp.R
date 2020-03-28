@@ -16,7 +16,7 @@
 #'
 #' @details sim_surv returns weibull (log-logistic) randomly
 #' generated survival times. According to Collett (2003), the
-#' accelerated failure time model emcompasses a wide variety of parametric
+#' accelerated failure time model encompasses a wide variety of parametric
 #' models, including weibull and log-logistic models.
 #'
 #' @return data.frame of `ncol(x) +2` columns in which the
@@ -37,10 +37,6 @@
 #'   features = x, model = 'ph', dist = 'weibull')
 #'
 #' @seealso \code{\link[spsurv]{spbp}}
-#' @references
-#' Collett, D. (2015). Modelling survival data in medical research. Chapman and Hall/CRC.
-#'
-#'  Klein, J. P., & Moeschberger, M. L. (2006). Survival analysis: techniques for censored and truncated data. Springer Science & Business Media.
 
 itsamp <- function(n,
   beta = c(2, -1),

@@ -5,6 +5,9 @@
 \alias{spsurv-package}
 \alias{spsurv}
 \title{The 'spsurv' package.}
+\value{
+none
+}
 \description{
 A set of flexible routines to allow semiparametric
 survival regression modeling based on Bernstein polynomial, including Bernstein based proportinal hazards model (BPPH), Bernstein polynomial based proportional odds model (BPPO) and
@@ -20,6 +23,8 @@ to estimate the baseline functions. Even so, this is said to be semi-parametric 
 does not rely on any distribution. Unlike the Cox model, the BP based models provide smooth hazard and survival curve estimates.
 }
 \references{
+Panaro R.V. (2020). spsurv: An R package for semi-parametric survival analysis. arXiv preprint arXiv:2003.10548.
+
 Demarqui, F. N., & Mayrink, V. D. (2019). A fully likelihood-based approach to model survival data with crossing survival curves. arXiv preprint arXiv:1910.02406.
 
 Demarqui, F. N., Mayrink, V. D., & Ghosh, S. K. (2019). An Unified Semiparametric Approach to Model Lifetime Data with Crossing Survival Curves. arXiv preprint arXiv:1910.04475.

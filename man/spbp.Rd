@@ -11,6 +11,9 @@ spbp(formula, ...)
 
 \item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
 }
+\value{
+An object of class 'spbp'.
+}
 \description{
 Semiparametric Survival Analysis Using Bernstein Polynomial
 }
@@ -35,11 +38,8 @@ fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
 summary(fit_bayes)
 
 }
-\references{
-Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
-}
 \seealso{
 \code{\link[spsurv]{spbp.default}}
 
-\url{https://mc-stan.org/users/documentation/}
+\code{\link[spsurv]{spbp.default}},  \code{\link[spsurv]{bpph}},  \code{\link[spsurv]{bppo}}, \code{\link[spsurv]{bpaft}}, \url{https://mc-stan.org/users/documentation/}
 }

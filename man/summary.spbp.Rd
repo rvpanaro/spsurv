@@ -13,6 +13,9 @@
 
 \item{...}{further arguments passed to or from other methods}
 }
+\value{
+An object of class analogous to for e.g. 'summary.bppo.bayes'.
+}
 \description{
 Bernstein Polynomial Based Regression Object Summary
 }

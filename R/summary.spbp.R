@@ -5,6 +5,8 @@
 #' @param interval interval coverage (confidence or credibility)
 #' @param ... further arguments passed to or from other methods
 #' @method summary spbp
+#' @return An object of class analogous to for e.g. 'summary.bppo.bayes'.
+
 
 summary.spbp <- function(object, interval = 0.95, ...){
     ## mle approach

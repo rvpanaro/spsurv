@@ -9,6 +9,9 @@
 \arguments{
 \item{...}{further arguments passed to or from other methods}
 }
+\value{
+none
+}
 \description{
 Bernstein Polynomial Based Regression Object Summary BPPH Bayes
 }

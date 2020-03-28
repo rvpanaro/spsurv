@@ -6,6 +6,8 @@
 #' @param signif.stars see \code{\link{getOption}}
 #' @param ... further arguments passed to or from other methods
 #' @method print spbp
+#' @return none
+
 
 print.spbp <-
   function(x, digits = max(getOption('digits')-4, 3),

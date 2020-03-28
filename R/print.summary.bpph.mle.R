@@ -3,7 +3,7 @@
 #' @export
 #' @param ... further arguments passed to or from other methods
 #' @method print summary.bpph.mle
-#'
+#' @return none
 
 print.summary.bpph.mle <-
   function(...){
