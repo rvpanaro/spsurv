@@ -23,11 +23,10 @@
 #'
 #' summary(fit_bayes)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censoreddata using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @rdname spbp
 #' @export spbp
-#' @seealso \url{https://mc-stan.org/users/documentation/}
-#'
+#' @seealso  \code{\link[spsurv]{spbp.default}},  \code{\link[spsurv]{bpph}},  \code{\link[spsurv]{bppo}}, \code{\link[spsurv]{bpaft}}, \url{https://mc-stan.org/users/documentation/}
+#' @return An object of class 'spbp'.
 
 spbp <- function(formula, ...) {
   UseMethod("spbp", formula)

@@ -11,6 +11,10 @@ Duration: 3m 48.4s
   Compilation used the following non-portable flag(s):
     ‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’
 
+* checking compiled code ... OK
+   WARNING
+  ‘qpdf’ is needed for checks on size reduction of PDFs
+
 * checking installed package size ... NOTE
     installed size is 77.7Mb
     sub-directories of 1Mb or more:
@@ -19,4 +23,4 @@ Duration: 3m 48.4s
 * checking for GNU extensions in Makefiles ... NOTE
   GNU make is a SystemRequirements.
 
-0 errors ✓ | 1 warning x | 2 notes x
+0 errors ✓ | 2 warnings x | 2 notes x

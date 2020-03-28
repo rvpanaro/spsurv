@@ -6,8 +6,7 @@
 #' @param spbp an object of class spbp
 #' @param ... further arguments passed to or from other methods
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{itsamp}}
-#' @references  Ross, S. (2012),Simulation, Knovel Library, Elsevier Science.
-#'
+#' @return estimates survival for each dataset individual (line).
 
 #' Spbp Object Observed Survival
 survivor <- function(spbp, ...) UseMethod("survivor")
@@ -29,43 +28,54 @@ survivor.spbp <- function(spbp, newdata, ...){
     newdata <- data.frame(t(matrix(colMeans(design))))
     colnames(newdata) <- colnames(design)
   }
-  if(!is.data.frame(newdata))
-    stop("newdata is not a data.frame object")
-
-  if(spbp$call$approach == "bayes"){
-
-    beta <- rstan::extract(spbp$stanfit, pars = "beta")$beta
-    if(ncol(newdata) != ncol(beta))
-      stop("cols must match with `model.matrix(spbp)`")
-    gamma <- rstan::extract(spbp$stanfit, pars = "gamma")$gamma
-    iter <- nrow(beta)
-    ####
-
-    s <- matrix(NA, ncol = length(spbp$y[,1]), nrow = iter)
-    for(i in 1:iter){
-      s[i, ] <- survivor.aux(time = spbp$y[,1],
-                                 arg = list(beta = beta[i,],
-                                            gamma = gamma[i,]),
-                                 newdata = matrix(newdata, nrow = 1),
-                                 model = spbp$call$model,
-                                 approach = spbp$call$approach)
-    }
-  }
   else{
-    beta <- spbp$coefficients[1:spbp$q]
-    if(ncol(newdata) != length(beta))
-      stop("cols must match with `model.matrix(spbp)`")
-    gamma <- spbp$coefficients[(spbp$q+1):length(spbp$coefficients)]
-    ####
-
-    s <- survivor.aux(time = spbp$y[,1],
-                          arg = list(beta = beta,
-                                     gamma = gamma),
-                          newdata = newdata,
-                          model = spbp$call$model,
-                          approach = spbp$call$approach)
+    if(!is.data.frame(newdata))
+      stop("newdata is not a data.frame object")
+    newdata <- model.matrix(as.formula(paste("~", as.character(spbp$call$formula)[3])),
+                            data =  newdata)[, -1]
   }
-  return(s)
+  res <- list()
+  for(N in 1:nrow(newdata)){
+
+    if(spbp$call$approach == "bayes"){
+
+      beta <- rstan::extract(spbp$stanfit, pars = "beta")$beta
+      if(ncol(newdata) != ncol(beta))
+        stop("cols must match with `model.matrix(spbp)`")
+      gamma <- rstan::extract(spbp$stanfit, pars = "gamma")$gamma
+      iter <- nrow(beta)
+      ####
+
+      s <- matrix(NA, ncol = length(spbp$y[,1]), nrow = iter)
+      for(i in 1:iter){
+        s[i, ] <- survivor.aux(time = spbp$y[,1],
+                                   arg = list(beta = beta[i,],
+                                              gamma = gamma[i,]),
+                                   newdata = matrix(newdata[N,], nrow = 1),
+                                   model = spbp$call$model,
+                                   approach = spbp$call$approach)
+      }
+      s <- colMeans(s)
+    }
+    else{
+      beta <- spbp$coefficients[1:spbp$q]
+      if(ncol(newdata) != length(beta))
+        stop("cols must match with `model.matrix(spbp)`")
+      gamma <- spbp$coefficients[(spbp$q+1):length(spbp$coefficients)]
+      ####
+
+      s <- survivor.aux(time = spbp$y[,1],
+                            arg = list(beta = beta,
+                                       gamma = gamma),
+                            newdata = newdata[N,],
+                            model = spbp$call$model,
+                            approach = spbp$call$approach)
+      }
+    res[[N]] <- s
+  }
+  res <- cbind(sort(spbp$y[,1]), do.call(cbind, res))
+  colnames(res) <- c("time", paste0("survival", 1:(ncol(res)-1)))
+  return(data.frame(res))
 }
 
 survivor.aux <- function(time,

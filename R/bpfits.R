@@ -19,7 +19,6 @@
 #'
 #' summary(fit)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
@@ -57,7 +56,6 @@ bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #'
 #' summary(fit)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
@@ -94,7 +92,6 @@ bppo <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #'
 #' summary(fit)
 #'
-#' @references Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 

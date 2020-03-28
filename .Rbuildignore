@@ -9,3 +9,4 @@
 ^script$
 ^inst/dev\.R$
 ^CRAN-RELEASE$
+^inst/load\.R$

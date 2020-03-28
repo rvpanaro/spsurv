@@ -6,7 +6,7 @@
 #' @param signif.stars see \code{\link{getOption}}
 #' @param ... further arguments passed to or from other methods
 #' @method print summary.spbp.mle
-#'
+#' @return none
 
 print.summary.spbp.mle <- ## summary printings
   function(x, digits = max(getOption('digits')-4, 3),

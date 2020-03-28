@@ -19,7 +19,7 @@ Authors@R:
            email = "vdinizm@gmail.com",
            comment = c(ORCID = "0000-0002-5683-8326")))
 Maintainer: Renato Panaro <renatovp@ime.usp.br>
-Description: "A set of reliable routines to ease semiparametric survival regression modeling based on Bernstein Polynomials. 'spsurv' includes Proportional Hazards, Proportional Odds and Accelerated Failure Time frameworks for right censored data."
+Description: A set of reliable routines to ease semiparametric survival regression modeling based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
 License: GPL-3
 Biarch: true
 Depends: 
@@ -43,9 +43,11 @@ Suggests:
     knitr,
     devtools,
     roxygen2,
-    testthat
+    testthat,
+    KMsurv
 Encoding: UTF-8
 LazyData: true
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
+VignetteBuilder: knitr
 RoxygenNote: 7.0.2

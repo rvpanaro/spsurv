@@ -34,9 +34,6 @@ data = veteran)
 summary(fit)
 
 }
-\references{
-Osman, M. and Ghosh, S. K. (2012), “Nonparametric regression models for right-censored data using Bernstein polynomials,”Computational Statistics & Data Analysis, 56, 559–573.
-}
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bpph}} and \code{\link[spsurv]{bppo}} for other BP based models.
 }
