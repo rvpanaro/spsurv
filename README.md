@@ -1,6 +1,8 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
+[![CRAN RStudio mirror
+downloads](http://cranlogs.r-pkg.org/badges/spsurv)](http://www.r-pkg.org/pkg/spsurv)
 [![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv?branch=master)
 
 # spsurv
