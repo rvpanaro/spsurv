@@ -27,7 +27,9 @@ devtools::test()
 # devtools::reload()
 t1 <- Sys.time(); devtools::run_examples();
 t2 <- Sys.time(); t2-t1
+
 devtools::build_manual()
+covr::codecov(token = "5ac8c633-0916-4cdc-9b1f-7391b8dafe7f")
 devtools::submit_cran()
 #install.packages("crossSurv_0.0.0.9000.tar.gz", repos = FALSE, dependencies=TRUE)
 # para eliminar o sequinte erro: Found the following hidden files and directories: .travis.yml
