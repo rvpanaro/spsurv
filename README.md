@@ -1,7 +1,16 @@
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/ggmap)](https://cran.r-project.org/package=spsurv)
+
 # spsurv
 An R package for semi-parametric survival analysis.
 
 The *spsurv* package was designed to contribute with a flexible set of semi-parametric survival regression modelings, including proportional hazards (PH), proportional odds (PO), and accelerated failure time (AFT) models for right-censored data.
+
+- Install CRAN version of the package.
+```r
+install.packages("spsurv")
+```
 
 - Install and load the *spsurv* package using the devtools package.
 
