@@ -3,6 +3,7 @@
 status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
 [![CRAN RStudio mirror
 downloads](http://cranlogs.r-pkg.org/badges/spsurv)](http://www.r-pkg.org/pkg/spsurv)
+[![Travis build status](https://travis-ci.org/rvpanaro/spsurv.svg?branch=master)](https://travis-ci.org/rvpanaro/spsurv)
 [![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv?branch=master)
 
 # spsurv
