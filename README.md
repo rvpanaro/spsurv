@@ -1,6 +1,6 @@
 
 [![CRAN
-status](https://www.r-pkg.org/badges/version/ggmap)](https://cran.r-project.org/package=spsurv)
+status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
 
 # spsurv
 An R package for semi-parametric survival analysis.
