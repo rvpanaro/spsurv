@@ -43,8 +43,9 @@ Suggests:
     knitr,
     devtools,
     roxygen2,
-    testthat,
-    KMsurv
+    testthat (>= 2.1.0),
+    KMsurv,
+    covr
 Encoding: UTF-8
 LazyData: true
 SystemRequirements: GNU make

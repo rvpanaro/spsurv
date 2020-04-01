@@ -34,15 +34,8 @@ text-align: justify
 This vignette gives the instructions on how to fit the Bernstein polynomial (BP) based survival regression models using the unprecedent routines implemented in the ``spsurv`` package. In addition to this vignette, you can have access to a full description of the methodology (MSc dissertation) available at arXiv,  check it out [https://arxiv.org/abs/2003.10548](https://arxiv.org/abs/2003.10548). The ``spsurv::spbp``  function is the main routine of this package, as it allows to fit all BP related survival regression approaches presented in the [dissertation](https://arxiv.org/abs/2003.10548). The acronym ``spbp`` refers to *semi-parametric Bernstein polynomial based regression*. The ``formula`` argument in ``spsurv::spbp`` makes use of the same structure available at the ``survival`` package in order to provide a familiar environment to the public.
 The development version can be found on [github.com/rvpanaro/spsurv](https://github.com/rvpanaro/spsurv), it can be installed using:
 
-```{r, echo = F}
-if(!require("KMsurv")){
-    install.packages("KMsurv")
-    library(KMsurv)
-}
-```
 
 ```{r, eval = F, echo = T}
-
 library("devtools")
 devtools::install_github("rvpanaro/spsurv")
 ```
