@@ -1,6 +1,7 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
+[![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv?branch=master)
 
 # spsurv
 An R package for semi-parametric survival analysis.
