@@ -1,15 +1,19 @@
+# spsurv <a href='https://rvpanaro.github.io/spsurv'><img src='inst/figures/logo.png' align="right" height="139" /></a>
+---
 
-[![CRAN
-status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
-[![CRAN RStudio mirror
-downloads](http://cranlogs.r-pkg.org/badges/spsurv)](http://www.r-pkg.org/pkg/spsurv)
+[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
+[![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/spsurv)](http://www.r-pkg.org/pkg/spsurv)
+[![R build status](https://github.com/rvpanaro/spsurv/workflows/R-CMD-check/badge.svg)](https://github.com/rvpanaro/spsurv/actions)
 [![Travis build status](https://travis-ci.org/rvpanaro/spsurv.svg?branch=master)](https://travis-ci.org/rvpanaro/spsurv)
 [![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv?branch=master)
 
-# spsurv
+## Overview
+
 An R package for semi-parametric survival analysis.
 
 The *spsurv* package was designed to contribute with a flexible set of semi-parametric survival regression modelings, including proportional hazards (PH), proportional odds (PO), and accelerated failure time (AFT) models for right-censored data.
+
+## Installation
 
 - Install CRAN version of the package.
 ```r
@@ -24,6 +28,9 @@ install.packages("devtools")
 library(devtools)
 install_github("rvpanaro/spsurv")
 ```
+
+## Usage 
+
 - Check out the main fitter function examples.
 
 ```r
