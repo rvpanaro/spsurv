@@ -11,3 +11,7 @@
 ^CRAN-RELEASE$
 ^inst/load\.R$
 ^codecov\.yml$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
