@@ -1,6 +1,9 @@
 destination: docs
 template:
   params:
+    docsearch:
+      api_key: efd1fff66c6333fc3b69114572cc8e90
+      index_name: spsurv
     bootswatch: cosmo
 url: https://rvpanaro.github.io/spsurv/
 authors:
