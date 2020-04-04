@@ -12,8 +12,8 @@
 <!-- jquery -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 <!-- Bootstrap -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootswatch/3.4.0/cosmo/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous" />
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script>
 
@@ -89,6 +89,9 @@
 <li>
   <a href="../reference/index.html">Reference</a>
 </li>
+<li>
+  <a href="../news/index.html">Changelog</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
@@ -124,7 +127,7 @@
     <tbody>
       <tr>
         <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
+          <h2 id="section-details" class="hasAnchor"><a href="#section-details" class="anchor"></a>Details</h2>
           <p class="section-desc"></p>
         </th>
       </tr>
@@ -136,16 +139,23 @@
       <tr>
         
         <td>
-          <p><code><a href="bp.basis.html">bp.basis()</a></code> </p>
+          <p><code><a href="spsurv-package.html">spsurv-package</a></code> </p>
         </td>
-        <td><p>Bernstein basis polynomials calculations</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="bpaft.html">bpaft()</a></code> </p>
-        </td>
-        <td><p>Bernstein Polynomial Based Accelerated Failure Time Model</p></td>
-      </tr><tr>
+        <td><p>The 'spsurv' package.</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-fitter-functions" class="hasAnchor"><a href="#section-fitter-functions" class="anchor"></a>Fitter functions</h2>
+          <p class="section-desc"><p>Functions for fitting a BP based survival regression model.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
         
         <td>
           <p><code><a href="bpph.html">bpph()</a></code> </p>
@@ -158,6 +168,86 @@
         </td>
         <td><p>Bernstein Polynomial Based Proportional Odds Model</p></td>
       </tr><tr>
+        
+        <td>
+          <p><code><a href="bpaft.html">bpaft()</a></code> </p>
+        </td>
+        <td><p>Bernstein Polynomial Based Accelerated Failure Time Model</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="spbp.html">spbp()</a></code> </p>
+        </td>
+        <td><p>spbp: The BP Based Survival Analysis Function</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="spbp.default.html">spbp(<i>&lt;default&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>spbp: The BP Based Semiparametric Survival Analysis Function</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-graphical-and-useful-rstan-related-functions-" class="hasAnchor"><a href="#section-graphical-and-useful-rstan-related-functions-" class="anchor"></a>Graphical and useful rstan related functions.</h2>
+          <p class="section-desc"><p>S3 methods for using rstan functions.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="stan_dens-methods.html">stan_dens(<i>&lt;spbp&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Density plots method for fitted spbp models</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="stan_dens.html">stan_dens()</a></code> </p>
+        </td>
+        <td><p>Generic S3 method extract</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="extract-methods.html">extract(<i>&lt;spbp&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Extract method for fitted spbp models</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="extract.html">extract()</a></code> </p>
+        </td>
+        <td><p>Generic S3 method extract</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="traceplot-methods.html">traceplot(<i>&lt;spbp&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Traceplot method for fitted spbp models</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="traceplot.html">traceplot()</a></code> </p>
+        </td>
+        <td><p>Generic S3 method traceplot</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-extraction-functions-" class="hasAnchor"><a href="#section-extraction-functions-" class="anchor"></a>Extraction functions.</h2>
+          <p class="section-desc"><p>Functions for extracting useful information about the results.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
         
         <td>
           <p><code><a href="coef-methods.html">coef(<i>&lt;spbp&gt;</i>)</a></code> </p>
@@ -184,24 +274,6 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="extract-methods.html">extract(<i>&lt;spbp&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract method for fitted spbp models</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="extract.html">extract()</a></code> </p>
-        </td>
-        <td><p>Generic S3 method extract</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="itsamp.html">itsamp()</a></code> </p>
-        </td>
-        <td><p>Inverse Transform Sampling To Generate Time-to-event Data From Parametric Models</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="mode.html">mode()</a></code> </p>
         </td>
         <td><p>Calculate the posterior mode</p></td>
@@ -212,6 +284,81 @@
         </td>
         <td><p>Model.matrix method for fitted spbp models</p></td>
       </tr><tr>
+        
+        <td>
+          <p><code><a href="residuals.spbp.html">residuals(<i>&lt;spbp&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>BP based models residuals.</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="survivor.html">survivor()</a></code> </p>
+        </td>
+        <td><p>Generic S3 method vcov</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="vcov-methods.html">vcov(<i>&lt;spbp&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Covariance of the regression coefficients</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="vcov.html">vcov()</a></code> </p>
+        </td>
+        <td><p>Generic S3 method vcov</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-bernstein-polynomial-basis-function-" class="hasAnchor"><a href="#section-bernstein-polynomial-basis-function-" class="anchor"></a>Bernstein polynomial basis function.</h2>
+          <p class="section-desc"><p>Function for supporting the computation of the BP basis.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="bp.basis.html">bp.basis()</a></code> </p>
+        </td>
+        <td><p>Bernstein basis polynomials calculations</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-data-generating-function-" class="hasAnchor"><a href="#section-data-generating-function-" class="anchor"></a>Data generating function.</h2>
+          <p class="section-desc"><p>Function for generating simulated data.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
+        
+        <td>
+          <p><code><a href="itsamp.html">itsamp()</a></code> </p>
+        </td>
+        <td><p>Inverse Transform Sampling To Generate Time-to-event Data From Parametric Models</p></td>
+      </tr>
+    </tbody><tbody>
+      <tr>
+        <th colspan="2">
+          <h2 id="section-print-and-summary-functions-" class="hasAnchor"><a href="#section-print-and-summary-functions-" class="anchor"></a>Print and summary functions.</h2>
+          <p class="section-desc"><p>Functions for printing and summarising the spbp outcomes.</p></p>
+        </th>
+      </tr>
+      
+      
+    </tbody><tbody>
+      
+      
+      <tr>
         
         <td>
           <p><code><a href="print.spbp.html">print(<i>&lt;spbp&gt;</i>)</a></code> </p>
@@ -268,75 +415,9 @@
       </tr><tr>
         
         <td>
-          <p><code><a href="residuals.spbp.html">residuals(<i>&lt;spbp&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>BP based models residuals.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="spbp.html">spbp()</a></code> </p>
-        </td>
-        <td><p>spbp: The BP Based Survival Analysis Function</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="spbp.default.html">spbp(<i>&lt;default&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>spbp: The BP Based Semiparametric Survival Analysis Function</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="spsurv-package.html">spsurv-package</a></code> </p>
-        </td>
-        <td><p>The 'spsurv' package.</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="stan_dens-methods.html">stan_dens(<i>&lt;spbp&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Density plots method for fitted spbp models</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="stan_dens.html">stan_dens()</a></code> </p>
-        </td>
-        <td><p>Generic S3 method extract</p></td>
-      </tr><tr>
-        
-        <td>
           <p><code><a href="summary.spbp.html">summary(<i>&lt;spbp&gt;</i>)</a></code> </p>
         </td>
         <td><p>Bernstein Polynomial Based Regression Object Summary</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="survivor.html">survivor()</a></code> </p>
-        </td>
-        <td><p>Generic S3 method vcov</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="traceplot-methods.html">traceplot(<i>&lt;spbp&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Traceplot method for fitted spbp models</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="traceplot.html">traceplot()</a></code> </p>
-        </td>
-        <td><p>Generic S3 method traceplot</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="vcov-methods.html">vcov(<i>&lt;spbp&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Covariance of the regression coefficients</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="vcov.html">vcov()</a></code> </p>
-        </td>
-        <td><p>Generic S3 method vcov</p></td>
       </tr>
     </tbody>
     </table>

@@ -2,3 +2,52 @@ destination: docs
 template:
   params:
     bootswatch: cosmo
+url: https://rvpanaro.github.io/spsurv/
+authors:
+  Panaro RV:
+    href: https://rvpanaro.github.io/
+  Mayrink VD:
+    href: http://www.est.ufmg.br/~vdinizm/
+  Demarqui FN:
+    href: http://www.est.ufmg.br/~fndemarqui/
+development:
+  mode: auto
+reference:
+- title: "Details"
+- contents:
+  - starts_with("spsurv")
+- title: "Fitter functions"
+  desc: "Functions for fitting a BP based survival regression model."
+- contents:
+  - starts_with("bpph")
+  - starts_with("bppo")
+  - starts_with("bpaft")
+  - starts_with("spbp")
+- title: "Graphical and useful rstan related functions."
+  desc: "S3 methods for using rstan functions."
+- contents:
+  - starts_with("stan_dens")
+  - starts_with("extract")
+  - starts_with("traceplot")
+- title: "Extraction functions."
+  desc: "Functions for extracting useful information about the results."
+- contents:
+  - starts_with("coef")
+  - starts_with("confint")
+  - starts_with("mode")
+  - starts_with("residuals")
+  - starts_with("survivor")
+  - starts_with("vcov")
+- title: "Bernstein polynomial basis function."
+  desc: "Function for supporting the computation of the BP basis."
+- contents:
+  - starts_with("bp.basis")
+- title: "Data generating function."
+  desc: "Function for generating simulated data."
+- contents:
+  - starts_with("itsamp")
+- title: "Print and summary functions."
+  desc: "Functions for printing and summarising the spbp outcomes."
+- contents:
+  - starts_with("print")
+  - starts_with("summary")
