@@ -1,7 +1,7 @@
 Package: spsurv
 Type: Package
 Title: Bernstein Polynomial Based Semiparametric Survival Analysis
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     c(person(given = "Renato",
            family = "Panaro",
@@ -12,12 +12,12 @@ Authors@R:
            family = "Demarqui",
            role = "aut",
            email = "fndemarqui@gmail.com",
-           comment = c(ORCID = "0000-0001-9236-1986")),
+           comment = c(ORCID = "0000-0001-9236-1986", URL= "http://www.est.ufmg.br/~fndemarqui/")),
 	person(given = "Vinícius",
            family = "Mayrink",
            role = "aut",
            email = "vdinizm@gmail.com",
-           comment = c(ORCID = "0000-0002-5683-8326")))
+           comment = c(ORCID = "0000-0002-5683-8326", URL= "http://www.est.ufmg.br/~vdinizm/")))
 Maintainer: Renato Panaro <renatovp@ime.usp.br>
 Description: A set of reliable routines to ease semiparametric survival regression modeling based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
 License: GPL-3
