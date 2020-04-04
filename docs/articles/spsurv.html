@@ -11,7 +11,9 @@
 <script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
-<script src="../pkgdown.js"></script><meta property="og:title" content="spsurv">
+<script src="../pkgdown.js"></script><!-- docsearch --><script src="../docsearch.js"></script><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/docsearch.js/2.6.3/docsearch.min.css" integrity="sha256-QOSRU/ra9ActyXkIBbiIB144aDBdtvXBcNc3OTNuX/Q=" crossorigin="anonymous">
+<link href="../docsearch.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js" integrity="sha256-4HLtjeVgH0eIB3aZ9mLYF6E8oU5chNdjU6p6rrXpl9U=" crossorigin="anonymous"></script><meta property="og:title" content="spsurv">
 <meta property="og:description" content="spsurv">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -31,7 +33,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">spsurv</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.0.1</span>
       </span>
     </div>
 
@@ -61,7 +63,13 @@
   </a>
 </li>
       </ul>
+<form class="navbar-form navbar-right hidden-xs hidden-sm" role="search">
+        <div class="form-group">
+          <input type="search" class="form-control" name="search-input" id="search-input" placeholder="Search..." aria-label="Search for..." autocomplete="off">
 </div>
+      </form>
+      
+    </div>
 <!--/.nav-collapse -->
   </div>
 <!--/.container -->
@@ -180,8 +188,8 @@ text-align: justify
 <pre><code>## 
 ## SAMPLING FOR MODEL 'spbp' NOW (CHAIN 1).
 ## Chain 1: 
-## Chain 1: Gradient evaluation took 4.6e-05 seconds
-## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.46 seconds.
+## Chain 1: Gradient evaluation took 3.7e-05 seconds
+## Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 0.37 seconds.
 ## Chain 1: Adjust your expectations accordingly!
 ## Chain 1: 
 ## Chain 1: 
@@ -198,21 +206,17 @@ text-align: justify
 ## Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 ## Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 ## Chain 1: 
-## Chain 1:  Elapsed Time: 2.64334 seconds (Warm-up)
-## Chain 1:                2.46929 seconds (Sampling)
-## Chain 1:                5.11264 seconds (Total)
+## Chain 1:  Elapsed Time: 2.38067 seconds (Warm-up)
+## Chain 1:                2.36772 seconds (Sampling)
+## Chain 1:                4.74839 seconds (Total)
 ## Chain 1:</code></pre>
-<pre><code>## Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
-## Running the chains for more iterations may help. See
-## http://mc-stan.org/misc/warnings.html#bulk-ess</code></pre>
 <pre><code>## Warning: Relative effective sample sizes ('r_eff' argument) not specified.
 ## For models fit with MCMC, the reported PSIS effective sample sizes and 
 ## MCSE estimates will be over-optimistic.</code></pre>
-<pre><code>## Warning: Some Pareto k diagnostic values are slightly high. See help('pareto-k-diagnostic') for details.</code></pre>
 <pre><code>## Warning: 
 ## 3 (3.3%) p_waic estimates greater than 0.4. We recommend trying loo instead.</code></pre>
 <p>As with the ML estimation, the summary method is extended to the <code><a href="../reference/spbp.html">spsurv::spbp</a></code> class when applying to a Bayesian fit. Along with the regression estimates, this output also contains descriptive statistics for the posterior hazard ratio denoted by <code>_exp</code> (in the console output) and the diagnosis statistics from the <code>loo</code> package. The effective sample size <code>n_eff</code> gives an estimate of the independent draws from the posterior distribution, and <code>Rhat</code> referred to as the potential scale reduction statistic, is one of the useful ways to monitor whether a chain has converged to the equilibrium distribution. This statistic measures the ratio between the average variation of the samples within each chain and the variation of the combined samples in the chains; if the chains have not converged to a common distribution, this statistic will be greater than one. It is worth noting that all, the information provided by the <code>Stan</code> output, including warnings, is passed to the final user. One can have access to the <code>stanfit</code> object with the <code>fit$stanfit</code> command. In particular, one can have access to built-in plot functions and even to a <code>shiny</code> app (details in <a href="https://shiny.rstudio.com/">https://shiny.rstudio.com/</a> developed by <code>Stan</code> developer’s team. The summary outcome is as follows:</p>
-<div class="sourceCode" id="cb20"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span>(<span class="no">fit</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb18"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/summary.html">summary</a></span>(<span class="no">fit</span>)</pre></body></html></div>
 <pre><code>## Bayesian Bernstein Polynomial based Proportional Hazards model
 ## 
 ## Call:
@@ -222,63 +226,56 @@ text-align: justify
 ## 
 ##   n= 0, number of events= 0 
 ## 
-##                  mode   mean  se_mean     sd    50% n_eff  Rhat lowerHPD
-## age            0.0192 0.0196 0.000451 0.0151 0.0197  1124 1.001 -0.00874
-## factor(stage)2 0.1247 0.1209 0.014432 0.4608 0.1291  1019 0.999 -0.77111
-## factor(stage)3 0.7090 0.6616 0.011756 0.3472 0.6673   872 1.000 -0.04028
-## factor(stage)4 1.7548 1.7920 0.014325 0.4290 1.7989   897 0.999  1.04298
+##                  mode   mean se_mean     sd    50% n_eff  Rhat lowerHPD
+## age            0.0201 0.0189 0.00046 0.0145 0.0191   993 0.999 -0.00911
+## factor(stage)2 0.2448 0.1120 0.01740 0.4819 0.1467   767 1.001 -0.84032
+## factor(stage)3 0.5840 0.6405 0.01272 0.3559 0.6398   783 0.999  0.02740
+## factor(stage)4 1.6732 1.7712 0.01510 0.4219 1.7687   781 0.999  1.05130
 ##                upperHPD
-## age              0.0494
-## factor(stage)2   1.0007
-## factor(stage)3   1.3063
-## factor(stage)4   2.6511
+## age              0.0467
+## factor(stage)2   1.0030
+## factor(stage)3   1.4031
+## factor(stage)4   2.7070
 ## ---
 ##                mean_exp median_exp sd_exp lowerHPD_exp upperHPD_exp
-## age                1.02       1.02 0.0154        0.989         1.05
-## factor(stage)2     1.25       1.14 0.6023        0.325         2.41
-## factor(stage)3     2.06       1.95 0.7311        0.856         3.55
-## factor(stage)4     6.56       6.04 2.7855        2.166        12.21
+## age                1.02       1.02 0.0148        0.991         1.05
+## factor(stage)2     1.25       1.16 0.5946        0.293         2.43
+## factor(stage)3     2.02       1.90 0.7320        0.769         3.38
+## factor(stage)4     6.42       5.86 2.8349        2.009        12.26
 ## ---
 ## 
 ## Computed from 1000 by 90 log-likelihood matrix
 ## 
 ##           Estimate   SE
-## elpd_waic   -150.2  9.6
-## p_waic         9.9  1.0
-## waic         300.4 19.2
+## elpd_waic   -149.9  9.5
+## p_waic         9.6  1.0
+## waic         299.8 19.0
 ## 
 ## 3 (3.3%) p_waic estimates greater than 0.4. We recommend trying loo instead. 
 ## 
 ## Computed from 1000 by 90 log-likelihood matrix
 ## 
 ##          Estimate   SE
-## elpd_loo   -150.3  9.6
-## p_loo        10.0  1.0
-## looic       300.6 19.2
+## elpd_loo   -149.9  9.5
+## p_loo         9.6  1.0
+## looic       299.9 19.0
 ## ------
 ## Monte Carlo SE of elpd_loo is 0.1.
 ## 
-## Pareto k diagnostic values:
-##                          Count Pct.    Min. n_eff
-## (-Inf, 0.5]   (good)     88    97.8%   529       
-##  (0.5, 0.7]   (ok)        2     2.2%   307       
-##    (0.7, 1]   (bad)       0     0.0%   &lt;NA&gt;      
-##    (1, Inf)   (very bad)  0     0.0%   &lt;NA&gt;      
-## 
-## All Pareto k estimates are ok (k &lt; 0.7).
+## All Pareto k estimates are good (k &lt; 0.5).
 ## See help('pareto-k-diagnostic') for details.</code></pre>
 </div>
 <div id="graphical-analysis" class="section level2">
 <h2 class="hasAnchor">
 <a href="#graphical-analysis" class="anchor"></a>Graphical analysis</h2>
 <p>The next code chunk shows the code for trace and density plotting and to give access to the shiny app from the shinystan package <code>shinystan</code>. Figures illustrate the trace plot and the density plot of the BPPH for the <code>larynx</code> data set. The graphs show unimodal posterior densities and well behaved chains with good mixing, this is a good behavior indication.</p>
-<div class="sourceCode" id="cb22"><html><body><pre class="r"><span class="kw pkg">rstan</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/rstan/man/stanfit-method-traceplot.html">traceplot</a></span>(<span class="no">fit</span>$<span class="no">stanfit</span>, <span class="kw">pars</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"beta"</span>, <span class="st">"gamma"</span>))</pre></body></html></div>
+<div class="sourceCode" id="cb20"><html><body><pre class="r"><span class="kw pkg">rstan</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/rstan/man/stanfit-method-traceplot.html">traceplot</a></span>(<span class="no">fit</span>$<span class="no">stanfit</span>, <span class="kw">pars</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"beta"</span>, <span class="st">"gamma"</span>))</pre></body></html></div>
 <p><img src="spsurv_files/figure-html/unnamed-chunk-8-1.png" width="700"></p>
-<div class="sourceCode" id="cb23"><html><body><pre class="r"><span class="kw pkg">rstan</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/rstan/man/stan_plot.html">stan_dens</a></span>(<span class="no">fit</span>$<span class="no">stanfit</span>, <span class="kw">pars</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"beta"</span>, <span class="st">"gamma"</span>))</pre></body></html></div>
+<div class="sourceCode" id="cb21"><html><body><pre class="r"><span class="kw pkg">rstan</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/rstan/man/stan_plot.html">stan_dens</a></span>(<span class="no">fit</span>$<span class="no">stanfit</span>, <span class="kw">pars</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"beta"</span>, <span class="st">"gamma"</span>))</pre></body></html></div>
 <p><img src="spsurv_files/figure-html/unnamed-chunk-8-2.png" width="700"></p>
-<div class="sourceCode" id="cb24"><html><body><pre class="r"><span class="kw pkg">shinystan</span><span class="kw ns">::</span><span class="fu">launch_shinystan</span>(<span class="no">fit</span>$<span class="no">stanfit</span>)</pre></body></html></div>
+<div class="sourceCode" id="cb22"><html><body><pre class="r"><span class="kw pkg">shinystan</span><span class="kw ns">::</span><span class="fu">launch_shinystan</span>(<span class="no">fit</span>$<span class="no">stanfit</span>)</pre></body></html></div>
 <p>Not least, a S3 method had to be created rather than extended. The <code>survivor</code> method was created to accomplish the calculation of the survival function evaluated in each time point. The goal is similar to the <code><a href="https://rdrr.io/pkg/survival/man/survfit.html">survival::survfit</a></code> S3 method, that could be extended instead. The difference is that <code>spbp</code> classes allows both Bayesian and frequentist approaches. The following code was used to generate Figure:</p>
-<div class="sourceCode" id="cb25"><html><body><pre class="r"><span class="co">## CoxPH model</span>
+<div class="sourceCode" id="cb23"><html><body><pre class="r"><span class="co">## CoxPH model</span>
 <span class="no">fitcoxph</span> <span class="kw">&lt;-</span> <span class="kw pkg">survival</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/survival/man/coxph.html">coxph</a></span>(<span class="fu">Surv</span>(<span class="no">time</span> , <span class="no">delta</span>)~<span class="no">age</span> + <span class="fu"><a href="https://rdrr.io/r/base/factor.html">factor</a></span>(<span class="no">stage</span>),
 <span class="kw">data</span> <span class="kw">=</span> <span class="no">larynx</span>)
 
@@ -331,7 +328,20 @@ text-align: justify
 </div>
 
   
-
-
-  </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docsearch.js/2.6.1/docsearch.min.js" integrity="sha256-GKvGqXDznoRYHCwKXGnuchvKSwmx9SRMrZOTh2g4Sb0=" crossorigin="anonymous"></script><script>
+  docsearch({
+    
+    
+    apiKey: 'efd1fff66c6333fc3b69114572cc8e90',
+    indexName: 'spsurv',
+    inputSelector: 'input#search-input.form-control',
+    transformData: function(hits) {
+      return hits.map(function (hit) {
+        hit.url = updateHitURL(hit);
+        return hit;
+      });
+    }
+  });
+</script>
+</body>
 </html>
