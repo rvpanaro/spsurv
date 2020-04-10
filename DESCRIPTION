@@ -45,7 +45,8 @@ Suggests:
     roxygen2,
     testthat (>= 2.1.0),
     KMsurv,
-    covr
+    covr,
+    rmarkdown 	
 Encoding: UTF-8
 LazyData: true
 SystemRequirements: GNU make
