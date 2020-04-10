@@ -5,7 +5,7 @@
 #' @export
 #' @param spbp an object of class spbp
 #' @param ... further arguments passed to or from other methods
-#' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{itsamp}}
+#' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{rsurv}}
 #' @return estimates survival for each dataset individual (line).
 
 #' Spbp Object Observed Survival
@@ -134,7 +134,7 @@ survivor.calc <- function(time,
   k <- 1:degree
   y <- time[order(time)]
   tau <- max(y)
-  
+
   B <- matrix(sapply(k, function(k) pbeta(y/tau, k, degree - k + 1)), ncol = degree)
 
   eta <- x %*% matrix(beta, ncol = 1)
@@ -177,5 +177,6 @@ survivor.calc <- function(time,
 #'
 
 residuals.spbp <- function(object, type=c("cox-snell"), ...){
-  return(-log(survivor(object)))
+  s <- survivor(object)
+  cbind(s[,1], -log(s[,1]))
 }

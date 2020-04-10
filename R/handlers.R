@@ -15,7 +15,7 @@ handler1 <- function(){
                names(Call), nomatch = 0)
 
   e$aux <- aux
-  return(FALSE)
+
 }
 
 ## --------------- Frailty handling ---------------
@@ -55,7 +55,7 @@ handler2 <- function(){
   e$dist <- dist
   e$id <- id
   e$frailty_idx <- frailty_idx
-  return(FALSE)
+
 }
 
 ## --------------- Priors handling ---------------
@@ -115,7 +115,7 @@ handler3 <- function(){
                    frailty1 = frailtyp[2],
                    frailty2 = frailtyp[3]
                    ))
-  return(FALSE)
+
 }
 
 ## --------------- Extra args error handling ---------------
@@ -145,7 +145,7 @@ handler4 <- function(){
     if (any(aux == 0))
       stop(gettextf("Argument %s not matched", names(stanArgs)[aux==0]))
   }
-  return(FALSE)
+
 }
 
   ## --------------- Model Frame error handling ---------------
@@ -162,15 +162,15 @@ handler5 <- function(){
   if (type!='right' && type!='counting')
     stop(paste("spsurv doesn't support \"", type,
                "\" survival data", sep=''))
-  print(attr(Terms, '))variables'))
-  if (length(attr(Terms, '))variables')) > 2) { # a ~1 formula has length 2
-    ytemp <- terms.inner(formula)[1:2]
-    xtemp <- terms.inner(formula)[-c(1,2)]
-    if (any(!is.na(match(xtemp, ytemp))))
-      stop("a variable appears on both the left and right sides of
-                the formula")
+
+    if (length(attr(Terms, 'variables')) > 2) { # a ~1 formula has length 2
+      ytemp <- terms.inner(formula)[1:2]
+      xtemp <- terms.inner(formula)[-c(1,2)]
+      if (any(!is.na(match(xtemp, ytemp))))
+        stop("a variable appears on both the left and right sides of
+                  the formula")
   }
-  return(FALSE)
+
 }
 
 
