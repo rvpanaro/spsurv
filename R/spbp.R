@@ -31,6 +31,7 @@
 spbp <- function(formula, ...) {
   UseMethod("spbp", formula)
 }
+
 #' @title spbp: The BP Based Semiparametric Survival Analysis Function
 #' @param formula a Surv object with time to event, status and explanatory terms
 #' @param degree Bernstein Polynomial degree
@@ -82,8 +83,9 @@ spbp.default <-
   approach_flag <- match.arg(approach) ### saves string input
   approach <- ifelse(approach_flag == "mle", 0, 1)
 
-  handler1() ## error handling #1
-
+  ## error-handling nº1
+  if(tryCatch(expr = handler1(),
+           error = function(e){warning(e); return(TRUE)})) return(NaN)
   ## terms
   temp <- Call[c(1, aux)] # keep important args
   temp[[1L]] <- quote(stats::model.frame) # model frame call
@@ -91,22 +93,28 @@ spbp.default <-
   temp$formula <- terms(formula, special, data = data)
   temp$formula <- terms(formula, data = data);
 
-  ## frailty (id, distribution, column)
-  handler2()
+  ## error-handling nº2 -- Frailty (id, distribution, column)
+  if(tryCatch(expr = handler2(),
+           error = function(e){warning(e); return(TRUE)})) return(NaN)
 
-  ## Priors
-  suppressMessages(handler3())
+  ## error-handling nº3 -- Priors
+  if(tryCatch(expr = handler3(),
+           error = function(e){warning(e); return(TRUE)})) return(NaN)
 
-  ## stanArgs
   stanArgs <- list(...)
-  handler4()
 
-  ## Model Frame
+  ## error-handling nº4 --  stanArgs
+  if(tryCatch(expr = handler4(),
+           error = function(e){warning(e); return(TRUE)})) return(NaN)
+
   mf <- eval(temp, parent.frame())
   Terms <- terms(mf)
   Y <- model.extract(mf, "response") # time-to-event response
   type <- attr(Y, "type")
-  handler5()
+
+  ## error-handling nº5 --  Model Frame
+  if(tryCatch(expr = handler5(),
+           error = function(e){warning(e); return(TRUE)})) return(NaN)
 
   # ---------------  Data declaration + definitions ---------------
 
@@ -200,12 +208,13 @@ spbp.default <-
   )
 
   # --------------- Fit  ---------------
-  output <- list()
   if(approach == 0){
-    spbp.mle(standata = standata, ...)
-  }
+    tryCatch(expr = spbp.mle(standata = standata, ...),
+             error = function(e){warning(e); return(NaN)})
+    }
   else{
-    spbp.bayes(standata = standata, ...)
+    tryCatch(expr = spbp.bayes(standata = standata, ...),
+             error = function(e){warning(e); return(NaN)})
   }
 }
 
@@ -250,10 +259,6 @@ spbp.mle <-
   names(coef) <- c(names(beta),
                    paste0("gamma", 1:(degree))
   )
-
-  ## singular matrices handler
-  #   if(det(-hess) == 0)
-  #   stop("Optimizing hesssian matrix is singular!")
 
   ## rescaled fisher info
   jac <- diag(1/std, q)

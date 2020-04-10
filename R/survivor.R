@@ -134,6 +134,7 @@ survivor.calc <- function(time,
   k <- 1:degree
   y <- time[order(time)]
   tau <- max(y)
+  
   B <- matrix(sapply(k, function(k) pbeta(y/tau, k, degree - k + 1)), ncol = degree)
 
   eta <- x %*% matrix(beta, ncol = 1)
