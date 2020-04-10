@@ -202,16 +202,6 @@ blockSolve <- function(M, q){
   return(S)
 }
 
-solveAny <- function(A){
-  tol <- .Machine$double.eps ## solve default tolerance
-  class(S) <- "try-error"
-  while(class(S) == "try-error"){
-    S <- try(qr.solve(A, tol = tol), silent = T)
-    tol <- tol^(1.00001)
-  }
-  return(S)
-}
-
 read_prior <- function(prior){
   aux <- unlist(strsplit(prior, "\\("))
   dist <- aux[1]

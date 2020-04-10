@@ -1,4 +1,6 @@
 comment: false
+ignore:
+  - "src/"  # ignore folders and all its contents
 
 coverage:
   status:
@@ -10,3 +12,4 @@ coverage:
       default:
         target: auto
         threshold: 1%
+

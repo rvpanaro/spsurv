@@ -61,7 +61,8 @@ rsurv <- function(n,
                     shape = k)
     }
   else{
-      t <- exp(rlogis(n, location = -(log(lambda) + eta)/k,
+    location = -(log(lambda) + eta)
+      t <- exp(rlogis(n, location/k,
                       scale =  exp(location)))
   }
   c <- runif(n = n, min = 0, max =  t)

@@ -84,8 +84,8 @@ spbp.default <-
   approach <- ifelse(approach_flag == "mle", 0, 1)
 
   ## error-handling nº1
-  if(tryCatch(expr = handler1(),
-           error = function(e){warning(e); return(TRUE)})) return(NaN)
+  handler1()
+
   ## terms
   temp <- Call[c(1, aux)] # keep important args
   temp[[1L]] <- quote(stats::model.frame) # model frame call
@@ -94,18 +94,15 @@ spbp.default <-
   temp$formula <- terms(formula, data = data);
 
   ## error-handling nº2 -- Frailty (id, distribution, column)
-  if(tryCatch(expr = handler2(),
-           error = function(e){warning(e); return(TRUE)})) return(NaN)
+  handler2()
 
   ## error-handling nº3 -- Priors
-  if(tryCatch(expr = handler3(),
-           error = function(e){warning(e); return(TRUE)})) return(NaN)
+  handler3()
 
   stanArgs <- list(...)
 
   ## error-handling nº4 --  stanArgs
-  if(tryCatch(expr = handler4(),
-           error = function(e){warning(e); return(TRUE)})) return(NaN)
+  handler4()
 
   mf <- eval(temp, parent.frame())
   Terms <- terms(mf)
@@ -113,8 +110,7 @@ spbp.default <-
   type <- attr(Y, "type")
 
   ## error-handling nº5 --  Model Frame
-  if(tryCatch(expr = handler5(),
-           error = function(e){warning(e); return(TRUE)})) return(NaN)
+  handler5()
 
   # ---------------  Data declaration + definitions ---------------
 
