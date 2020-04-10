@@ -106,6 +106,7 @@ console the code
 ``??rstan::sampling``" for help. The following ``R`` console outcome refers to the Bayesian estimation for the ``larynx`` data set:
 
 ```{r}
+options(mc.cores=2)
 fit <- spsurv::spbp(Surv(time, delta)~age + factor(stage),
                      approach = "bayes",  data = larynx,
                      iter = 2000, chains = 1, warmup = 1000, cores = 1)
