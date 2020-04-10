@@ -35,12 +35,18 @@ spbp(formula = Surv(time, status) ~ karno + factor(celltype),
 spbp(formula = Surv(time, status) ~ karno + factor(celltype),
      data = veteran, chaind = 1)
 
-spbp(formula = Surv(time, status) ~ karno + factor(celltype),
-     data = NULL)
-
-spbp(formula = status ~ karno + factor(celltype),
+spbp(formula = time ~ karno + factor(celltype),
      data = veteran)
 
+time2 <- veteran$time
+spbp(formula = Surv(time = time, time2 = time2, status) ~ karno + factor(celltype),
+     data = veteran)
+
+spbp(formula = Surv(type = "left", time = time, status) ~ karno + factor(celltype),
+     data = veteran)
+
+spbp(formula = Surv(time = time, status) ~ status+ karno,
+     data = veteran)
 #---- spbp.R
 
 # ML approach:

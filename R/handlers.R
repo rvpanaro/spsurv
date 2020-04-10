@@ -14,9 +14,8 @@ handler1 <- function(){
   aux <- match(c("formula", "data"),
                names(Call), nomatch = 0)
 
-  if (aux[1] == 0) stop("A formula argument is required")
-  if (aux[2] == 0) stop("A dataset argument is required")
   e$aux <- aux
+  return(FALSE)
 }
 
 ## --------------- Frailty handling ---------------
@@ -56,6 +55,7 @@ handler2 <- function(){
   e$dist <- dist
   e$id <- id
   e$frailty_idx <- frailty_idx
+  return(FALSE)
 }
 
 ## --------------- Priors handling ---------------
@@ -115,6 +115,7 @@ handler3 <- function(){
                    frailty1 = frailtyp[2],
                    frailty2 = frailtyp[3]
                    ))
+  return(FALSE)
 }
 
 ## --------------- Extra args error handling ---------------
@@ -144,6 +145,7 @@ handler4 <- function(){
     if (any(aux == 0))
       stop(gettextf("Argument %s not matched", names(stanArgs)[aux==0]))
   }
+  return(FALSE)
 }
 
   ## --------------- Model Frame error handling ---------------
@@ -158,15 +160,17 @@ handler5 <- function(){
   if (nrow(mf) == 0) stop("Only missing observations")
   if (!inherits(Y, "Surv")) stop("Response must be a survival object")
   if (type!='right' && type!='counting')
-    stop(paste("Proportional hazards model doesn't support \"", type,
+    stop(paste("spsurv doesn't support \"", type,
                "\" survival data", sep=''))
+  print(attr(Terms, '))variables'))
   if (length(attr(Terms, '))variables')) > 2) { # a ~1 formula has length 2
     ytemp <- terms.inner(formula)[1:2]
     xtemp <- terms.inner(formula)[-c(1,2)]
     if (any(!is.na(match(xtemp, ytemp))))
-      warning("a variable appears on both the left and right sides of
+      stop("a variable appears on both the left and right sides of
                 the formula")
   }
+  return(FALSE)
 }
 
 
