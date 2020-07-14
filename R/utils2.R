@@ -11,7 +11,6 @@
 #' @importFrom stats model.matrix
 #' @examples
 #'
-#'
 #' library("spsurv")
 #' data("veteran")
 #'
@@ -34,6 +33,7 @@ model.matrix.spbp <-
 #' @param ... further arguments passed to or from other methods.
 #' @return the traceplot of a MCMC chain.
 #'
+
 traceplot <- function(spbp, ...) UseMethod("traceplot")
 
 #' Traceplot method for fitted spbp models
@@ -60,6 +60,7 @@ traceplot <- function(spbp, ...) UseMethod("traceplot")
 #' traceplot(fit)
 #'
 #' @importFrom rstan traceplot
+#'
 
 traceplot.spbp <-
   function(spbp, pars = c("beta", "gamma"), ...){
@@ -122,6 +123,7 @@ extract.spbp <-
 #' @param ... further arguments passed to or from other methods.
 #' @return the density plot of a MCMC chain.
 #'
+
 stan_dens <- function(spbp, ...) UseMethod("stan_dens")
 
 #' Density plots method for fitted spbp models
@@ -149,6 +151,7 @@ stan_dens <- function(spbp, ...) UseMethod("stan_dens")
 #'
 #' @importFrom rstan stan_dens
 #'
+
 stan_dens.spbp <-
   function(spbp, pars = c("beta", "gamma"), ...){
     if(spbp$call$approach == "bayes")
@@ -157,5 +160,3 @@ stan_dens.spbp <-
       warning("not applicable, change approach to 'bayes' to get MCMC chains density plots")
     }
   }
-
-
