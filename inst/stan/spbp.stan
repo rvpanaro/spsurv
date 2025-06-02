@@ -57,7 +57,7 @@ transformed parameters{
       beta = beta_star ./ sdv;      // beta to original scale
 
       if(M == 2){	       // if AFT
-        vector<lower=0>[n] y = time ./exp_eta;
+        vector<lower=0>[n] y = time ./exp_eta * exp(-sum(beta_star .* means ./ sdv));
         vector[n] y_alt = y ./ max(tau_aft);
         matrix[n, m] g2;
         matrix[n, m] G2;
