@@ -10,9 +10,12 @@
   data,
   approach = c("mle", "bayes"),
   model = c("ph", "po", "aft"),
-  priors = list(beta = c("normal(0,4)"), gamma = "lognormal(0,10)"),
+  priors = list(beta = c("normal(0,4)"), gamma = c("lognormal(0,4)"), frailty =
+    c("gamma(0.01,0.01)")),
+  cores = min(parallel::detectCores() - 1, 4),
   scale = TRUE,
-  cores = parallel::detectCores(),
+  verbose = FALSE,
+  chains = 4,
   ...
 )
 }
@@ -27,11 +30,11 @@
 
 \item{model}{Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"}
 
-\item{priors}{prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `gamma`, `inv_gamma` or `lognormal` for gamma (BP coefficients)}
-
-\item{scale}{logical; indicates whether to center and scale the data}
+\item{priors}{prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients)}
 
 \item{cores}{number of core threads to use}
+
+\item{scale}{logical; indicates whether to center and scale the data}
 
 \item{...}{further arguments passed to or from other methods}
 }

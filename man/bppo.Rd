@@ -29,10 +29,10 @@ library("spsurv")
 data("veteran")
 
 fit <- bppo(Surv(time, status) ~ karno + celltype,
-data = veteran)
+  data = veteran
+)
 
 summary(fit)
-
 }
 \seealso{
 \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bpph}} and \code{\link[spsurv]{bpaft}} for other BP based models.

@@ -26,17 +26,20 @@ library("spsurv")
 data("veteran") ## imports from survival package
 
 fit_mle <- spbp(Surv(time, status) ~ karno + factor(celltype),
- data = veteran, model = "po")
+  data = veteran, model = "po"
+)
 summary(fit_mle)
 
 fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
-                  data = veteran, model = "po", approach = "bayes",
-                   cores = 1, iter = 300, chains = 1,
-                    priors = list(beta = c("normal(0,4)"),
-                     gamma = "lognormal(0,4)"))
+  data = veteran, model = "po", approach = "bayes",
+  cores = 1, iter = 300, chains = 1,
+  priors = list(
+    beta = c("normal(0,5)"),
+    gamma = "halfnormal(0,5)"
+  )
+)
 
 summary(fit_bayes)
-
 }
 \seealso{
 \code{\link[spsurv]{spbp.default}}
