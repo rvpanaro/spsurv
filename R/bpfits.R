@@ -15,21 +15,23 @@
 #' data("veteran")
 #'
 #' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
-#' data = veteran)
+#'   data = veteran
+#' )
 #'
 #' summary(fit)
-#'
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
 
-bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
-  fit <- spbp.default(formula = formula,
-               degree = degree,
-               data = data,
-               model = "ph",
-               approach = match.arg(approach),
-               ...)
+bpph <- function(formula, degree, data, approach = c("mle", "bayes"), ...) {
+  fit <- spbp.default(
+    formula = formula,
+    degree = degree,
+    data = data,
+    model = "ph",
+    approach = match.arg(approach),
+    ...
+  )
   fit$call$formula <- match.call()$formula
   fit$call$data <- match.call()$data
   return(fit)
@@ -48,24 +50,26 @@ bpph <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[spsurv]{bpph}} and \code{\link[spsurv]{bpaft}} for other BP based models.
 #' @examples
 #'
-#'library("spsurv")
+#' library("spsurv")
 #' data("veteran")
 #'
 #' fit <- bppo(Surv(time, status) ~ karno + celltype,
-#' data = veteran)
+#'   data = veteran
+#' )
 #'
 #' summary(fit)
-#'
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
-bppo <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
-  fit <- spbp.default(formula = formula,
-               degree = degree,
-               data = data,
-               model = "po",
-               approach = match.arg(approach),
-               ...)
+bppo <- function(formula, degree, data, approach = c("mle", "bayes"), ...) {
+  fit <- spbp.default(
+    formula = formula,
+    degree = degree,
+    data = data,
+    model = "po",
+    approach = match.arg(approach),
+    ...
+  )
   fit$call$formula <- match.call()$formula
   fit$call$data <- match.call()$data
   return(fit)
@@ -88,20 +92,22 @@ bppo <- function(formula, degree, data,  approach = c("mle", "bayes"), ...){
 #' data("veteran")
 #'
 #' fit <- bpaft(Surv(time, status) ~ karno + celltype,
-#' data = veteran)
+#'   data = veteran
+#' )
 #'
 #' summary(fit)
-#'
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 
-bpaft <- function(formula, degree, data, approach = c("mle", "bayes"), ...){
-  fit <- spbp.default(formula =  formula,
-               degree = degree,
-               data = data,
-               model = "aft",
-               approach = match.arg(approach),
-               ...)
+bpaft <- function(formula, degree, data, approach = c("mle", "bayes"), ...) {
+  fit <- spbp.default(
+    formula = formula,
+    degree = degree,
+    data = data,
+    model = "aft",
+    approach = match.arg(approach),
+    ...
+  )
   fit$call$formula <- match.call()$formula
   fit$call$data <- match.call()$data
   return(fit)

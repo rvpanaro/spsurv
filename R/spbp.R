@@ -12,19 +12,23 @@
 #' data("veteran") ## imports from survival package
 #'
 #' fit_mle <- spbp(Surv(time, status) ~ karno + factor(celltype),
-#'  data = veteran, model = "po")
+#'   data = veteran, model = "po"
+#' )
 #' summary(fit_mle)
 #'
 #' fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
-#'                   data = veteran, model = "po", approach = "bayes",
-#'                    cores = 1, iter = 300, chains = 1,
-#'                     priors = list(beta = c("normal(0,4)"),
-#'                      gamma = "lognormal(0,4)"))
+#'   data = veteran, model = "po", approach = "bayes",
+#'   cores = 1, iter = 300, chains = 1,
+#'   priors = list(
+#'     beta = c("normal(0,5)"),
+#'     gamma = "halfnormal(0,5)"
+#'   )
+#' )
 #'
 #' summary(fit_bayes)
-#'
 #' @rdname spbp
 #' @export spbp
+#' @importFrom magrittr `%>%`
 #' @seealso  \code{\link[spsurv]{spbp.default}},  \code{\link[spsurv]{bpph}},  \code{\link[spsurv]{bppo}}, \code{\link[spsurv]{bpaft}}, \url{https://mc-stan.org/users/documentation/}
 #' @return An object of class 'spbp'.
 
@@ -38,7 +42,7 @@ spbp <- function(formula, ...) {
 #' @param data a data.frame object
 #' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"
 #' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"
-#' @param priors prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `gamma`, `inv_gamma` or `lognormal` for gamma (BP coefficients)
+#' @param priors prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients)
 #' @param scale logical; indicates whether to center and scale the data
 #' @param ... further arguments passed to or from other methods
 #' @param cores number of core threads to use
@@ -48,302 +52,383 @@ spbp <- function(formula, ...) {
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
 #' @importFrom MASS ginv
+#' @importFrom mnormt pd.solve
 #' @importFrom loo waic loo
 #' @importFrom coda  HPDinterval
 #' @importFrom stats .getXlevels as.formula contrasts dbeta density dist formula median model.extract pbeta pchisq printCoefmat qnorm rlogis rnorm rweibull sd terms
 #'
 
 spbp.default <-
-  function(formula, degree, data,
-            approach = c("mle", "bayes"),
-            model = c("ph", "po", "aft"),
-            priors = list(beta = c("normal(0,4)"),
-                         gamma = "lognormal(0,10)"),
-           scale = TRUE, cores =  parallel::detectCores(),
-           ...){
+  function(formula,
+           degree,
+           data,
+           approach = c("mle", "bayes"),
+           model = c("ph", "po", "aft"),
+           priors = list(
+             beta = c("normal(0,4)"),
+             gamma = c("lognormal(0,4)"),
+             frailty = c("gamma(0.01,0.01)")
+           ),
+           cores = min(parallel::detectCores() - 1, 4),
+           scale = TRUE,
+           verbose = FALSE, chains = 4,
+           ...) {
+    # ---------------Definitions + error handling  ---------------
+    Call <- match.call()
 
-  # ---------------Definitions + error handling  ---------------
-  ## tau degree
-
-  if(missing(degree)){
-    degree <- ceiling(sqrt(nrow(data)))
-  }
-
-  ## Call
-  Call <- match.call();
-
-  ## model
-  if(length(model) == 3){model_flag = "ph"}
-  else{model_flag <- model}
-
-  model <- ifelse(match.arg(model) == "po", 0,
-                  ifelse(match.arg(model) == "ph", 1, 2))
-
-  ## approach
-  approach_flag <- match.arg(approach) ### saves string input
-  approach <- ifelse(approach_flag == "mle", 0, 1)
-
-  ## error-handling nº1
-  handler1()
-
-  ## terms
-  temp <- Call[c(1, aux)] # keep important args
-  temp[[1L]] <- quote(stats::model.frame) # model frame call
-  special <- c("frailty", "frailty.gamma", "frailty.gaussian", "frailty.t")
-  temp$formula <- terms(formula, special, data = data)
-  temp$formula <- terms(formula, data = data);
-
-  ## error-handling nº2 -- Frailty (id, distribution, column)
-  handler2()
-
-  ## error-handling nº3 -- Priors
-  handler3()
-
-  stanArgs <- list(...)
-
-  ## error-handling nº4 --  stanArgs
-  handler4()
-
-  mf <- eval(temp, parent.frame())
-  Terms <- terms(mf)
-  Y <- model.extract(mf, "response") # time-to-event response
-  type <- attr(Y, "type")
-
-  ## error-handling nº5 --  Model Frame
-  handler5()
-
-  # ---------------  Data declaration + definitions ---------------
-
-  ## + sample size + labels
-  data.n <- nrow(Y)
-  labels <- attributes(temp$formula)$term.labels
-  null <- 0
-
-  if (length(labels) > 1){
-    X <-  model.matrix(Terms, mf)[, -1]
-  }
-  else if(length(labels) == 1){
-    X <- as.matrix(model.matrix(Terms, mf)[, -1], ncol = data.n)
-    colnames(X) <- labels
-  }
-  else{
-    X <- as.matrix(rep(0, data.n), ncol = data.n)
-    colnames(X) <- "non-parametric"
-    null <- 1
-  }
-
-  ## time + status + features
-  features <- X
-  attr(X, "assign") <- attr(model.matrix(Terms, mf), "assign")[-1]
-  attr(X, "contrasts") <- attr(model.matrix(Terms, mf), "contrasts")
-  xlevels <- .getXlevels(Terms, mf)
-  contrasts <- attr(X, "contrasts")
-
-  assign <- attrassign(X, Terms)
-
-  q <- ncol(X)
-  time <- as.vector(Y[,1])
-  tau <- max(time)
-  status <- as.vector(Y[,2])
-
-  if(scale == T){
-    X <- scale(X)
-    ## rescaled coefficients (correction)
-      means <- array(attr(X, "scaled:center"), dim = q)
-      std <- array(attr(X, "scaled:scale"), dim = q)
-  }
-  else{
-    std <- array(1, dim = q)
-    means <- array(0, dim = q)
-  }
-
-  ## base calculations
-  base <- bp.basis(time, degree = degree, tau = tau)
-
-  ## priors to num
-  priordist <- sapply(priordist,
-                      function(x){
-                        switch(x,
-                               "normal" = 0,
-                               "gamma" = 1,
-                               "inv_gamma" = 2,
-                               "lognormal" = 3)})
-
-  priordist_beta <- sapply(priordist_beta,
-                          function(x){switch(x,
-                          "normal" = 0,
-                          "cauchy" = 1)})
-  ## Recycling the prior specs
-  priordist_beta <- array(priordist_beta, dim = q)
-  location_beta <- array(as.numeric(location_beta), dim = q)
-  scale_beta <- array(as.numeric(scale_beta), dim = q)
-
-  ## standata
-  standata <- list(time = time,
-                   tau = tau,
-                   n = data.n,
-                   m = base$degree,
-                   q = q,
-                   status = status,
-                   X = X,
-                   B = base$B,
-                   b = base$b,
-                   approach = approach,
-                   M = model,
-                   null = null,
-                   id = rep(1, data.n),
-                   dist = dist,
-                   z = rep(0, data.n),
-                   priordist = priordist,
-                   priorpars = priorpars,
-                   priordist_beta = priordist_beta,
-                   location_beta = location_beta,
-                   scale_beta = scale_beta,
-                   std  = std,
-                   means = means
-  )
-
-  # --------------- Fit  ---------------
-  if(approach == 0){
-    tryCatch(expr = spbp.mle(standata = standata, ...),
-             error = function(e){warning(e); return(NaN)})
+    if (length(model) == 3) {
+      model_flag <- "ph"
+    } else {
+      model_flag <- model
     }
-  else{
-    tryCatch(expr = spbp.bayes(standata = standata, ...),
-             error = function(e){warning(e); return(NaN)})
-  }
-}
 
+    model <- ifelse(match.arg(model) == "po", 0,
+      ifelse(match.arg(model) == "ph", 1, 2)
+    )
+
+    approach_flag <- match.arg(approach)
+    approach <- ifelse(approach_flag == "mle", 0, 1)
+
+    handler1() ## error-handling nº1 -- BP degree handling
+
+    temp <- Call[c(1, aux)] # keep important args
+    temp[[1L]] <- quote(stats::model.frame) # model frame call
+    special <- c("frailty", "frailty.gamma", "frailty.gaussian", "frailty.t")
+    temp$formula <- terms(formula, special, data = data)
+    temp$formula <- terms(formula, data = data)
+    stanArgs <- list(...)
+
+    mf <- eval(temp, parent.frame())
+    Terms <- terms(mf)
+    Y <- model.extract(mf, "response")
+    type <- attr(Y, "type")
+
+    time <- as.vector(Y[, 1])
+    tau <- max(time)
+    status <- as.vector(Y[, 2])
+
+    if (missing(degree)) degree <- ceiling(nrow(data)^(0.5))
+
+    handler2() ## error-handling nº2 -- Frailty (id, distribution, column)
+    handler3() ## error-handling nº3 -- Priors
+    handler4() ## error-handling nº5 -- Model Frame
+
+    # ---------------  Data declaration + definitions ---------------
+    data.n <- nrow(Y) ## + sample size + labels
+    labels <- attributes(temp$formula)$term.labels
+    null <- 0
+
+    if (length(labels) > 0) {
+      X <- model.matrix(Terms, mf)[, -1]
+
+      if (is.null(ncol(X))) {
+        X <- as.matrix(X)
+        colnames(X) <- labels
+      }
+    } else {
+      X <- as.matrix(rep(0, data.n), ncol = 1)
+      colnames(X) <- "non-parametric"
+      null <- 1
+    }
+
+    features <- X
+    attr(X, "assign") <- attr(model.matrix(Terms, mf), "assign")[-1]
+    attr(X, "contrasts") <- attr(model.matrix(Terms, mf), "contrasts")
+    xlevels <- .getXlevels(Terms, mf)
+    contrasts <- attr(X, "contrasts")
+
+    assign <- attrassign(X, Terms)
+    p <- ncol(X)
+
+    if (scale & (null == 0)) {
+      X <- scale(X, center = TRUE)
+      means <- array(attr(X, "scaled:center"))
+      sdv <- array(attr(X, "scaled:scale"))
+    } else {
+      means <- array(0, p)
+      sdv <- array(1, p)
+    }
+
+    if (!(degree %% 1 == 0)) {
+      stop("Polynomial degree must be integer.")
+    }
+
+    bp <- bp.basis(time, degree = degree, tau = tau)
+    pw <- pw.basis(degree = degree)
+
+    priordist_beta <- sapply(priordist_beta, function(x) {
+      switch(x,
+        "normal" = 0,
+        "logistic" = 1
+      )
+    })
+
+    priordist_gamma <- sapply(priordist_gamma, function(x) {
+      switch(x,
+        "lognormal" = 0,
+        "halfnormal" = 1
+      )
+    })
+
+    priordist_frailty <- sapply(priordist_frailty, function(x) {
+      switch(x,
+        "gamma" = 0,
+        "invgamma" = 1,
+        "lognormal" = 2
+      )
+    })
+
+    priordist_beta <- array(priordist_beta, dim = p)
+    location_beta <- array(as.numeric(location_beta), dim = p)
+    scale_beta <- array(as.numeric(scale_beta), dim = p)
+
+    priordist_gamma <- array(priordist_gamma, dim = degree)
+    location_gamma <- array(as.numeric(location_gamma), dim = degree)
+    scale_gamma <- array(as.numeric(scale_gamma), dim = degree)
+
+    priordist_frailty <- array(priordist_frailty, dim = 1)
+    par1_frailty <- array(as.numeric(par1_frailty), dim = 1)
+    par2_frailty <- array(as.numeric(par2_frailty), dim = 1)
+
+    standata <- list(
+      n = data.n,
+      m = bp$degree,
+      p = p,
+      tau = tau,
+      approach = approach,
+      rand = rand,
+      M = model,
+      status = status,
+      id = rep(1, data.n),
+      z = rep(0, data.n),
+      time = time,
+      X = X,
+      g = bp$g,
+      G = bp$G,
+      P = pw,
+      priordist_beta = priordist_beta,
+      location_beta = location_beta,
+      scale_beta = scale_beta,
+      priordist_gamma = priordist_gamma,
+      location_gamma = location_gamma,
+      scale_gamma = scale_gamma,
+      priordist_frailty = priordist_frailty,
+      par1_frailty = par1_frailty,
+      par2_frailty = par2_frailty,
+      means = means,
+      sdv = sdv
+    )
+
+    # --------------- Fit  ---------------
+    if (approach == 0) {
+      tryCatch(
+        expr = spbp.mle(standata = standata, hessian = T, verbose = verbose, ...),
+        error = function(e) {
+          warning(e)
+          return(NaN)
+        }
+      )
+    } else {
+      tryCatch(
+        expr = spbp.bayes(standata = standata, hessian = F, verbose = verbose, chains = chains, ...),
+        error = function(e) {
+          warning(e)
+          return(NaN)
+        }
+      )
+    }
+  }
+
+#'
+#' @export
 spbp.mle <-
-  function(standata,
-           init = 0,
-           hessian = TRUE,
-           verbose = FALSE,
-           ...){
+  function(standata, hessian = TRUE, verbose = FALSE, ...) {
+    e <- parent.frame() # "sourcing" the parent.frame
+    vnames <- objects(, envir = e) # variable names in parent frame
 
-  e <- parent.frame()
-  #variable names in parent frame
+    for (n in vnames) assign(n, get(n, e))
 
-  vnames <- objects(, envir = e)
-  # "sourcing" the parent.frame
-  for(n in vnames) assign(n, get(n, e))
+    if (!is.null(frailty_idx)) {
+      standata$X <- X[, -frailty_idx]
+      message("Frailty ignored, change approach to `bayes` for frailty estimation.")
+    }
 
-  if(!is.null(frailty_idx)){
-    standata$X <- X[, -frailty_idx]
-    message("Frailty ignored, change approach to `bayes` for frailty estimation.")
+    c <- 0
+    stanfit <- list(return_code = 70)
+
+    while (stanfit$return_code != 0 && c < 15) {
+      # Run optimizing() with args from the list
+      stanfit <- suppressWarnings(
+        do.call(rstan::optimizing, c(list(
+          object  = stanmodels$spbp,
+          data    = standata,
+          hessian = hessian,
+          verbose = verbose
+        ), ...))
+      )
+      c <- c + 1
+    }
+
+    if (stanfit$return_code != 0) {
+      warning("In .local(object, ...) : non-zero return code in optimizing")
+    }
+
+    nms <- names(stanfit$par)
+    alpha <- stanfit$par[nms == "alpha"] ## intercept
+    coef <- stanfit$par[startsWith(nms, "beta[")] / sdv ## regression estimates
+    gamma <- stanfit$par[startsWith(nms, "gamma[")] / exp(alpha) ## bernstein coefficients
+
+    names(coef) <- colnames(X)
+    names(gamma) <- paste0("gamma[", 1:degree, "]")
+
+    if (hessian == FALSE) {
+      stanfit$hessian <- matrix(rep(NA, p^2), ncol = 1:p, nrow = 1:p)
+    }
+
+    nulldata <- standata
+    nulldata$X <- matrix(0, ncol = ncol(X), nrow = data.n)
+
+    nullfit <- tryCatch(rstan::optimizing(stanmodels$spbp, data = nulldata, hessian = hessian, ...),
+      error = function(e) {
+        return(list(value = NULL))
+      }
+    )
+
+    output <- list(
+      coefficients = coef,
+      bp.param = gamma,
+      alpha = alpha,
+      hessian = stanfit$hessian,
+      loglik = c(nullfit$value, stanfit$value),
+      features = features,
+      n = data.n,
+      nevent = sum(status),
+      terms = Terms,
+      y = Y,
+      formula = formula,
+      xlevels = xlevels,
+      contrasts = contrasts,
+      return_code = stanfit$return_code,
+      call = Call,
+      means = means,
+      sdv = sdv,
+      standata = standata,
+      tau_a = 0,
+      tau_b = tau,
+      stanfit = stanfit
+    )
+
+    if (model_flag == "aft") {
+      output$tau_a <- min(log(Y[, 1])) - max(features %*% coef)
+      output$tau_b <- max(log(Y[, 1])) - min(features %*% coef)
+    }
+
+    if (null) {
+      output$coefficients <- NULL
+      output$hessian <- stanfit$hessian[-1, -1]
+      output$features <- NULL
+    }
+
+    output$call$approach <- approach_flag
+    output$call$model <- model_flag
+
+    class(output) <- c("spbp")
+    message("Priors are ignored because the MLE approach is used.")
+
+    return(output)
   }
+
+#'
+#' @export
+spbp.bayes <- function(standata, hessian = FALSE, verbose = FALSE, chains = 1, ...) {
+  e <- parent.frame() # "sourcing" the parent.frame
+  vnames <- objects(, envir = e) # variable names in parent frame
+
+  for (n in vnames) assign(n, get(n, e))
+
+  if (rand > 0) standata$X <- X[, -frailty_idx]
 
   stanfit <-
-    rstan::optimizing(stanmodels$spbp,
-                             data = standata,
-                             init = init,
-                             hessian = hessian,
-                             verbose = verbose,
-                             ...)
-  len <- length(stanfit$par)
-  ## stanfit coefficients (beta, nu)
-  aux <- stanfit$par
-  coef <- aux[names(aux) %in% c(paste0("beta[", 1:q, "]"), paste0("gamma[", 1:degree, "]"))]
-  ## regression estimates
-  beta <- array(coef[1:q], q)
-  gamma_std <- aux[names(aux) %in% paste0("gamma_std[", 1:degree, "]")]
+    rstan::sampling(stanmodels$spbp, data = standata, verbose = verbose, chains = chains, cores = cores, ...)
 
-  ## rescaled hessian matrix
-  info <- - stanfit$hessian
+  message("\nExtracting posterior draws (this may take a moment)...\n")
 
-  names(beta) <- colnames(X)
-  names(coef) <- c(names(beta),
-                   paste0("gamma", 1:(degree))
+  alpha_vec <- rstan::extract(
+    stanfit,
+    permuted = TRUE,
+    pars = "alpha",
+    inc_warmup = FALSE
+  )$alpha
+
+  beta_mat <- rstan::extract(
+    stanfit,
+    permuted = TRUE,
+    pars = "beta",
+    inc_warmup = FALSE
+  )$beta
+
+  gamma_mat <- rstan::extract(stanfit, pars = "gamma")$gamma
+
+  posterior <-
+    list(
+      alpha = alpha_vec,
+      beta = t(apply(beta_mat, 1, function(x) x / sdv)),
+      gamma = apply(gamma_mat, 2, function(x) x / exp(alpha_vec)),
+      log_lik = rstan::extract(
+        stanfit,
+        permuted = TRUE,
+        pars = "log_lik",
+        inc_warmup = FALSE
+      )$log_lik
+    )
+
+  if (ncol(posterior$beta) > nrow(posterior$beta)) {
+    posterior$beta <- t(posterior$beta)
+  }
+  colnames(posterior$beta) <- colnames(X)
+  colnames(posterior$gamma) <- paste0("gamma[", 1:degree, "]")
+  colnames(posterior$log_lik) <- paste0("log_lik[", 1:data.n, "]")
+
+  output <- list(
+    coefficients = colMeans(posterior$beta),
+    bp.param = colMeans(posterior$gamma),
+    loglik = colMeans(posterior$log_lik),
+    features = features,
+    n = data.n,
+    nevent = sum(status),
+    terms = Terms,
+    y = Y,
+    formula = formula,
+    xlevels = xlevels,
+    contrasts = contrasts,
+    call = Call,
+    means = means,
+    sdv = sdv,
+    standata = standata,
+    posterior = posterior,
+    tau_a = 0,
+    tau_b = tau,
+    stanfit = stanfit
   )
 
-  ## rescaled fisher info
-  jac <- diag(1/std, q)
-  var <- jac %*% blockSolve(info, q)[1:q, 1:q] %*% t(jac)
-  rownames(var) <- names(beta)
-  colnames(var) <- names(beta)
-
-  if(hessian == FALSE || null == 1){
-    stanfit$hessian <- matrix(rep(NA, q^2),
-                              ncol = 1:q,
-                              nrow = 1:q)
+  if (model_flag == "aft") {
+    z <- matrix(nrow = nrow(posterior$beta), ncol = length(Y[, 1]))
+    for (i in 1:nrow(posterior$beta)) {
+      z[i, ] <- (features %*% posterior$beta[i, ])
+    }
+    output$tau_a <- min(log(Y[, 1])) - max(colMeans(z))
+    output$tau_b <- max(log(Y[, 1])) - min(colMeans(z))
   }
-  nulldata <- standata
-  nulldata$null <- 1
-  nullfit <- rstan::optimizing(stanmodels$spbp,
-                               data = nulldata,
-                               init = init,
-                               hessian = hessian,
-                               ...)
 
-  output <- list(coefficients = coef,
-                 var = var[1:q, 1:q],
-                 loglik = c(nullfit$value, stanfit$value),
-                 linear.predictors = c(features %*% beta),
-                 means = colMeans(features),
-                 method = "optimizing",
-                 n = data.n,
-                 nevent = sum(status),
-                 q = q,
-                 terms = Terms,
-                 assign = assign,
-                 wald.test = coxph.wtest(var[1:q, 1:q], beta)$test,
-                 y = Y,
-                 formula = formula,
-                 xlevels = xlevels,
-                 contrasts = contrasts,
-                 return_code = stanfit$return_code,
-                 tau = tau,
-                 call = Call)
-  output$call$approach <- approach_flag
-  output$call$model <- model_flag
-
-  class(output) <- "spbp"
-  message('Priors are ignored due to mle approach.')
-
-  return(output)
-}
-
-spbp.bayes <- function(standata,
-                       hessian = TRUE,
-                       verbose = FALSE,
-                       chains = 1,
-                       ...){
-  e <- parent.frame()
-  #variable names in parent frame
-
-  vnames <- objects(, envir = e)
-  # "sourcing" the parent.frame
-  for(n in vnames) assign(n, get(n, e))
-
-  # bayes
-  output <- list(y = Y)
-
-  if(dist == 0){
-    output$stanfit <- rstan::sampling(stanmodels$spbp,
-                                      data = standata,
-                                      verbose = verbose,
-                                      chains = chains, cores = cores,
-                                      ...)
-
-    samp <- rstan::extract(output$stanfit, pars = c("beta", "gamma"))
-    output$pmode <- apply(X = cbind(samp[[1]], samp[[2]]), MARGIN = 2, FUN = mode)
-    # output$pmode <- apply(X = samp, MARGIN = 2, FUN = mode)
+  if (null) {
+    output$coefficients <- NULL
   }
-  else{
-    standata$X <- X[, -frailty_idx]
-    output$stanfit <- rstan::sampling(stanmodels$spbp_frailty,
-                                      data = standata,
-                                      verbose = verbose,
-                                      chains = chains,
-                                      ...)
 
-    output$pmode <- apply(rstan::extract(output$stanfit, c("beta", "gamma")), 2, mode)
-  }
-  output$loo <- loo::loo(loo::extract_log_lik(output$stanfit), cores = cores)
-  output$waic <- loo::waic(loo::extract_log_lik(output$stanfit), cores = cores)
   output$call <- Call
   output$call$approach <- approach_flag
   output$call$model <- model_flag
-  class(output) <- "spbp"
+
+  class(output) <- c("spbp")
+
   return(output)
 }

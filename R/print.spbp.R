@@ -10,75 +10,133 @@
 
 
 print.spbp <-
-  function(x, digits = max(getOption('digits')-4, 3),
-           signif.stars = getOption("show.signif.stars"), ...){
+  function(x, bp.param = FALSE, digits = max(getOption("digits") - 4, 3),
+           signif.stars = getOption("show.signif.stars"), ...) {
+    savedig <- options(digits = digits)
+    on.exit(options(savedig))
 
-  savedig <- options(digits = digits)
-  on.exit(options(savedig))
-
-  if (!is.null(x$call)) {
-    cat("\n---")
-    cat("\n")
-    cat("Call:\n")
-    dput(x$call)
-    cat("\n")
-  }
-
-  if(x$call$approach == "mle"){
-
-    coef <- as.array(x$coefficients[1:x$q])
-    var <- as.array(x$var[1:x$q, 1:x$q])
-
-    ### Error handling ###
-    # Null model
-    if (is.null(x$coefficients)) return(x)
-
-    coef2 <- coef[!(is.na(coef))] #non-missing coefs
-    if(is.null(coef) | is.null(var )) stop("Input is not valid")
-
-    se <- as.array(suppressWarnings(sqrt(diag(x$var)[1:x$q])))
-
-    Coefmat  <- cbind(coef, exp(coef), se, coef/se,
-                                  pchisq((coef/ se)^2, 1, lower.tail=FALSE))
-    dimnames(Coefmat) <- list(names(coef), c("coef", "exp(coef)",
-                                                         "se(coef)", "z", "Pr(>|z|)"))
-
-    if(!is.null(x$coefficients)) {
+    if (!is.null(x$call)) {
+      cat("Call:\n")
+      dput(x$call)
       cat("\n")
-      printCoefmat(Coefmat, digits = digits,
-                   signif.stars = signif.stars, ...)
     }
-    if(!is.null(x$loglik)) {
-      cat("\n Loglik(model)= ", x$loglik[2])
-      cat("      Loglik(no predictors)= ", x$loglik[1], "\n")
-    }
-    logtest <- -2 * (x$loglik[1] - x$loglik[2])
-    cat("      Chisq= ", logtest," on ", x$q, " degrees of freedom ",
-        pchisq(logtest, x$q, lower.tail=FALSE), "\n")
 
-    if(!is.null(x$n)) {
-        cat("n= ", x$n)
+    coef <- coef(x)
+
+    if (x$call$approach == "mle") {
+      var <- vcov(x)
+
+      ### Error handling ###
+      # Null model
+      coef2 <- coef[!(is.na(coef))] # non-missing coefs
+      if (is.null(var)) stop("Input is not valid")
+
+      if (!is.null(x$coefficients) & !bp.param) {
+        se <- sqrt(diag(as.matrix(vcov(x))))
+
+        Coefmat <- cbind(
+          coef, exp(coef), se, coef / se,
+          pchisq((coef / se)^2, 1, lower.tail = FALSE)
+        )
+        dimnames(Coefmat) <- list(names(coef), c(
+          "coef", "exp(coef)",
+          "se(coef)", "z", "Pr(>|z|)"
+        ))
+      } else {
+        se <- sqrt(diag(as.matrix(vcov(x, TRUE))))
+
+        Coefmat <- cbind(
+          log(x$bp.param), x$bp.param, se, x$bp.param * log(x$bp.param) / se,
+          pnorm(q = x$bp.param * log(x$bp.param) / se, lower.tail = FALSE)
+        )
+
+        dimnames(Coefmat) <- list(names(x$bp.param), c(
+          "log(gamma)", "gamma",
+          "se(log(gamma))", "z", "Pr(>z)"
+        ))
+      }
+
+      cat("\n")
+      printCoefmat(Coefmat,
+        digits = digits,
+        signif.stars = signif.stars, ...
+      )
+
+      if (!is.null(x$loglik)) {
+        logtest <- -2 * (x$loglik[1] - x$loglik[2])
+
+        cat(
+          "\nLoglik(model)= ", x$loglik[2], "  Loglik(baseline only)= ", x$loglik[1], "\n"
+        )
+        if (!is.null(x$coefficients)) {
+          cat(
+            "        Chisq= ", logtest, " on ", ncol(x$features), " df, p= ",
+            pchisq(logtest, ncol(x$features), lower.tail = FALSE), "\n"
+          )
+        }
+      }
+
+      if (!is.null(x$n)) {
+        cat("n= ", paste0(x$n, ","), " number of events= ", x$nevent)
+      }
+    } else {
+      coef2 <- coef[!(is.na(coef))] # non-missing coefs
+
+      if (is.null(x$posterior)) stop("Input is not valid")
+
+
+      if (!is.null(x$coefficients)) {
+        Coefmat <- cbind(
+          coef,
+          apply(x$posterior$beta, 2, mode),
+          apply(x$posterior$beta, 2, median),
+          colMeans(exp(x$posterior$beta)),
+          apply(x$posterior$beta, 2, sd)
+        )
+        dimnames(Coefmat) <- list(names(coef), c(
+          "mean(coef)",
+          "mode(coef)",
+          "median(coef)",
+          "mean(exp(coef))", "sd(coef)"
+        ))
+
+        cat("\n")
+        printCoefmat(Coefmat,
+          digits = digits,
+          signif.stars = signif.stars, ...
+        )
+      } else {
+        browser()
+        Coefmat <- cbind(
+          x$bp.param,
+          apply(x$posterior$gamma, 2, mode),
+          apply(x$posterior$gamma, 2, median),
+          colMeans(log(x$posterior$gamma)),
+          apply(x$posterior$gamma, 2, sd)
+        )
+        dimnames(Coefmat) <- list(names(x$bp.param), c(
+          "mean(bp)",
+          "mode(bp)",
+          "median(bp)",
+          "mean(log(bp))", "sd(bp)"
+        ))
+
+        cat("\n")
+        printCoefmat(Coefmat,
+          digits = digits,
+          signif.stars = signif.stars, ...
+        )
+      }
+      cat("\n")
+
+      if (!is.null(x$posterior$log_lik)) {
+        cat(
+          "\nDeviance criterion= ", DIC(x$posterior$log_lik)[1, 1], "  Watanabe–Akaike criterion= ", WAIC(x$posterior$log_lik)[1, 1], "\nLog pseudo-marginal lik=", LPML(x$posterior$log_lik)[1], "\n"
+        )
+      }
+
+      if (!is.null(x$n)) {
+        cat("n= ", paste0(x$n, ","), " number of events= ", x$nevent)
+      }
     }
   }
-  else{
-    summarise <- rstan::summary(x$stanfit, pars = "beta")$summary
-    design <- as.matrix(model.matrix(x))
-    p <- ncol(design)
-    Coef <- cbind(matrix(summarise[, 1], nrow = p),
-                  matrix(coda::HPDinterval(coda::mcmc(rstan::extract(x$stanfit, "beta")$beta)), nrow = p),
-                  matrix(summarise[, -c(1, 5, 7, 9, 10)], nrow = p))
-
-    rownames(Coef) <-  colnames(design)
-    colnames(Coef) <- c("mean", "lowerHPD", "upperHPD", colnames(summarise)[-c(1, 5, 7, 9, 10)])
-    print(Coef, digits = digits)
-
-    cat("---\n")
-    cat("\n WAIC Estimate= ", sprintf('%.3f', x$waic$estimates[3,1]))
-    cat("      WAIC SE= ", sprintf('%.3f', x$waic$estimates[3,2], "\n"))
-    cat("\n LOOIC Estimate= ", sprintf('%.3f', x$loo$estimates[3,1]))
-    cat("      LOOIC SE= ", sprintf('%.3f', x$loo$estimates[3,2], "\n"))
-    cat("\n---\n")
-    cat("\n")
-  }
-}
-

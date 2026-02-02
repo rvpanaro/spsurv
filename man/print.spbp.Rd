@@ -6,6 +6,7 @@
 \usage{
 \method{print}{spbp}(
   x,
+  bp.param = FALSE,
   digits = max(getOption("digits") - 4, 3),
   signif.stars = getOption("show.signif.stars"),
   ...

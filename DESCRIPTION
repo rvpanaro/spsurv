@@ -1,25 +1,25 @@
 Package: spsurv
 Type: Package
 Title: Bernstein Polynomial Based Semiparametric Survival Analysis
-Version: 1.0.1
+Version: 2.0
 Authors@R: 
     c(person(given = "Renato",
            family = "Panaro",
-           role = c("aut", "cre"),
-           email = "renatovp@ime.usp.br",
+           role = c("aut", "cre", "cph"),
+           email = "rvpanaro@gmail.com",
            comment = c(ORCID = "0000-0002-1903-2091", URL= "https://rvpanaro.github.io/")),
 	person(given = "Fábio",
            family = "Demarqui",
-           role = "aut",
+           role = c("ctb", "ths"),
            email = "fndemarqui@gmail.com",
            comment = c(ORCID = "0000-0001-9236-1986", URL= "http://www.est.ufmg.br/~fndemarqui/")),
-	person(given = "Vinícius",
+	person(given = "Vinicius",
            family = "Mayrink",
-           role = "aut",
+           role = c("ths"),
            email = "vdinizm@gmail.com",
            comment = c(ORCID = "0000-0002-5683-8326", URL= "http://www.est.ufmg.br/~vdinizm/")))
-Maintainer: Renato Panaro <renatovp@ime.usp.br>
-Description: A set of reliable routines to ease semiparametric survival regression modeling based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
+Maintainer: Renato Panaro <rvpanaro@gmail.com>
+Description: Semiparametric survival analysis based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
 License: GPL-3
 Biarch: true
 Depends: 
@@ -32,7 +32,9 @@ Imports:
     methods,
     Rcpp (>= 0.12.0),
     rstan (>= 2.18.1),
-    rstantools (>= 1.5.1)
+    rstantools (>= 1.5.1), 
+    magrittr,
+    mnormt
 LinkingTo: 
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
@@ -40,7 +42,6 @@ LinkingTo:
     rstan (>= 2.18.1),
     StanHeaders (>= 2.18.0)
 Suggests:
-    knitr,
     devtools,
     roxygen2,
     testthat (>= 2.1.0),
@@ -51,6 +52,5 @@ Encoding: UTF-8
 LazyData: true
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
-VignetteBuilder: knitr
-RoxygenNote: 7.1.0
+RoxygenNote: 7.3.3
 URL: https://github.com/rvpanaro/spsurv

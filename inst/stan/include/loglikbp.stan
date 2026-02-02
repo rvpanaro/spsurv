@@ -1,102 +1,38 @@
-// Functions block (optional).
-// Here we implement a likelihood function and other useful functions.
-functions{
 
- vector loglik_null(vector gamma_star, vector status,
-   matrix g, matrix G, int n, int M, int rand, int [] id, vector z){
+functions {
 
-    vector[n] log_lik;
-    vector[n] bp;
-    vector[n] BP;
+  // cumulative hazard H(t|x)
+  vector cumhaz(matrix Gbas, vector gamma, vector eta, int M) {
+    int n = rows(Gbas);
+    vector[n] B0 = Gbas * gamma;
+    vector[n] H;
 
-    bp = g * gamma_star;
-    BP = G * gamma_star;
-
-    if(rand == 1){ //gamma
-      bp = bp .* z[id];
-      BP = BP .* z[id];
+    if (M == 0) {                // PO
+      H = log1p(B0 .* exp(eta));
+    } else if (M == 1) {         // PH
+      H = B0 .* exp(eta);
+    } else {                     // AFT (baseline evaluated at y = log(t) - eta)
+      H = B0;
     }
-    else if( rand == 2) { //additive
-      bp = bp .* exp(z[id]);
-      BP = BP .* exp(z[id]);
-    }
-
-    if(M == 0){
-        log_lik = (log(bp) - log(1 + BP)) .* status - log(1 + BP); // prop odds
-    }
-    else{
-        log_lik = log(bp) .* status - BP; // aft or prop hazards
-    }
-    return log_lik;
+    return H;
   }
 
- vector loglik_ph(vector exp_eta, vector gamma_star, vector status,
- matrix g, matrix G, int n, int rand, int [] id, vector z){
+  // log hazard log h(t|x)
+  vector log_haz(matrix gbas, matrix Gbas, vector gamma, vector eta, vector log_t,  int M) {
+    int n = rows(gbas);
+    vector[n] b0 = gbas * gamma;
+    vector[n] B0 = Gbas * gamma;
+    vector[n] log_h;
 
-      vector[n] log_lik;
-      vector[n] h0;
-      vector[n] H0;
-
-      h0 = g * gamma_star;
-      H0 = G * gamma_star;
-
-    if(rand == 1){ //gamma
-      h0 = h0 .* z[id];
-      H0 = H0 .* z[id];
+    if (M == 0) {                // PO: h = b0 e^eta / (1 + B0 e^eta)
+      log_h = log(b0) + eta - log1p(B0 .* exp(eta));
+    } else if (M == 1) {         // PH: h = b0 e^eta
+      log_h = log(b0) + eta;
+    } else {                     // AFT: h(t|x) = h0(log(t) -eta) / t
+      log_h = log(b0) - log_t;
     }
-    else if( rand == 2) { //additive
-      h0 = h0 .* exp(z[id]);
-      H0 = H0 .* exp(z[id]);
-    }
-
-    log_lik = (log(h0) + log(exp_eta)) .* status - (H0 .* exp_eta);
- return log_lik;
+    return log_h;
+  }
 }
 
- vector loglik_po(vector exp_eta, vector gamma_star, vector status,
-  matrix g, matrix G, int n, int rand, int [] id, vector z){
-
-      vector[n] log_lik;
-      vector[n] r0;
-      vector[n] R0;
-
-      r0 = g * gamma_star;
-      R0 = G * gamma_star;
-
-    if(rand == 0){
-      r0 = r0 .* z[id];
-      R0 = R0 .* z[id];
-    }
-    else if( rand == 2) { //additive
-      r0 = r0 .* exp(z[id]);
-      R0 = R0 .* exp(z[id]);
-    }
-
-	  log_lik = (log((r0 .* exp_eta)) - log(1 + R0 .* exp_eta)) .* status - log(1 + R0 .* exp_eta);
- return log_lik;
- }
-
- vector loglik_aft(vector time,  vector exp_eta, vector gamma_star, vector gamma, vector status,
-    matrix g, matrix G, int n, int rand, int [] id, vector z){
-
-      vector[n] log_lik;
-      vector[n] h0;
-      vector[n] H0;
-
-      h0 = g * gamma_star;
-      H0 = G * gamma;
-
-    if(rand == 1){ //gamma multiplicative
-      h0 = g * gamma_star .* z[id];
-      H0 = G * gamma_star .* z[id];
-    }
-    else if( rand == 2) { //additive
-      h0 = g * gamma_star .* exp(z[id]);
-      H0 = G * gamma_star .* exp(z[id]);
-    }
-
-	  log_lik =  ((log(h0)-log(exp_eta)) .* status) - H0;
- return log_lik;
- }
-}
 // Final line empty to avoid warnings.

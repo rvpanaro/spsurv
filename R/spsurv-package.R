@@ -13,7 +13,7 @@
 #' does not rely on any distribution. Unlike the Cox model, the BP based models provide smooth hazard and survival curve estimates.
 #'
 #'
-#' @docType package
+#' _PACKAGE
 #' @name spsurv-package
 #' @aliases spsurv
 #' @useDynLib spsurv, .registration = TRUE
@@ -38,12 +38,16 @@
 NULL
 
 ## quiets concerns of R CMD check re: the .'s that appear in pipelines
-if(getRversion() >= "2.15.1")  utils::globalVariables(c("Call", "Terms", "X", "Y",
-                                                         "approach", "approach_flag",
-                                                         "aux", "cores", "data.n", "degree",
-                                                         "features", "frailty_idx",
-                                                         "mf", "model_flag", "null",
-                                                         "priorpars", "priors",
-                                                         "stanArgs", "status", "std",
-                                                         "tau", "temp", "type",
-                                                         "xlevels"))
+if (getRversion() >= "2.15.1") {
+  utils::globalVariables(c(
+    "Call", "Terms", "X", "Y",
+    "approach", "approach_flag",
+    "aux", "cores", "data.n", "degree",
+    "features", "frailty_idx",
+    "mf", "model_flag", "null",
+    "priorpars", "priors",
+    "stanArgs", "status", "std",
+    "tau", "temp", "type",
+    "xlevels"
+  ))
+}
