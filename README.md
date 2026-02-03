@@ -1,6 +1,6 @@
 ## spsurv <a href='https://rvpanaro.github.io/spsurv'><img src="https://raw.githubusercontent.com/rvpanaro/spsurv/master/inst/figures/logo.png" align="right" height="139"/></a>
 
-[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv) [![R-CMD-check](https://github.com/rvpanaro/spsurv/workflows/R-CMD-check/badge.svg)](https://github.com/rvpanaro/spsurv/actions) [![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv)
+[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv)  [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/spsurv)](https://cran.r-project.org/package=spsurv)[![R-CMD-check](https://github.com/rvpanaro/spsurv/workflows/R-CMD-check/badge.svg)](https://github.com/rvpanaro/spsurv/actions) [![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv)
 
 `spsurv` provides flexible **semi-parametric survival regression** for right-censored data: **proportional hazards (PH)**, **proportional odds (PO)**, and **accelerated failure time (AFT)** models with smooth baseline functions estimated via **Bernstein polynomials**.
 
