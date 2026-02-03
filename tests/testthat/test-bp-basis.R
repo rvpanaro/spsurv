@@ -137,3 +137,14 @@ test_that("bp.basis with larger degree produces more columns", {
   expect_equal(ncol(r2$G), 2)
   expect_equal(ncol(r4$G), 4)
 })
+
+# plot.spbp is in bp.basis.R
+test_that("plot.spbp runs without error", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit))
+})
+
+test_that("plot.spbp with graph basis and cumulative", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "basis", cumulative = TRUE))
+})
