@@ -20,7 +20,7 @@ test_that("confint with custom level", {
 })
 
 test_that("credint returns matrix for Bayes fit", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   ci <- credint(fit, prob = 0.95, type = "Equal-Tailed")
   expect_true(is.matrix(ci))
   expect_equal(nrow(ci), ncol(fit$posterior$beta))
@@ -28,13 +28,13 @@ test_that("credint returns matrix for Bayes fit", {
 })
 
 test_that("credint with type HPD", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   ci <- credint(fit, prob = 0.95, type = "HPD")
   expect_true(is.matrix(ci))
 })
 
 test_that("confint on Bayes fit warns and calls credint", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   expect_warning(ci <- confint(fit), "not applicable")
   expect_true(is.matrix(ci))
 })

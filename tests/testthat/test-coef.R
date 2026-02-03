@@ -18,21 +18,31 @@ test_that("coef returns coefficients for MLE null model", {
   expect_true(is.null(b) || length(b) == 0L)
 })
 
-test_that("coef with summary mean for Bayes fit", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+test_that("coef with summary mean for Bayes fit (line 19-20)", {
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   b <- coef(fit, summary = "mean")
   expect_true(is.vector(b))
   expect_equal(length(b), ncol(fit$posterior$beta))
+  expect_equal(b, apply(fit$posterior$beta, 2, mean))
 })
 
-test_that("coef with summary median for Bayes fit", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
-  # b <- coef(fit, summary = "median")
-  # expect_true(is.vector(b))
+test_that("coef with summary median for Bayes fit (line 21-22)", {
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  b <- coef(fit, summary = "median")
+  expect_true(is.vector(b))
+  expect_equal(length(b), ncol(fit$posterior$beta))
+  expect_true(is.numeric(b))
 })
 
-test_that("coef with summary mode for Bayes fit", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
-  # b <- coef(fit, summary = "mode")
-  # expect_true(is.vector(b))
+test_that("coef with summary mode for Bayes fit (line 23-24)", {
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  b <- coef(fit, summary = "mode")
+  expect_true(is.vector(b))
+  expect_equal(length(b), ncol(fit$posterior$beta))
+  expect_true(is.numeric(b))
+})
+
+test_that("coef default summary is mean for Bayes fit (line 16-17)", {
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  expect_equal(coef(fit), coef(fit, summary = "mean"))
 })

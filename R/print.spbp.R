@@ -107,7 +107,6 @@ print.spbp <-
           signif.stars = signif.stars, ...
         )
       } else {
-
         Coefmat <- cbind(
           x$bp.param,
           apply(x$posterior$gamma, 2, .mode),

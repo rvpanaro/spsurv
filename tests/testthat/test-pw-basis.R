@@ -12,7 +12,7 @@ test_that("pw.basis returns a matrix of correct dimensions", {
 
 test_that("pw.basis with degree 1 returns 1x1 matrix", {
   result <- pw.basis(degree = 1)
-  # expect_equal(dim(result), c(1, 1))
+  expect_equal(dim(result), c(1, 1))
 })
 
 test_that("pw.basis with larger degree produces larger matrix", {

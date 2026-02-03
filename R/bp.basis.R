@@ -19,7 +19,9 @@ bp.basis <- function(time, degree, tau = max(time)) {
   G <- matrix(NA, n, degree)
   y <- time / tau
 
-  g <- sapply(k, function(k) {dbeta(y, k, degree - k + 1) / tau})
+  g <- sapply(k, function(k) {
+    dbeta(y, k, degree - k + 1) / tau
+  })
   G <- sapply(k, function(k) pbeta(y, k, degree - k + 1))
   # Equivalent to
   # for (i in 1:n){

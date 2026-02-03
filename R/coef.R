@@ -19,9 +19,9 @@ coef.spbp <- function(object, summary = c("mean", "median", "mode"), ...) {
     if (summary_flag == "mean") {
       return(apply(object$posterior$beta, 2, mean))
     } else if (summary_flag == "median") {
-      return(apply(object$posterior$beta, 3, median))
+      return(apply(object$posterior$beta, 2, median))
     } else {
-      return(apply(object$posterior$beta, 3, mode))
+      return(apply(object$posterior$beta, 2, .mode))
     }
   } else {
     return(NULL)

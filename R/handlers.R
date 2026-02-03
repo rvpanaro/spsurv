@@ -1,33 +1,13 @@
 #'
 #' @keywords internal
-.handler1 <- function() {
-  e <- parent.frame()
-
-  # variable names in parent frame
-
-  vnames <- objects(, envir = e)[!objects(, envir = e) %in% "degree"]
-
-  # "sourcing" the parent.frame
-  for (n in vnames) assign(n, get(n, e))
-
-  aux <- match(c("formula", "data"),
-    names(Call),
-    nomatch = 0
-  )
-
-  e$aux <- aux
+.handler1 <- function(Call) {
+  aux <- match(c("formula", "data"), names(Call), nomatch = 0)
+  return(aux)
 }
 
 #'
 #' @keywords internal
-.handler2 <- function() {
-  e <- parent.frame()
-  # variable names in parent frame
-
-  vnames <- objects(, envir = e)
-  # "sourcing" the parent.frame
-  for (n in vnames) assign(n, get(n, e))
-
+.handler2 <- function(temp, formula) {
   id <- NULL
   if (!is.null(attr(temp$formula, "specials")$frailty)) {
     frailty_idx <- attr(temp$formula, "specials")$frailty
@@ -49,57 +29,55 @@
     rand <- 0
     frailty_idx <- NULL
   }
-  e$rand <- rand
-  e$id <- id
-  e$frailty_idx <- frailty_idx
+  list(rand = rand, id = id, frailty_idx = frailty_idx)
 }
 
 #'
 #' @keywords internal
-.handler3 <- function() {
-  e <- parent.frame()
-  vnames <- objects(, envir = e)
-
-  for (n in vnames) assign(n, get(n, e))
-
+.handler3 <- function(priors) {
   if (length(priors$beta) > 0) {
     betap <- lapply(priors$beta, read_prior)
   } else {
     betap <- list(c("normal", "0", "5"))
   }
-  e$priordist_beta <- sapply(betap, `[[`, 1)
-  e$location_beta <- sapply(betap, `[[`, 2)
-  e$scale_beta <- sapply(betap, `[[`, 3)
+  priordist_beta <- sapply(betap, `[[`, 1)
+  location_beta <- sapply(betap, `[[`, 2)
+  scale_beta <- sapply(betap, `[[`, 3)
 
   if (length(priors$gamma) > 0) {
     gammap <- lapply(priors$gamma, read_prior)
   } else {
     gammap <- list(c("lognormal", "0", "5"))
   }
-  e$priordist_gamma <- sapply(gammap, `[[`, 1)
-  e$location_gamma <- sapply(gammap, `[[`, 2)
-  e$scale_gamma <- sapply(gammap, `[[`, 3)
+  priordist_gamma <- sapply(gammap, `[[`, 1)
+  location_gamma <- sapply(gammap, `[[`, 2)
+  scale_gamma <- sapply(gammap, `[[`, 3)
 
   if (length(priors$frailty) > 0) {
     frailtyp <- lapply(priors$frailty, read_prior)
   } else {
     frailtyp <- list(c("gamma", "1", "1"))
   }
-  e$priordist_frailty <- sapply(frailtyp, `[[`, 1)
-  e$par1_frailty <- sapply(frailtyp, `[[`, 2)
-  e$par2_frailty <- sapply(frailtyp, `[[`, 3)
+  priordist_frailty <- sapply(frailtyp, `[[`, 1)
+  par1_frailty <- sapply(frailtyp, `[[`, 2)
+  par2_frailty <- sapply(frailtyp, `[[`, 3)
+
+  list(
+    priordist_beta = priordist_beta,
+    location_beta = location_beta,
+    scale_beta = scale_beta,
+    priordist_gamma = priordist_gamma,
+    location_gamma = location_gamma,
+    scale_gamma = scale_gamma,
+    priordist_frailty = priordist_frailty,
+    par1_frailty = par1_frailty,
+    par2_frailty = par2_frailty
+  )
 }
 
 #'
 #' @keywords internal
-.handler4 <- function() {
-  e <- parent.frame()
-  # variable names in parent frame
-
-  vnames <- objects(, envir = e)
-  # "sourcing" the parent.frame
-  for (n in vnames) assign(n, get(n, e))
-
+.handler4 <- function(mf, Y, type, Terms, formula) {
   if (nrow(mf) == 0) stop("Only missing observations")
   if (!inherits(Y, "Surv")) stop("Response must be a survival object")
   if (type != "right" && type != "counting") {

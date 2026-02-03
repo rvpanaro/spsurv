@@ -11,7 +11,7 @@
 #'
 #'
 confint.spbp <- function(object, parm = names(coef(object)), level = 0.95, ...) {
-  if(sum(object$features) != 0){
+  if (sum(object$features) != 0) {
     if (object$call$approach == "mle") {
       se <- sqrt(diag(as.matrix(vcov(object))))
       alpha <- 1 - level
@@ -24,9 +24,9 @@ confint.spbp <- function(object, parm = names(coef(object)), level = 0.95, ...) 
       warning("not applicable, calling credint.spbp to get credible intervals instead")
       credint.spbp(object, prob = level)
     }
-  } else{
+  } else {
     if (object$call$approach == "mle") {
-      se <- sqrt(diag(as.matrix(vcov(object, bp.param = T))))/object$bp.param
+      se <- sqrt(diag(as.matrix(vcov(object, bp.param = T)))) / object$bp.param
       alpha <- 1 - level
       CI <- as.vector(log(object$bp.param)) + se %o% c(-qnorm(1 - alpha / 2), qnorm(1 - alpha / 2))
 
@@ -66,7 +66,7 @@ credint <- function(x, ...) UseMethod("credint")
 credint.spbp <- function(x, prob = 0.95, type = c("HPD", "Equal-Tailed"), ...) {
   type <- match.arg(type)
 
-  if(sum(x$features) != 0){
+  if (sum(x$features) != 0) {
     if (x$call$approach == "mle") {
       warning("not applicable, calling confint.spbp to get credible intervals instead")
       confint.spbp(x, level = prob)
@@ -89,5 +89,4 @@ credint.spbp <- function(x, prob = 0.95, type = c("HPD", "Equal-Tailed"), ...) {
       }
     }
   }
-
 }
