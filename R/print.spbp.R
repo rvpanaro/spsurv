@@ -1,13 +1,14 @@
 #' Bernstein Polynomial Based Regression Object Print
 #'
 #' @export
-#' @param x an object of class spbp
-#' @param digits number of digits to display
-#' @param signif.stars see \code{\link{getOption}}
-#' @param ... further arguments passed to or from other methods
+#' @param x an object of class spbp.
+#' @param digits number of digits to display.
+#' @param signif.stars see \code{\link{getOption}}.
+#' @param bp.param print BP parameters.
+#' @param ... further arguments passed to or from other methods.
 #' @method print spbp
 #' @return none
-
+#' @importFrom stats pnorm
 
 print.spbp <-
   function(x, bp.param = FALSE, digits = max(getOption("digits") - 4, 3),
@@ -46,8 +47,8 @@ print.spbp <-
         se <- sqrt(diag(as.matrix(vcov(x, TRUE))))
 
         Coefmat <- cbind(
-          log(x$bp.param), x$bp.param, se, x$bp.param * log(x$bp.param) / se,
-          pnorm(q = x$bp.param * log(x$bp.param) / se, lower.tail = FALSE)
+          log(x$bp.param), x$bp.param, se, x$bp.param * (log(x$bp.param) - log(1e-19)) / se,
+          pnorm(q = x$bp.param * (log(x$bp.param) - log(1e-19)) / se, lower.tail = FALSE)
         )
 
         dimnames(Coefmat) <- list(names(x$bp.param), c(
@@ -88,7 +89,7 @@ print.spbp <-
       if (!is.null(x$coefficients)) {
         Coefmat <- cbind(
           coef,
-          apply(x$posterior$beta, 2, mode),
+          apply(x$posterior$beta, 2, .mode),
           apply(x$posterior$beta, 2, median),
           colMeans(exp(x$posterior$beta)),
           apply(x$posterior$beta, 2, sd)
@@ -106,10 +107,10 @@ print.spbp <-
           signif.stars = signif.stars, ...
         )
       } else {
-        browser()
+
         Coefmat <- cbind(
           x$bp.param,
-          apply(x$posterior$gamma, 2, mode),
+          apply(x$posterior$gamma, 2, .mode),
           apply(x$posterior$gamma, 2, median),
           colMeans(log(x$posterior$gamma)),
           apply(x$posterior$gamma, 2, sd)
@@ -131,7 +132,7 @@ print.spbp <-
 
       if (!is.null(x$posterior$log_lik)) {
         cat(
-          "\nDeviance criterion= ", DIC(x$posterior$log_lik)[1, 1], "  Watanabe–Akaike criterion= ", WAIC(x$posterior$log_lik)[1, 1], "\nLog pseudo-marginal lik=", LPML(x$posterior$log_lik)[1], "\n"
+          "\nDeviance criterion= ", DIC(x$posterior$log_lik)[1, 1], "  Watanabe\u2013Akaike criterion= ", WAIC(x$posterior$log_lik)[1, 1], "\nLog pseudo-marginal lik=", LPML(x$posterior$log_lik)[1], "\n"
         )
       }
 

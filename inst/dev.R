@@ -4,6 +4,7 @@ devtools::load_all()
 devtools::document()
 # devtools::install()
 devtools::install(quick=TRUE)
+covr::codecov(token = "5ac8c633-0916-4cdc-9b1f-7391b8dafe7f")
 
 usethis::use_build_ignore("_pkgdown.yml")
 usethis::use_build_ignore("codecov.yml")
@@ -31,5 +32,4 @@ t1 <- Sys.time(); devtools::run_examples();
 t2 <- Sys.time(); t2-t1
 devtools::release()
 devtools::build_manual()
-covr::codecov(token = "5ac8c633-0916-4cdc-9b1f-7391b8dafe7f")
 devtools::submit_cran()

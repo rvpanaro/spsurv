@@ -9,7 +9,7 @@ credint(x, ...)
 \arguments{
 \item{x}{a fitted model object}
 
-\item{...}{further arguments passed to or from other methods.}
+\item{...}{further arguments passed to parent method}
 }
 \value{
 the estimated regression coefficients

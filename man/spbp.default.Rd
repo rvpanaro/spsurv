@@ -36,6 +36,10 @@
 
 \item{scale}{logical; indicates whether to center and scale the data}
 
+\item{verbose}{verbose passed to stan}
+
+\item{chains}{number of chains passed to stan}
+
 \item{...}{further arguments passed to or from other methods}
 }
 \value{

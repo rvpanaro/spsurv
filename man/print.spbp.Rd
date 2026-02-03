@@ -13,13 +13,15 @@
 )
 }
 \arguments{
-\item{x}{an object of class spbp}
+\item{x}{an object of class spbp.}
 
-\item{digits}{number of digits to display}
+\item{bp.param}{print BP parameters.}
 
-\item{signif.stars}{see \code{\link{getOption}}}
+\item{digits}{number of digits to display.}
 
-\item{...}{further arguments passed to or from other methods}
+\item{signif.stars}{see \code{\link{getOption}}.}
+
+\item{...}{further arguments passed to or from other methods.}
 }
 \value{
 none

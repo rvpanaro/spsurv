@@ -1,46 +1,34 @@
 #---------------------------------------------
-#' Generic S3 method vcov
-#' @aliases vcov
-#' @export
-#' @param x a fitted model object
-#' @param ... further arguments passed to or from other methods.
-#' @return the variance-covariance matrix associated the regression coefficients.
-#'
-vcov <- function(x, ...) UseMethod("vcov")
-
-#---------------------------------------------
 #' Covariance of the regression coefficients
 #'
 #' @aliases vcov.spbp
-#' @rdname vcov-methods
-#' @method vcov spbp
 #' @export
-#' @export vcov
-#' @param x an object of the class spbp
-#' @param ... further arguments passed to or from other methods.
+#' @param object an object of the class spbp
+#' @param bp.param return Bernstein Polynomial variance.
+#' @param ... arguments passed to parent method.
 #' @return  the variance-covariance matrix associated with the regression coefficients.
 #'
 
-vcov.spbp <- function(x, bp.param.var = FALSE, ...) {
-  if (x$call$approach != "mle") {
+vcov.spbp <- function(object, bp.param = FALSE, ...) {
+  if (object$call$approach != "mle") {
     warning("Not available, change approach to 'mle' instead.")
     return(NULL)
   }
 
-  V <- MASS::ginv(-x$hessian)
+  V <- MASS::ginv(-object$hessian)
   diag(V) <- abs(diag(V))
 
-  q <- length(x$coefficients)
-  m <- length(x$bp.param)
+  q <- length(object$coefficients)
+  m <- length(object$bp.param)
 
   # Parameters for Delta Method
-  inv_exp_a <- 1 / exp(x$alpha)
+  inv_exp_a <- 1 / exp(object$alpha)
 
   # Construct Jacobian J
   J <- matrix(0, q + m, q + m)
 
   # d(coef)/d(beta_std)
-  diag(J)[1:q] <- 1 / x$sdv
+  diag(J)[1:q] <- 1 / object$sdv
 
   # d(gamma)/d(gamma_std)
   diag(J)[(q + 1):(q + m)] <- inv_exp_a
@@ -48,16 +36,16 @@ vcov.spbp <- function(x, bp.param.var = FALSE, ...) {
   # d(gamma)/d(beta_std): The cross-dependency
   # This accounts for how the intercept shift affects the gamma weights
   for (i in 1:m) {
-    J[q + i, 1:q] <- -x$bp.param[i] * inv_exp_a * x$means
+    J[q + i, 1:q] <- -object$bp.param[i] * inv_exp_a * object$means
   }
 
   V_final <- J %*% V %*% t(J)
 
   # Labeling
-  nms <- c(names(x$coefficients), names(x$bp.param))
+  nms <- c(names(object$coefficients), names(object$bp.param))
   dimnames(V_final) <- list(nms, nms)
 
-  if (bp.param.var) {
+  if (bp.param) {
     return(V_final)
   } else {
     return(V_final[1:q, 1:q])

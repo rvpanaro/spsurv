@@ -4,14 +4,14 @@
 \alias{residuals.spbp}
 \title{BP based models residuals.}
 \usage{
-\method{residuals}{spbp}(x, type = c("martingale", "deviance", "cox-snell"))
+\method{residuals}{spbp}(object, type = c("martingale", "deviance", "coobject-snell"), ...)
 }
 \arguments{
-\item{x}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
+\item{object}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
 
 \item{type}{type of residuals, default is "cox-snell"}
 
-\item{...}{further arguments passed to or from other methods}
+\item{...}{arguments passed to parent method.}
 }
 \description{
 Residuals for a fitted \code{\link[spsurv]{spbp}} model.
@@ -28,5 +28,5 @@ fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
 residuals(fit)
 }
 \seealso{
-\code{\link[spsurv]{spbp}}, \code{\link[survfit]{spbp}}.
+\code{\link[spsurv:spbp]{spbp}}, \code{\link[survival:survfit]{spbp}}.
 }

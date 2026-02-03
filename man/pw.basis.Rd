@@ -8,10 +8,6 @@ pw.basis(degree)
 }
 \arguments{
 \item{degree}{Bernstein polynomial degree}
-
-\item{time}{a vector of times.}
-
-\item{tau}{must be greater than times maximum value observed.}
 }
 \value{
 A list containing matrices g and G corresponding BP basis and corresponding tau value used to compute them.

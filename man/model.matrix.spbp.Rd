@@ -4,17 +4,15 @@
 \alias{model.matrix.spbp}
 \title{Model.matrix method for fitted spbp models}
 \usage{
-\method{model.matrix}{spbp}(x, ...)
+\method{model.matrix}{spbp}(object, ...)
 }
 \arguments{
-\item{...}{arguments inherent from \code{\link[stats]{model.matrix}}.}
-
 \item{object}{an object of class `spbp`, see \code{\link[spsurv]{spbp}}.}
 
-\item{data}{data.frame object.}
+\item{...}{arguments passed to parent method.}
 }
 \value{
-The explanatory variables matrix.
+The model matrix.
 }
 \description{
 Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
