@@ -91,7 +91,7 @@ spbp.default <-
     approach_flag <- match.arg(approach)
     approach <- ifelse(approach_flag == "mle", 0, 1)
 
-    .handler1() ## error-handling nº1 -- BP degree handling
+    aux <- .handler1(Call) ## error-handling nº1 -- BP degree handling
 
     temp <- Call[c(1, aux)] # keep important args
     temp[[1L]] <- quote(stats::model.frame) # model frame call
@@ -111,9 +111,23 @@ spbp.default <-
 
     if (missing(degree)) degree <- ceiling(nrow(data)^(0.5))
 
-    .handler2() ## error-handling nº2 -- Frailty (id, distribution, column)
-    .handler3() ## error-handling nº3 -- Priors
-    .handler4() ## error-handling nº5 -- Model Frame
+    h2 <- .handler2(temp, formula) ## error-handling nº2 -- Frailty (id, distribution, column)
+    rand <- h2$rand
+    id <- h2$id
+    frailty_idx <- h2$frailty_idx
+
+    h3 <- .handler3(priors) ## error-handling nº3 -- Priors
+    priordist_beta <- h3$priordist_beta
+    location_beta <- h3$location_beta
+    scale_beta <- h3$scale_beta
+    priordist_gamma <- h3$priordist_gamma
+    location_gamma <- h3$location_gamma
+    scale_gamma <- h3$scale_gamma
+    priordist_frailty <- h3$priordist_frailty
+    par1_frailty <- h3$par1_frailty
+    par2_frailty <- h3$par2_frailty
+
+    .handler4(mf, Y, type, Terms, formula) ## error-handling nº5 -- Model Frame
 
     # ---------------  Data declaration + definitions ---------------
     data.n <- nrow(Y) ## + sample size + labels

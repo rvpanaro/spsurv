@@ -71,18 +71,18 @@ test_that("bp.basis g (density) is non-negative", {
   expect_true(all(result$g >= 0))
 })
 
-# test_that("bp.basis at time = 0 gives G = 0 for first basis", {
-#   result <- bp.basis(time = 0.001, degree = 2, tau = 1)
-#   # pbeta(0, k, degree-k+1) = 0 for any k
-#   expect_true(all(result$G[1, ] >= 0))
-# })
+test_that("bp.basis at time = 0 gives G = 0 for first basis", {
+  result <- bp.basis(time = 0.001, degree = 2, tau = 1)
+  # pbeta(0, k, degree-k+1) = 0 for any k
+  expect_true(all(result$G[1] >= 0))
+})
 
-# test_that("bp.basis at time = tau gives G = 1", {
-#   tau <- 5
-#   result <- bp.basis(time = tau, degree = 3, tau = tau)
-#   # pbeta(1, k, m-k+1) = 1
-#   expect_equal(result$G[1, ], c(1, 1, 1))
-# })
+test_that("bp.basis at time = tau gives G = 1", {
+  tau <- 5
+  result <- bp.basis(time = tau, degree = 3, tau = tau)
+  # pbeta(1, k, m-k+1) = 1
+  expect_equal(result$G, c(1, 1, 1))
+})
 
 test_that("bp.basis errors on negative time", {
   expect_error(bp.basis(time = -1, degree = 1), "time must be a positive vector")
@@ -138,7 +138,7 @@ test_that("bp.basis with larger degree produces more columns", {
   expect_equal(ncol(r4$G), 4)
 })
 
-# plot.spbp is in bp.basis.R
+# plot.spbp (lines 56-125 in bp.basis.R): main title logic (68-88), portion (90-104), summation (106-110)
 test_that("plot.spbp runs without error", {
   fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
   expect_silent(plot(fit))
@@ -147,4 +147,57 @@ test_that("plot.spbp runs without error", {
 test_that("plot.spbp with graph basis and cumulative", {
   fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
   expect_silent(plot(fit, graph = "basis", cumulative = TRUE))
+})
+
+# graph = 'baseline' (portion: baseline branch, cumulative and non-cumulative)
+test_that("plot.spbp graph = baseline, cumulative = FALSE", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "baseline", cumulative = FALSE))
+})
+
+test_that("plot.spbp graph = baseline, cumulative = TRUE", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "baseline", cumulative = TRUE))
+})
+
+# graph = 'basis' (portion: basis branch)
+test_that("plot.spbp graph = basis, cumulative = FALSE", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "basis", cumulative = FALSE))
+})
+
+# main title when missing: PH/aft -> baseline hazard vs cumulative hazard; PO -> baseline odds vs derivative odds
+test_that("plot.spbp PH model uses baseline hazard titles when main missing", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "baseline", cumulative = FALSE))
+  expect_silent(plot(fit, graph = "baseline", cumulative = TRUE))
+})
+
+test_that("plot.spbp PO model uses baseline odds titles when main missing", {
+  fit <- bppo(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "baseline", cumulative = FALSE))
+  expect_silent(plot(fit, graph = "baseline", cumulative = TRUE))
+})
+
+test_that("plot.spbp AFT model uses baseline hazard titles when main missing", {
+  fit <- bpaft(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "baseline", cumulative = FALSE))
+  expect_silent(plot(fit, graph = "baseline", cumulative = TRUE))
+})
+
+test_that("plot.spbp graph = basis uses Basis/Cumulative Basis when main missing", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, graph = "basis", cumulative = FALSE))
+  expect_silent(plot(fit, graph = "basis", cumulative = TRUE))
+})
+
+test_that("plot.spbp with explicit main overrides default", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, main = "Custom title"))
+  expect_silent(plot(fit, graph = "baseline", main = "Custom baseline"))
+})
+
+test_that("plot.spbp accepts frame and lwd", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")
+  expect_silent(plot(fit, frame = TRUE, lwd = 2))
 })

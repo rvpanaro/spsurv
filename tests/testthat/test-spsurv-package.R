@@ -13,7 +13,7 @@ test_that("package loads and exports main functions", {
 })
 
 test_that("veteran data is available", {
-  data("veteran", package = "survival")
+  data("cancer", package = "survival")
   expect_true(exists("veteran"))
   expect_true(is.data.frame(veteran))
   expect_true("time" %in% names(veteran))

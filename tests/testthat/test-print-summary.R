@@ -48,7 +48,7 @@ test_that("print.summary.spbp.mle outputs n and coefficients", {
 })
 
 test_that("print.summary.spbp.bayes outputs DIC WAIC LPML", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   s <- summary(fit)
   expect_output(print(s), "DIC=|WAIC=|LPML=")
 })

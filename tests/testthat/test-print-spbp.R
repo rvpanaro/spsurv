@@ -16,12 +16,12 @@ test_that("print.spbp with bp.param = TRUE", {
 })
 
 test_that("print.spbp for Bayes fit", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   expect_output(print(fit), "Call:")
   expect_output(print(fit), "mean\\(coef\\)|Deviance|WAIC")
 })
 
 test_that("print.spbp for Bayes null model", {
-  fit <- bpph(Surv(time, status) ~ 1, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ 1, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   expect_output(print(fit), "mean\\(bp\\)|mode\\(bp\\)")
 })

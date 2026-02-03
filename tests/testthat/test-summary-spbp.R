@@ -23,7 +23,7 @@ test_that("summary.spbp for null model returns fit unchanged", {
 })
 
 test_that("summary.spbp for Bayes fit", {
-  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   s <- summary(fit, interval = 0.95)
   expect_equal(class(s), "summary.bpph.bayes")
   expect_true(!is.null(s$coefficients))

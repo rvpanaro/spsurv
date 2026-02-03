@@ -26,7 +26,7 @@ test_that("spbp.default with model ph, po, aft", {
 })
 
 test_that("spbp.default Bayes with short run", {
-  fit <- spbp(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
+  fit <- expect_warning(spbp(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
   expect_s3_class(fit, "spbp")
   expect_true(!is.null(fit$posterior$beta) || !is.null(fit$posterior$gamma))
 })

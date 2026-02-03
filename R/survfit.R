@@ -29,7 +29,7 @@ survfit.spbp <- function(formula, newdata, times,
 
   data <- eval(x$call$data, envir = environment(x$terms))
 
-  coxfit <- coxph(x$formula, data = data, model= TRUE)
+  coxfit <- coxph(x$formula, data = data, model = TRUE)
   p <- length(x$coefficients)
 
   if (missing(newdata)) {
