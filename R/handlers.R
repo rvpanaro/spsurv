@@ -1,5 +1,6 @@
-## --------------- Degree error handling ---------------
-handler1 <- function() {
+#'
+#' @keywords internal
+.handler1 <- function() {
   e <- parent.frame()
 
   # variable names in parent frame
@@ -17,8 +18,9 @@ handler1 <- function() {
   e$aux <- aux
 }
 
-## --------------- Frailty handling ---------------
-handler2 <- function() {
+#'
+#' @keywords internal
+.handler2 <- function() {
   e <- parent.frame()
   # variable names in parent frame
 
@@ -52,8 +54,9 @@ handler2 <- function() {
   e$frailty_idx <- frailty_idx
 }
 
-## --------------- Priors handling ---------------
-handler3 <- function() {
+#'
+#' @keywords internal
+.handler3 <- function() {
   e <- parent.frame()
   vnames <- objects(, envir = e)
 
@@ -87,8 +90,9 @@ handler3 <- function() {
   e$par2_frailty <- sapply(frailtyp, `[[`, 3)
 }
 
-## --------------- Model Frame error handling ---------------
-handler4 <- function() {
+#'
+#' @keywords internal
+.handler4 <- function() {
   e <- parent.frame()
   # variable names in parent frame
 

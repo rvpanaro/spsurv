@@ -4,10 +4,10 @@
 \alias{summary.spbp}
 \title{Bernstein Polynomial Based Regression Object Summary}
 \usage{
-\method{summary}{spbp}(x, interval = 0.95, ...)
+\method{summary}{spbp}(object, interval = 0.95, ...)
 }
 \arguments{
-\item{x}{an object of class spbp}
+\item{object}{an object of class spbp}
 
 \item{interval}{interval coverage (confidence or credibility)}
 

@@ -1,23 +1,23 @@
 #' Bernstein Polynomial Based Regression Object Summary
 #'
 #' @export
-#' @param x an object of class spbp
+#' @param object an object of class spbp
 #' @param interval interval coverage (confidence or credibility)
 #' @param ... further arguments passed to or from other methods
 #' @method summary spbp
+#' @importFrom stats vcov
 #' @return An object of class analogous to for e.g. 'summary.bppo.bayes'.
 
-
-summary.spbp <- function(x, interval = 0.95, ...) {
+summary.spbp <- function(object, interval = 0.95, ...) {
   # Null model
-  if (is.null(x$coefficients)) {
-    return(x)
+  if (is.null(object$coefficients)) {
+    return(object)
   }
-  beta <- x$coefficients
+  beta <- object$coefficients
 
   ## mle approach
-  if (x$call$approach == "mle") {
-    var <- as.matrix(vcov(x))
+  if (object$call$approach == "mle") {
+    var <- as.matrix(vcov(object))
 
     ### Error handling ###
     beta2 <- beta[!(is.na(beta))] # non-missing coefs
@@ -26,14 +26,14 @@ summary.spbp <- function(x, interval = 0.95, ...) {
     se <- sqrt(diag(var))
 
     output <- list(
-      call = x$call,
-      return_code = x$return_code,
-      n = x$n,
-      loglik = x$loglik
+      call = object$call,
+      return_code = object$return_code,
+      n = object$n,
+      loglik = object$loglik
     )
 
-    if (!is.null(x$nevent)) {
-      output$nevent <- x$nevent
+    if (!is.null(object$nevent)) {
+      output$nevent <- object$nevent
     }
 
     output$coefficients <- cbind(
@@ -57,26 +57,26 @@ summary.spbp <- function(x, interval = 0.95, ...) {
     ))
 
     df <- length(beta2)
-    logtest <- -2 * (x$loglik[1] - x$loglik[2])
+    logtest <- -2 * (object$loglik[1] - object$loglik[2])
     output$logtest <- c(
       test = logtest,
       df = df,
       pvalue = pchisq(logtest, df, lower.tail = FALSE)
     )
     output$rsq <- c(
-      rsq = 1 - exp(-logtest / x$n),
-      maxrsq = 1 - exp(2 * x$loglik[1] / x$n)
+      rsq = 1 - exp(-logtest / object$n),
+      maxrsq = 1 - exp(2 * object$loglik[1] / object$n)
     )
     output$waldtest <- c(
-      test = as.vector(round(coxph.wtest(vcov(x), coef(x))$test, 2)),
+      test = as.vector(round(coxph.wtest(vcov(object), coef(object))$test, 2)),
       df = df,
-      pvalue = pchisq(as.vector(round(coxph.wtest(vcov(x), coef(x))$test, 2)), df,
+      pvalue = pchisq(as.vector(round(coxph.wtest(vcov(object), coef(object))$test, 2)), df,
         lower.tail = FALSE
       )
     )
-    output$p <- ncol(vcov(x))
+    output$p <- ncol(vcov(object))
 
-    class(output) <- switch(x$call$model,
+    class(output) <- switch(object$call$model,
       "po" = "summary.bppo.mle",
       "ph" = "summary.bpph.mle",
       "aft" = "summary.bpaft.mle"
@@ -84,23 +84,23 @@ summary.spbp <- function(x, interval = 0.95, ...) {
   } else {
     ### Error handling ###
     beta2 <- beta[!(is.na(beta))] # non-missing coefs
-    if (is.null(beta) | is.null(x$posterior)) stop("Input is not valid")
+    if (is.null(beta) | is.null(object$posterior)) stop("Input is not valid")
 
     output <- list(
-      call = x$call,
-      n = x$n,
-      loglik = x$loglik
+      call = object$call,
+      n = object$n,
+      loglik = object$loglik
     )
 
-    if (!is.null(x$nevent)) {
-      output$nevent <- x$nevent
+    if (!is.null(object$nevent)) {
+      output$nevent <- object$nevent
     }
 
     output$coefficients <- cbind(
       beta,
-      apply(x$posterior$beta, 2, median),
-      colMeans(exp(x$posterior$beta)),
-      apply(x$posterior$beta, 2, sd)
+      apply(object$posterior$beta, 2, median),
+      colMeans(exp(object$posterior$beta)),
+      apply(object$posterior$beta, 2, sd)
     )
     dimnames(output$coefficients) <- list(names(beta), c(
       "mean(coef)",
@@ -108,10 +108,10 @@ summary.spbp <- function(x, interval = 0.95, ...) {
     ))
 
     output$interval <- cbind(
-      colMeans(exp(x$posterior$beta)),
-      colMeans(exp(-x$posterior$beta)),
-      HPDinterval(coda::mcmc(exp(x$posterior$beta)))[, 1],
-      HPDinterval(coda::mcmc(exp(x$posterior$beta)))[, 2]
+      colMeans(exp(object$posterior$beta)),
+      colMeans(exp(-object$posterior$beta)),
+      HPDinterval(coda::mcmc(exp(object$posterior$beta)))[, 1],
+      HPDinterval(coda::mcmc(exp(object$posterior$beta)))[, 2]
     )
     dimnames(output$interval) <- list(names(beta), c(
       "mean(exp(coef))", "mean(exp(-coef))",
@@ -119,13 +119,13 @@ summary.spbp <- function(x, interval = 0.95, ...) {
       paste("upper .", round(100 * interval, 2), "HPD", sep = "")
     ))
 
-    if (!is.null(x$posterior$log_lik)) {
-      output$dic <- DIC(x$posterior$log_lik)[1, 1]
-      output$waic <- WAIC(x$posterior$log_lik)[1, 1]
-      output$lpml <- LPML(x$posterior$log_lik)[1]
+    if (!is.null(object$posterior$log_lik)) {
+      output$dic <- DIC(object$posterior$log_lik)[1, 1]
+      output$waic <- WAIC(object$posterior$log_lik)[1, 1]
+      output$lpml <- LPML(object$posterior$log_lik)[1]
     }
 
-    class(output) <- switch(x$call$model,
+    class(output) <- switch(object$call$model,
       "po" = "summary.bppo.bayes",
       "ph" = "summary.bpph.bayes",
       "aft" = "summary.bpaft.bayes"

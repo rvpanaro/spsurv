@@ -2,10 +2,10 @@
 % Please edit documentation in R/survfit.R
 \name{survfit.spbp}
 \alias{survfit.spbp}
-\title{BP based models survfit.}
+\title{BP-based model survival curves}
 \usage{
 \method{survfit}{spbp}(
-  x,
+  formula,
   newdata,
   times,
   se.fit = TRUE,
@@ -15,24 +15,33 @@
 )
 }
 \arguments{
-\item{x}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
+\item{formula}{An object of class \code{"spbp"} returned by \code{\link[spsurv:spbp]{spbp}}.}
 
-\item{...}{further arguments passed to survfit.}
+\item{newdata}{Optional data frame used to obtain survival curves for specific covariate values.}
+
+\item{times}{Optional numeric vector of time points at which to return estimates.}
+
+\item{se.fit}{Logical; if \code{TRUE}, compute standard errors.}
+
+\item{interval}{Confidence level for intervals (e.g. \code{0.95}).}
+
+\item{type}{Character; confidence interval transformation. One of \code{"log"}, \code{"log-log"}, or \code{"plain"}.}
+
+\item{...}{Further arguments (currently ignored or reserved for future use).}
+}
+\value{
+An object of class \code{"survfit"}.
 }
 \description{
-Survival for a fitted \code{\link[spsurv]{spbp}} model.
+Compute survival curves for a fitted \code{\link[spsurv:spbp]{spbp}} model.
 }
 \examples{
-
-library("spsurv")
-data("veteran")
-
-fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
-  data = veteran
-)
-
+library(spsurv)
+data(veteran, package = "survival")
+fit <- bpph(Surv(time, status) ~ karno + factor(celltype), data = veteran)
 survfit(fit)
+
 }
 \seealso{
-\code{\link[spsurv]{spbp}}, \code{\link[survfit]{spbp}}.
+\code{\link[spsurv:spbp]{spbp}}, \code{\link[survival:survfit]{survfit}}.
 }

@@ -46,6 +46,8 @@ spbp <- function(formula, ...) {
 #' @param scale logical; indicates whether to center and scale the data
 #' @param ... further arguments passed to or from other methods
 #' @param cores number of core threads to use
+#' @param verbose verbose passed to stan
+#' @param chains number of chains passed to stan
 #' @return An object of class \code{spbp}
 #' @method spbp default
 #' @export
@@ -89,7 +91,7 @@ spbp.default <-
     approach_flag <- match.arg(approach)
     approach <- ifelse(approach_flag == "mle", 0, 1)
 
-    handler1() ## error-handling nº1 -- BP degree handling
+    .handler1() ## error-handling nº1 -- BP degree handling
 
     temp <- Call[c(1, aux)] # keep important args
     temp[[1L]] <- quote(stats::model.frame) # model frame call
@@ -109,9 +111,9 @@ spbp.default <-
 
     if (missing(degree)) degree <- ceiling(nrow(data)^(0.5))
 
-    handler2() ## error-handling nº2 -- Frailty (id, distribution, column)
-    handler3() ## error-handling nº3 -- Priors
-    handler4() ## error-handling nº5 -- Model Frame
+    .handler2() ## error-handling nº2 -- Frailty (id, distribution, column)
+    .handler3() ## error-handling nº3 -- Priors
+    .handler4() ## error-handling nº5 -- Model Frame
 
     # ---------------  Data declaration + definitions ---------------
     data.n <- nrow(Y) ## + sample size + labels
@@ -222,7 +224,7 @@ spbp.default <-
     # --------------- Fit  ---------------
     if (approach == 0) {
       tryCatch(
-        expr = spbp.mle(standata = standata, hessian = T, verbose = verbose, ...),
+        expr = .spbp_mle(standata = standata, hessian = T, verbose = verbose, ...),
         error = function(e) {
           warning(e)
           return(NaN)
@@ -230,7 +232,7 @@ spbp.default <-
       )
     } else {
       tryCatch(
-        expr = spbp.bayes(standata = standata, hessian = F, verbose = verbose, chains = chains, ...),
+        expr = .spbp_bayes(standata = standata, hessian = F, verbose = verbose, chains = chains, ...),
         error = function(e) {
           warning(e)
           return(NaN)
@@ -239,9 +241,10 @@ spbp.default <-
     }
   }
 
+#' Internal: compute survival CI bands (survfit-style)
 #'
-#' @export
-spbp.mle <-
+#' @keywords internal
+.spbp_mle <-
   function(standata, hessian = TRUE, verbose = FALSE, ...) {
     e <- parent.frame() # "sourcing" the parent.frame
     vnames <- objects(, envir = e) # variable names in parent frame
@@ -338,9 +341,10 @@ spbp.mle <-
     return(output)
   }
 
+#' Internal: compute survival CI bands (survfit-style)
 #'
-#' @export
-spbp.bayes <- function(standata, hessian = FALSE, verbose = FALSE, chains = 1, ...) {
+#' @keywords internal
+.spbp_bayes <- function(standata, hessian = FALSE, verbose = FALSE, chains = 1, ...) {
   e <- parent.frame() # "sourcing" the parent.frame
   vnames <- objects(, envir = e) # variable names in parent frame
 

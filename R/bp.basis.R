@@ -4,37 +4,23 @@
 #' @param degree Bernstein polynomial degree
 #' @param tau must be greater than times maximum value observed.
 #' @return A list containing matrices g and G corresponding BP basis and corresponding tau value used to compute them.
-
+#' @importFrom viridis scale_color_viridis
+#'
 bp.basis <- function(time, degree, tau = max(time)) {
   n <- length(time)
 
-  ## error handling
-  if (sum(time >= 0) != n) {
-    stop("time must be a positive vector.")
-  }
-
-  if (degree < 0) {
-    stop("polynomial degree must be positive.")
-  }
-
-  if (!(degree %% 1 == 0)) {
-    stop("polynomial degree must be integer.")
-  }
-
-  if (tau < max(time)) {
-    stop("tau must be greater than the last time.")
-  }
+  if (sum(time >= 0) != n) stop("time must be a positive vector.")
+  if (degree < 0) stop("polynomial degree must be positive.")
+  if (!(degree %% 1 == 0)) stop("polynomial degree must be integer.")
+  if (tau < max(time)) stop("tau must be greater than the last time.")
 
   k <- 1:degree
   g <- matrix(NA, n, degree)
   G <- matrix(NA, n, degree)
   y <- time / tau
 
-  g <- sapply(k, function(k) {
-    dbeta(y, k, degree - k + 1) / tau
-  })
+  g <- sapply(k, function(k) {dbeta(y, k, degree - k + 1) / tau})
   G <- sapply(k, function(k) pbeta(y, k, degree - k + 1))
-
   # Equivalent to
   # for (i in 1:n){
   #   for(k in 1:degree){
@@ -57,6 +43,7 @@ bp.basis <- function(time, degree, tau = max(time)) {
 #' @param lwd graphical parameter; default is 3
 #' @param ... further arguments passed to or from other methods
 #' @seealso \code{\link[spsurv]{spbp}}.
+#' @importFrom graphics curve
 #' @examples
 #'
 #' library("spsurv")

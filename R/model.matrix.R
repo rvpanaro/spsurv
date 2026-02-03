@@ -4,11 +4,9 @@
 #' @param object an object of class `spbp`, see \code{\link[spsurv]{spbp}}.
 #' @method model.matrix spbp
 #' @description Model.matrix of a fitted \code{\link[spsurv]{spbp}} model.
-#' @param data data.frame object.
-#' @param ... arguments inherent from \code{\link[stats]{model.matrix}}.
-#' @return The explanatory variables matrix.
+#' @return The model matrix.
 #' @seealso \code{\link[spsurv]{spbp}}, \code{\link[stats]{model.matrix}}
-#' @importFrom stats model.matrix
+#' @param ... arguments passed to parent method.
 #' @examples
 #'
 #' library("spsurv")
@@ -20,6 +18,6 @@
 #'
 #' model.matrix(fit)
 model.matrix.spbp <-
-  function(x, ...) {
-    x$features
+  function(object, ...) {
+    object$features
   }
