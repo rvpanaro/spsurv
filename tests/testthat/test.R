@@ -3,13 +3,38 @@ data("cancer")
 
 #---- bpfits.R ----
 
+ph_fit <- bpph(Surv(time, status) ~ 1, approach = "mle", data = veteran)
+print(ph_fit)
+survfit(ph_fit)
+summary(ph_fit)
+confint(ph_fit)
+residuals(ph_fit)
+print(summary(ph_fit))
+plot(ph_fit)
+
+ph_fit <- bpph(Surv(time, status) ~ 1, approach = "bayes", data = veteran, iter = 10, cores = 1)
+print(ph_fit)
+survfit(ph_fit)
+summary(ph_fit)
+credint(ph_fit)
+residuals(ph_fit)
+print(summary(ph_fit))
+plot(ph_fit)
+
 ## PH model
 ph_fit <- bpph(Surv(time, status) ~ karno + factor(celltype), data = veteran) ## PO model
 print(ph_fit)
 survfit(ph_fit)
 summary(ph_fit)
+confint(ph_fit)
 residuals(ph_fit)
 print(summary(ph_fit))
+plot(ph_fit)
+
+expect_error(bp.basis(time =-1))
+expect_error(bp.basis(time = 1, degree =-1))
+expect_error(bp.basis(time = 1, degree =0.5))
+expect_error(bp.basis(time = 1, degree =1, tau = 0.5))
 
 ph_fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
   approach = "bayes", data = veteran,
@@ -18,7 +43,9 @@ ph_fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
 print(ph_fit)
 survfit(ph_fit)
 summary(ph_fit)
+residuals(ph_fit)
 print(summary(ph_fit))
+plot(ph_fit)
 
 expect_warning(confint(ph_fit))
 expect_warning(vcov(ph_fit))
@@ -108,3 +135,4 @@ fit2 <- spbp(Surv(time, status) ~ karno + factor(celltype),
 print(fit2)
 summary(fit2)
 model.matrix(fit2)
+
