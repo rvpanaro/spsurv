@@ -9,7 +9,7 @@
 #' @examples
 #'
 #' library("spsurv")
-#' data("veteran") ## imports from survival package
+#' data("veteran", package = "survival")
 #'
 #' fit_mle <- spbp(Surv(time, status) ~ karno + factor(celltype),
 #'   data = veteran, model = "po"

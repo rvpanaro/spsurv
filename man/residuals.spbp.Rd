@@ -19,7 +19,7 @@ Residuals for a fitted \code{\link[spsurv]{spbp}} model.
 \examples{
 
 library("spsurv")
-data("veteran")
+data("veteran", package = "survival")
 
 fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
   data = veteran

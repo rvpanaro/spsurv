@@ -12,7 +12,7 @@
 #' @examples
 #'
 #' library("spsurv")
-#' data("veteran")
+#' data("veteran", package = "survival")
 #'
 #' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
 #'   data = veteran
@@ -51,7 +51,7 @@ bpph <- function(formula, degree, data, approach = c("mle", "bayes"), ...) {
 #' @examples
 #'
 #' library("spsurv")
-#' data("veteran")
+#' data("veteran", package = "survival")
 #'
 #' fit <- bppo(Surv(time, status) ~ karno + celltype,
 #'   data = veteran
@@ -89,7 +89,7 @@ bppo <- function(formula, degree, data, approach = c("mle", "bayes"), ...) {
 #' @examples
 #'
 #' library("spsurv")
-#' data("veteran")
+#' data("veteran", package = "survival")
 #'
 #' fit <- bpaft(Surv(time, status) ~ karno + celltype,
 #'   data = veteran

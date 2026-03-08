@@ -26,7 +26,7 @@ Fits the BPAFT model to time-to-event data.
 \examples{
 
 library("spsurv")
-data("veteran")
+data("veteran", package = "survival")
 
 fit <- bpaft(Surv(time, status) ~ karno + celltype,
   data = veteran
