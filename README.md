@@ -1,76 +1,79 @@
-## spsurv <a href='https://rvpanaro.github.io/spsurv'><img src="https://raw.githubusercontent.com/rvpanaro/spsurv/master/inst/figures/logo.png" align="right" height="139"/></a>
+## spsurv <a href='https://rvpanaro.github.io/spsurv'><img src="https://raw.githubusercontent.com/rvpanaro/spsurv/master/inst/figures/logo.png" align="right" width="240" height="277" alt="spsurv package logo"/></a>
 
-[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv)  [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/spsurv)](https://cran.r-project.org/package=spsurv)[![R-CMD-check](https://github.com/rvpanaro/spsurv/workflows/R-CMD-check/badge.svg)](https://github.com/rvpanaro/spsurv/actions) [![Codecov test coverage](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv)
+[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/spsurv)](https://cran.r-project.org/package=spsurv) [![R-CMD-check](https://github.com/rvpanaro/spsurv/workflows/R-CMD-check/badge.svg)](https://github.com/rvpanaro/spsurv/actions) [![Codecov](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv)
 
-`spsurv` provides flexible **semi-parametric survival regression** for right-censored data: **proportional hazards (PH)**, **proportional odds (PO)**, and **accelerated failure time (AFT)** models with smooth baseline functions estimated via **Bernstein polynomials**.
+## Overview
 
-### Key features
+**spsurv**: An R package for semi-parametric survival analysis.
 
--   PH / PO / AFT regression with Bernstein polynomial baseline functions
--   Estimation via **maximum likelihood** or **Bayesian inference**
--   Bayesian fitting via **Stan** (NUTS/HMC), with multiple prior options
--   Extensible interface for user-defined modeling workflows
+The **spsurv** package was designed to contribute with a flexible set of semi-parametric survival regression options, including **proportional hazards (PH)**, **proportional odds (PO)**, and **accelerated failure time (AFT)** models for right-censored data.
+
+The package provides:
+
+- Survival classes (PH, PO, AFT) extensions based on a fully likelihood-based approach for either **Bayesian** or **maximum likelihood (ML)** estimation procedures
+- Smooth estimates for the unknown baseline functions based on the **Bernstein polynomial (BP)**
+- Integration with **Stan** for user-defined modeling
+- Six distinct prior specification options in a Bayesian analysis
+
+Stan is an open-source platform with its own language and log-probability functions for custom likelihoods and priors. Access to Stan in R is provided via **rstan**; the package uses NUTS (No-U-Turn) sampling by default for Bayesian fits.
 
 ## Installation
 
 ### From CRAN
 
--   Install the CRAN version:
-
-``` r
+```r
 install.packages("spsurv")
 ```
 
 ### Development version
 
--   Installation using the devtools package:
-
-``` r
-install.packages("remotes")
-remotes::install_github("rvpanaro/spsurv")
+```r
+install.packages("devtools")
+devtools::install_github("rvpanaro/spsurv")
 ```
 
-## Quick start
+## Usage
 
-``` r
-library(survival)
-library(KMsurv)
+Fit a BP-based survival regression PH model:
+
+```r
+library("KMsurv")
+data("larynx")
+
 library(spsurv)
 
-data("larynx")  # time = follow-up time, delta = event indicator
+fit <- bpph(Surv(time, delta) ~ age + factor(stage), model = "ph", data = larynx)
+summary(fit)
+```
 
+Alternatively, use the `spbp` function:
+
+```r
 fit <- spbp(Surv(time, delta) ~ age + factor(stage), model = "ph", data = larynx)
-summary(fit)  
+summary(fit)
 ```
 
-## Bayesian example
+Bayesian analysis with the `approach` argument:
 
-``` r
-set.seed(1)
-
-fit_bayes <- spbp(
-  Surv(time, delta) ~ age + factor(stage),
-  model = "ph",
-  approach = "bayes",
-  data = larynx,
-  iter = 2000,
-  warmup = 1000,
-  chains = 4
-)
-
-summary(fit_bayes)
+```r
+fit2 <- spbp(Surv(time, delta) ~ age + factor(stage),
+             approach = "bayes", data = larynx,
+             iter = 2000, chains = 1, warmup = 1000)
+summary(fit2)
 ```
 
-More examples: <https://rvpanaro.github.io/spsurv/reference/index.html>
+See the [reference manual](https://rvpanaro.github.io/spsurv/reference/index.html) for more examples.
 
-## Citation
+## Troubleshooting
 
-```         
-citation("spsurv")
-```
+Please report issues at [https://github.com/rvpanaro/spsurv/issues](https://github.com/rvpanaro/spsurv/issues) or contact the maintainer (see DESCRIPTION).
 
-## Getting help / reporting bugs
+## Links
 
--   Bug reports and feature requests: <https://github.com/rvpanaro/spsurv/issues>
--   Questions: open a GitHub Discussion (if enabled) or file an issue with a reproducible example
--   Contact: [rvpanaro\@gmail.com](mailto:rvpanaro@gmail.com){.email}
+- [Download from CRAN](https://cloud.r-project.org/package=spsurv)
+- [Browse source code](https://github.com/rvpanaro/spsurv)
+- [Report a bug](https://github.com/rvpanaro/spsurv/issues)
+
+## License
+
+GPL-3
