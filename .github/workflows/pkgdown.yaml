@@ -1,5 +1,4 @@
 # pkgdown: build and deploy site to gh-pages
-# https://github.com/r-lib/actions/tree/master/examples
 on:
   push:
     branches: [master, main]
@@ -15,8 +14,6 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: write
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +26,22 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: pkgdown
+          extra-packages: [pkgdown, rmarkdown]
+
+      - name: Install package
+        run: R CMD INSTALL . --no-docs
+
+      - name: Build site
+        run: Rscript -e 'pkgdown::build_site()'
+
+      - name: Copy extra.css and add .nojekyll for GitHub Pages
+        run: |
+          cp inst/pkgdown/extra.css docs/extra.css
+          touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
-        run: |
-          git config --local user.name "$GITHUB_ACTOR"
-          git config --local user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          Rscript -e 'pkgdown::deploy_to_branch(new_process = FALSE)'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs
+          force_orphan: true
