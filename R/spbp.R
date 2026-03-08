@@ -91,8 +91,7 @@ spbp.default <-
     approach_flag <- match.arg(approach)
     approach <- ifelse(approach_flag == "mle", 0, 1)
 
-    aux <- .handler1(Call) ## error-handling nº1 -- BP degree handling
-
+    aux <- match(c("formula", "data"), names(Call), nomatch = 0)
     temp <- Call[c(1, aux)] # keep important args
     temp[[1L]] <- quote(stats::model.frame) # model frame call
     special <- c("frailty", "frailty.gamma", "frailty.gaussian", "frailty.t")
@@ -111,23 +110,68 @@ spbp.default <-
 
     if (missing(degree)) degree <- ceiling(nrow(data)^(0.5))
 
-    h2 <- .handler2(temp, formula) ## error-handling nº2 -- Frailty (id, distribution, column)
-    rand <- h2$rand
-    id <- h2$id
-    frailty_idx <- h2$frailty_idx
+    # Frailty: id, distribution, column index
+    id <- NULL
+    if (!is.null(attr(temp$formula, "specials")$frailty)) {
+      frailty_idx <- attr(temp$formula, "specials")$frailty
+      id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty]
+      rand <- 1L
+    } else if (!is.null(attr(temp$formula, "specials")$frailty.gamma)) {
+      frailty_idx <- attr(temp$formula, "specials")$frailty.gamma
+      id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gamma]
+      rand <- 1L
+    } else if (!is.null(attr(temp$formula, "specials")$frailty.gauss)) {
+      frailty_idx <- attr(temp$formula, "specials")$frailty.gauss
+      id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gauss]
+      rand <- 2L
+    } else if (!is.null(attr(temp$formula, "specials")$frailty.t)) {
+      frailty_idx <- attr(temp$formula, "specials")$frailty.t
+      id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.t]
+      rand <- 3L
+    } else {
+      rand <- 0L
+      frailty_idx <- NULL
+    }
 
-    h3 <- .handler3(priors) ## error-handling nº3 -- Priors
-    priordist_beta <- h3$priordist_beta
-    location_beta <- h3$location_beta
-    scale_beta <- h3$scale_beta
-    priordist_gamma <- h3$priordist_gamma
-    location_gamma <- h3$location_gamma
-    scale_gamma <- h3$scale_gamma
-    priordist_frailty <- h3$priordist_frailty
-    par1_frailty <- h3$par1_frailty
-    par2_frailty <- h3$par2_frailty
+    # Parse priors (beta, gamma, frailty)
+    if (length(priors$beta) > 0) {
+      betap <- lapply(priors$beta, read_prior)
+    } else {
+      betap <- list(c("normal", "0", "5"))
+    }
+    priordist_beta <- sapply(betap, `[[`, 1)
+    location_beta <- sapply(betap, `[[`, 2)
+    scale_beta <- sapply(betap, `[[`, 3)
+    if (length(priors$gamma) > 0) {
+      gammap <- lapply(priors$gamma, read_prior)
+    } else {
+      gammap <- list(c("lognormal", "0", "5"))
+    }
+    priordist_gamma <- sapply(gammap, `[[`, 1)
+    location_gamma <- sapply(gammap, `[[`, 2)
+    scale_gamma <- sapply(gammap, `[[`, 3)
+    if (length(priors$frailty) > 0) {
+      frailtyp <- lapply(priors$frailty, read_prior)
+    } else {
+      frailtyp <- list(c("gamma", "1", "1"))
+    }
+    priordist_frailty <- sapply(frailtyp, `[[`, 1)
+    par1_frailty <- sapply(frailtyp, `[[`, 2)
+    par2_frailty <- sapply(frailtyp, `[[`, 3)
 
-    .handler4(mf, Y, type, Terms, formula) ## error-handling nº5 -- Model Frame
+    # Model frame / response validation
+    if (nrow(mf) == 0) stop("Only missing observations")
+    if (!inherits(Y, "Surv")) stop("Response must be a survival object")
+    if (type != "right" && type != "counting") {
+      stop(paste("spsurv doesn't support \"", type, "\" survival data", sep = ""))
+    }
+    if (length(attr(Terms, "variables")) > 2) {
+      ytemp <- terms.inner(formula)[1:2]
+      xtemp <- terms.inner(formula)[-c(1, 2)]
+      if (any(!is.na(match(xtemp, ytemp)))) {
+        stop("a variable appears on both the left and right sides of the formula")
+      }
+    }
 
     # ---------------  Data declaration + definitions ---------------
     data.n <- nrow(Y) ## + sample size + labels
@@ -252,8 +296,8 @@ spbp.default <-
           return(NaN)
         }
       )
-    }
   }
+}
 
 #' Internal: compute survival CI bands (survfit-style)
 #'
