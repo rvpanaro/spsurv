@@ -18,6 +18,7 @@ Authors@R:
            role = c("ths"),
            email = "vdinizm@gmail.com",
            comment = c(ORCID = "0000-0002-5683-8326", URL= "http://www.est.ufmg.br/~vdinizm/")))
+Author: Renato Panaro [aut, cre, cph], Fábio Demarqui [ctb, ths], Vinicius Mayrink [ths]
 Maintainer: Renato Panaro <rvpanaro@gmail.com>
 Description: Semiparametric survival analysis based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
 License: GPL-3
@@ -53,4 +54,4 @@ LazyData: true
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
 RoxygenNote: 7.3.3
-URL: https://github.com/rvpanaro/spsurv
+URL: https://github.com/rvpanaro/spsurv, https://rvpanaro.github.io/spsurv
