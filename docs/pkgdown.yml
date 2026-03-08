@@ -1,10 +1,8 @@
-pandoc: 2.3.1
-pkgdown: 1.5.0.9000
-pkgdown_sha: 0eb8b5107beccb57e21086748a44e4fafddbba8e
-articles:
-  spsurv: spsurv.html
-last_built: 2020-04-04T18:39Z
+pandoc: '0'
+pkgdown: 2.1.3
+pkgdown_sha: ~
+articles: {}
+last_built: 2026-03-08T22:22Z
 urls:
-  reference: https://rvpanaro.github.io/spsurv//reference
-  article: https://rvpanaro.github.io/spsurv//articles
-
+  reference: https://rvpanaro.github.io/spsurv/reference
+  article: https://rvpanaro.github.io/spsurv/articles
