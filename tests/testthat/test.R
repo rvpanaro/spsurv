@@ -82,7 +82,7 @@ summary(aft_fit)
 survfit(aft_fit)
 print(summary(aft_fit))
 
-#---- handlers.R ----
+#---- handler checks (spbp.R) ----
 
 expect_error(spbp(
   formula = Surv(time, status) ~ karno + factor(celltype),
