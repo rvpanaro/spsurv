@@ -2,6 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rcheck
+..Rcheck
+rj/
+.DS_Store
 src/*.o
 src/*.so
 src/*.dll
+src/symbols.rds
