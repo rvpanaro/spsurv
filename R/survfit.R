@@ -275,7 +275,7 @@ survfit.spbp <- function(formula, newdata, times,
 #' @examples
 #'
 #' library("spsurv")
-#' data("veteran")
+#' data("veteran", package = "survival")
 #'
 #' fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
 #'   data = veteran

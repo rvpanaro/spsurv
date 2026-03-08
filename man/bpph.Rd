@@ -26,7 +26,7 @@ Fits the BPPH model to time-to-event data.
 \examples{
 
 library("spsurv")
-data("veteran")
+data("veteran", package = "survival")
 
 fit <- bpph(Surv(time, status) ~ karno + factor(celltype),
   data = veteran
