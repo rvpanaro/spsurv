@@ -37,14 +37,22 @@ reference:
 - contents:
   - starts_with("coef")
   - starts_with("confint")
+  - credint
+  - credint.spbp
   - starts_with("mode")
   - starts_with("residuals")
   - starts_with("survivor")
+  - survfit.spbp
   - starts_with("vcov")
 - title: "Bernstein polynomial basis function."
   desc: "Function for supporting the computation of the BP basis."
 - contents:
   - starts_with("bp.basis")
+  - pw.basis
+- title: "S3 plot method."
+  desc: "Plot method for spbp objects."
+- contents:
+  - plot.spbp
 - title: "Data generating function."
   desc: "Function for generating simulated data."
 - contents:
