@@ -2,8 +2,8 @@ setwd("~/Documents/spsurv")
 
 devtools::load_all()
 devtools::document()
-# devtools::install()
-devtools::install(quick=TRUE)
+devtools::install()
+# devtools::install(quick=TRUE)
 covr::codecov(token = "5ac8c633-0916-4cdc-9b1f-7391b8dafe7f")
 
 usethis::use_build_ignore("_pkgdown.yml")
