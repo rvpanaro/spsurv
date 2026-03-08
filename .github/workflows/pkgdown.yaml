@@ -29,6 +29,8 @@ jobs:
           extra-packages: |
             any::pkgdown
             any::rmarkdown
+            any::rstantools
+            any::rstan
 
       - name: Install package
         run: R CMD INSTALL . --no-docs
