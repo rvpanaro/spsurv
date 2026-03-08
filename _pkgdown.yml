@@ -1,11 +1,9 @@
 destination: docs
-template:
-  params:
-    docsearch:
-      api_key: efd1fff66c6333fc3b69114572cc8e90
-      index_name: spsurv
-    bootswatch: cosmo
 url: https://rvpanaro.github.io/spsurv/
+template:
+  bootstrap: 5
+  includes:
+    in_header: '<link rel="stylesheet" href="https://rvpanaro.github.io/spsurv/extra.css">'
 authors:
   Panaro RV:
     href: https://rvpanaro.github.io/
@@ -17,48 +15,36 @@ development:
   mode: auto
 reference:
 - title: "Details"
-- contents:
-  - starts_with("spsurv")
+  contents:
+  - spsurv-package
 - title: "Fitter functions"
   desc: "Functions for fitting a BP based survival regression model."
-- contents:
-  - starts_with("bpph")
-  - starts_with("bppo")
-  - starts_with("bpaft")
-  - starts_with("spbp")
-- title: "Graphical and useful rstan related functions."
-  desc: "S3 methods for using rstan functions."
-- contents:
-  - starts_with("stan_dens")
-  - starts_with("extract")
-  - starts_with("traceplot")
-- title: "Extraction functions."
-  desc: "Functions for extracting useful information about the results."
-- contents:
-  - starts_with("coef")
-  - starts_with("confint")
+  contents:
+  - bpph
+  - bppo
+  - bpaft
+  - spbp
+  - spbp.default
+- title: "Extraction and inference"
+  desc: "Coefficients, confidence and credible intervals, residuals, survival curves."
+  contents:
+  - coef.spbp
+  - confint.spbp
   - credint
   - credint.spbp
-  - starts_with("mode")
-  - starts_with("residuals")
-  - starts_with("survivor")
+  - vcov.spbp
+  - residuals.spbp
   - survfit.spbp
-  - starts_with("vcov")
-- title: "Bernstein polynomial basis function."
-  desc: "Function for supporting the computation of the BP basis."
-- contents:
-  - starts_with("bp.basis")
+  - model.matrix.spbp
+- title: "Bernstein polynomial basis"
+  desc: "Functions for the BP basis."
+  contents:
+  - bp.basis
   - pw.basis
-- title: "S3 plot method."
-  desc: "Plot method for spbp objects."
-- contents:
+- title: "Plot and print"
+  desc: "S3 methods for spbp objects."
+  contents:
   - plot.spbp
-- title: "Data generating function."
-  desc: "Function for generating simulated data."
-- contents:
-  - starts_with("itsamp")
-- title: "Print and summary functions."
-  desc: "Functions for printing and summarising the spbp outcomes."
-- contents:
-  - starts_with("print")
-  - starts_with("summary")
+  - print.spbp
+  - summary.spbp
+  - starts_with("print.summary")
