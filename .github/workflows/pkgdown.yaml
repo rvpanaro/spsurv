@@ -38,10 +38,8 @@ jobs:
       - name: Build site
         run: Rscript -e 'pkgdown::build_site()'
 
-      - name: Copy extra.css and add .nojekyll for GitHub Pages
-        run: |
-          cp inst/pkgdown/extra.css docs/extra.css
-          touch docs/.nojekyll
+      - name: Add .nojekyll for GitHub Pages
+        run: touch docs/.nojekyll
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

@@ -2,8 +2,6 @@ destination: docs
 url: https://rvpanaro.github.io/spsurv/
 template:
   bootstrap: 5
-  includes:
-    in_header: '<link rel="stylesheet" href="https://rvpanaro.github.io/spsurv/extra.css">'
 authors:
   Panaro RV:
     href: https://rvpanaro.github.io/
