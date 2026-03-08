@@ -21,7 +21,7 @@
 #' @import Rcpp
 #' @import survival
 #' @importFrom rstan stan sampling optimizing
-#' @author Renato Valladares Panaro (renatovp@ime.usp.br).
+#' @author rvpanaro@gmail.com
 #' @references
 #'
 #' Panaro R.V. (2020). spsurv: An R package for semi-parametric survival analysis. arXiv preprint arXiv:2003.10548.
