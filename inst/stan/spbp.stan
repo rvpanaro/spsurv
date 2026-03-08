@@ -20,20 +20,22 @@ data {
   int<lower=0> priordist_beta[p];
   vector[p] location_beta;
   vector<lower=0>[p] scale_beta;
-  
+
   int<lower=0> priordist_gamma[m];
   vector<lower=0>[m] location_gamma;
   vector<lower=0>[m] scale_gamma;
 
-  vector[p] means;                  
+  vector[p] means;
   vector<lower=0>[p] sdv;
-  
+
 }
 
 transformed data {
-  
+
   vector[n] log_time = log(time);  // log-time scale
-  
+  // Minimum feasible divisor to avoid 0/0 when range = 0; ~1.5 * machine epsilon (double)
+  real min_range = 1e-12;
+
 }
 
 parameters {
@@ -54,11 +56,11 @@ transformed parameters {
 
     vector[n] y = log_time - eta;
 
-    real tau_a = min(log_time) - max(eta);// virtual 0 in exp scale
-    real tau_b = max(log_time) - min(eta);                      
+    real tau_a = min(y);
+    real tau_b = max(y);
 
-    real range = (tau_b - tau_a);
-    vector[n] u = fmin(fmax((y - tau_a) / fmax(range, 1e-12), 1e-12), 1 - 1e-12);
+    real range = tau_b - tau_a;
+    vector[n] u = (y - tau_a) / range;
 
     for (j in 1:m) {
       b[,j] = pow(u, j - 1);       // n-vector
@@ -67,18 +69,21 @@ transformed parameters {
 
     b = (b * P) / range;
     B = (B * P);
-    
-    H     = cumhaz(B, gamma, eta, M);
-    log_h = log_haz(b, B, gamma, eta, log_time, M);
-    
+    H = cumhaz(B, gamma, eta, M);
+
+    if (min(u) < 0 || max(u) > 1){
+      log_h = rep_vector(negative_infinity(), n);
+    } else {
+      log_h = log_haz(b, B, gamma, eta, log_time, M);
+    }
+
   } else {
-    
+
     alpha = sum(beta .* means ./ sdv);
     H     = cumhaz(G, gamma, eta, M);     // No matrix copies here: just use g, G directly
     log_h = log_haz(g, G, gamma, eta, log_time, M);
-    
   }
-  
+
   vector[n] log_lik = -H + status .* log_h;
 }
 
@@ -92,7 +97,7 @@ model {
       else
         target += logistic_lpdf(beta | location_beta[j], scale_beta[j]) + log(sdv[j]);
     }
-    
+
     for (j in 1:m) {
       if (priordist_gamma[j] == 0)
         gamma[j] ~ lognormal(location_gamma[j], scale_gamma[j]);

@@ -299,6 +299,36 @@ spbp.default <-
   }
 }
 
+#' Initial values from prior for MLE optimizer (internal)
+#' @param standata Stan data list with p, m, location/scale and priordist vectors.
+#' @return List with elements \code{beta} and \code{gamma}.
+#' @keywords internal
+#' @noRd
+.spbp_initial_values <- function(standata) {
+  p <- standata$p
+  m <- standata$m
+  loc_beta <- standata$location_beta
+  scale_beta <- standata$scale_beta
+  priordist_beta <- standata$priordist_beta
+  loc_gamma <- standata$location_gamma
+  scale_gamma <- standata$scale_gamma
+  priordist_gamma <- standata$priordist_gamma
+
+  beta_init <- numeric(p)
+  for (j in seq_len(p)) {
+    # normal(location, scale): one draw from prior (in 95% interval w.h.p.)
+    beta_init[j] <- stats::rnorm(1, mean = 0, sd = 1)
+  }
+
+  gamma_init <- numeric(m)
+
+  for (j in seq_len(m)) {
+    gamma_init[j] <- exp( stats::rnorm(1, mean = 0, sd = 1))
+  }
+
+  list(beta = beta_init, gamma = gamma_init)
+}
+
 #' Internal: compute survival CI bands (survfit-style)
 #'
 #' @keywords internal
@@ -317,12 +347,14 @@ spbp.default <-
     c <- 0
     stanfit <- list(return_code = 70)
 
-    while (stanfit$return_code != 0 && c < 15) {
-      # Run optimizing() with args from the list
+    while (stanfit$return_code != 0 && c < 3) {
+      # Initial values from prior (one draw per attempt so retries try different starts)
+      init <- .spbp_initial_values(standata)
       stanfit <- suppressWarnings(
         do.call(rstan::optimizing, c(list(
           object  = stanmodels$spbp,
           data    = standata,
+          init    = init,
           hessian = hessian,
           verbose = verbose
         ), ...))
@@ -380,8 +412,8 @@ spbp.default <-
     )
 
     if (model_flag == "aft") {
-      output$tau_a <- min(log(Y[, 1])) - max(features %*% coef)
-      output$tau_b <- max(log(Y[, 1])) - min(features %*% coef)
+      output$tau_a <- min(log(Y[, 1]) - features %*% coef)
+      output$tau_b <- max(log(Y[, 1]) - features %*% coef)
     }
 
     if (null) {
@@ -478,8 +510,8 @@ spbp.default <-
     for (i in 1:nrow(posterior$beta)) {
       z[i, ] <- (features %*% posterior$beta[i, ])
     }
-    output$tau_a <- min(log(Y[, 1])) - max(colMeans(z))
-    output$tau_b <- max(log(Y[, 1])) - min(colMeans(z))
+    output$tau_a <- min(log(Y[, 1]) - colMeans(z))
+    output$tau_b <- max(log(Y[, 1]) - colMeans(z))
   }
 
   if (null) {
