@@ -40,6 +40,10 @@ articles:
   desc: "Martingale, Cox-Snell calibration, deviance, and decision table"
   contents:
     - diagnostics
+- title: "tidymodels"
+  desc: "parsnip engines, workflows, and tidybayes draws"
+  contents:
+    - tidymodels
 reference:
 - title: "Details"
   contents:
@@ -63,9 +67,17 @@ reference:
     - residuals.spbp
     - survfit.spbp
     - predict.spbp
+    - augment.spbp
     - tidy.spbp
     - glance.spbp
     - model.matrix.spbp
+    - as_draws_df.spbp
+    - spread_surv_draws.spbp
+- title: "tidymodels"
+  desc: "parsnip model specifications and engines."
+  contents:
+    - proportional_odds
+    - bp_survival_reg
 - title: "Model comparison and extraction"
   desc: "Bernstein baseline helper, parameter estimates, and information criteria."
   contents:

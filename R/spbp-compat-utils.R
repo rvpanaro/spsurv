@@ -130,6 +130,50 @@
   -2 * ll + 2 * k
 }
 
+#' Build multi-model AIC comparison table (internal).
+#' @keywords internal
+#' @noRd
+.spbp_aic_comparison_table <- function(fits) {
+  nms <- names(fits)
+  if (is.null(nms)) {
+    nms <- paste0("model", seq_along(fits))
+  }
+  data.frame(
+    fit = nms,
+    model = vapply(fits, function(f) {
+      m <- f$call$model
+      if (is.null(m)) NA_character_ else as.character(m)
+    }, character(1)),
+    degree = vapply(fits, function(f) as.integer(f$degree), integer(1)),
+    aic = vapply(fits, .spbp_aic, numeric(1)),
+    npars = vapply(fits, .spbp_nparams, integer(1)),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' MLE Wald table for Bernstein baseline weights (internal).
+#' @keywords internal
+#' @noRd
+.spbp_baseline_mle_table <- function(object) {
+  .spbp_check_mle(object)
+  V <- vcov(object, bp.param = TRUE)
+  if (is.null(V)) {
+    stop("Cannot compute baseline inference without vcov.", call. = FALSE)
+  }
+  gamma_nms <- names(object$bp.param)
+  se <- sqrt(diag(as.matrix(V)))[gamma_nms]
+  z <- object$bp.param * (log(object$bp.param) - log(1e-19)) / se
+  tab <- cbind(
+    log_gamma = log(object$bp.param),
+    gamma = object$bp.param,
+    se_log_gamma = se,
+    z = z,
+    `Pr(>|z|)` = stats::pnorm(z, lower.tail = FALSE)
+  )
+  rownames(tab) <- gamma_nms
+  tab
+}
+
 #' Residual degrees of freedom (n - total parameters)
 #' @keywords internal
 #' @noRd

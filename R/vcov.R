@@ -11,11 +11,14 @@
 #'   \eqn{\gamma}-related entries to \code{NA} if the Bernstein information block
 #'   is ill-conditioned. Set \code{FALSE} internally when propagating survival
 #'   uncertainty despite instability.
+#' @param polish when \code{TRUE} (default), add a small diagonal ridge if the
+#'   returned matrix is slightly indefinite.
 #' @param ... arguments passed to parent method.
 #' @return  the variance-covariance matrix associated with the regression coefficients.
 #'
 
-vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...) {
+vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE,
+                      polish = TRUE, ...) {
   if (object$call$approach != "mle") {
     warning("Not available, change approach to 'mle' instead.")
     return(NULL)
@@ -79,6 +82,10 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
   }
 
   V_final <- J %*% V %*% t(J)
+
+  if (isTRUE(polish)) {
+    V_final <- .spbp_near_pd_sym(V_final)
+  }
 
   # Labeling
   nms <- c(names(object$coefficients), names(object$bp.param))

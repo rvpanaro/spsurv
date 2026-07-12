@@ -7,10 +7,6 @@
 ..Rcheck
 .R-lib/
 *.tar.gz
-rj/
-outputs/
-template.TeX
-spsurv.bbl
 .Rd2pdf*
 ..pdf
 ^\.\.pdf$
@@ -27,6 +23,7 @@ _spsurv_bayes_*.rds
 Rplots.pdf
 **/Rplots.pdf
 paper/tex-fragments.rds
+inst/simulation/output/
 figures/
 vignettes/*_cache/
 vignettes/*.html

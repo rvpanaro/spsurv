@@ -1,11 +1,11 @@
-# Rebuild spsurv.TeX illustration verbatim blocks from paper/tex-fragments.rds
+# Rebuild paper/spsurv.TeX illustration verbatim blocks from paper/tex-fragments.rds
 pkg_root <- normalizePath("..", winslash = "/")
 if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
   pkg_root <- normalizePath(".", winslash = "/")
 }
 
 fragments <- readRDS(file.path(pkg_root, "paper", "tex-fragments.rds"))
-tex_path <- file.path(pkg_root, "spsurv.TeX")
+tex_path <- file.path(pkg_root, "paper", "spsurv.TeX")
 tex <- readLines(tex_path, warn = FALSE)
 
 source(file.path(pkg_root, "inst", "tex-verbatim-wrap.R"))
@@ -130,12 +130,12 @@ middle <- c(
   "\\centering",
   "\\begin{minipage}{0.48\\linewidth}",
   "\\centering",
-  "\\includegraphics[width=\\linewidth]{001_larynx_survfit.pdf}\\\\[0.4em]",
+  "\\includegraphics[width=\\linewidth]{../figures/001_larynx_survfit.pdf}\\\\[0.4em]",
   "{\\footnotesize (a) Default $m=10$ MLE with delta-method bands.}",
   "\\end{minipage}\\hfill",
   "\\begin{minipage}{0.48\\linewidth}",
   "\\centering",
-  "\\includegraphics[width=\\linewidth]{006_larynx_degree_comparison.pdf}\\\\[0.4em]",
+  "\\includegraphics[width=\\linewidth]{../figures/006_larynx_degree_comparison.pdf}\\\\[0.4em]",
   "{\\footnotesize (b) $m=3$ MLE, $m=10$ MLE, and $m=10$ Bayes (top to bottom).}",
   "\\end{minipage}",
   "\\caption{Estimated survival curves from maximum-likelihood BPPH fits for a",

@@ -61,11 +61,11 @@ test_that("AIC and BIC use the same nparams as logLik", {
 
 test_that("AIC.spbp multi-fit returns comparison data.frame", {
   fits <- nested_ph_mle(5L)
-  tab <- AIC(fits$null, fits$full)
+  tab <- AIC(null = fits$null, full = fits$full)
   expect_s3_class(tab, "data.frame")
-  expect_true(all(c("fit", "aic", "npars") %in% names(tab)))
+  expect_true(all(c("fit", "model", "degree", "aic", "npars") %in% names(tab)))
   expect_equal(nrow(tab), 2L)
-  expect_equal(tab$npars[2L], attr(logLik(fits$full), "df"))
+  expect_equal(tab$npars[tab$fit == "full"], attr(logLik(fits$full), "df"))
 })
 
 test_that("extractAIC.spbp returns length-2 vector", {

@@ -7,7 +7,13 @@
 ^_config\.yml$
 ^script$
 ^inst/render-tex-assets\.R$
-^inst/render-veteran-martingale\.R$
+^inst/render-bp-mcsim-abc\.R$
+^inst/render-degree-llph-bpph\.R$
+^inst/render-larynx-degree-comparison\.R$
+^inst/render-paper-figures\.R$
+^inst/rebuild-mc-appendix-tables\.R$
+^inst/mc-paper-summary\.R$
+^inst/simulation/
 ^inst/rebuild-tex-illustrations\.R$
 ^paper$
 ^codecov\.yml$
@@ -16,12 +22,7 @@
 ^docs$
 ^pkgdown$
 ^README\.html$
-^spsurv\.Rmd$
 ^run_tests\.r$
-^outputs$
-^template\.TeX$
-^spsurv\.bbl$
-^spsurv\.TeX$
 ^\.Rd2pdf.*
 ^figures$
 ^\.git$

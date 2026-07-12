@@ -531,7 +531,14 @@ spbp.default <-
     output$call$degree <- degree
 
     class(output) <- c("spbp")
-    message("Priors are ignored because the MLE approach is used.")
+
+    if (isTRUE(verbose)) {
+      message("Priors are ignored because the MLE approach is used.")
+    }
+
+    if (isTRUE(getOption("spsurv.store_residuals", TRUE))) {
+      output$residuals <- residuals(output)
+    }
 
     return(output)
   }
@@ -587,6 +594,7 @@ spbp.default <-
   colnames(posterior$beta) <- colnames(X)
   colnames(posterior$gamma) <- paste0("gamma[", 1:degree, "]")
   colnames(posterior$log_lik) <- paste0("log_lik[", 1:data.n, "]")
+  posterior$draw_indices <- .spbp_posterior_draw_indices(stanfit, nrow(posterior$beta))
 
   output <- list(
     coefficients = colMeans(posterior$beta),

@@ -13,6 +13,7 @@
         compact = TRUE,
         show_call = TRUE,
         show_intervals = TRUE,
+        show_baseline = FALSE,
         mle_test = "lr"
       )
     } else {
@@ -20,6 +21,7 @@
         compact = TRUE,
         show_call = TRUE,
         show_intervals = TRUE,
+        show_baseline = FALSE,
         bayes_criterion = "waic"
       )
     }
@@ -91,6 +93,25 @@
       )
       cat("\n")
     }
+  }
+
+  if (isTRUE(controls$show_baseline) && !is.null(x$baseline)) {
+    base_tab <- cbind(
+      Estimate = x$baseline[, "gamma"],
+      `Std. Error` = x$baseline[, "se_log_gamma"],
+      `z value` = x$baseline[, "z"],
+      `Pr(>|z|)` = x$baseline[, "Pr(>|z|)"]
+    )
+    cat("Bernstein baseline coefficients:\n")
+    stats::printCoefmat(
+      .spbp_drop_all_na_cols(base_tab),
+      digits = digits,
+      signif.stars = signif.stars,
+      P.value = TRUE,
+      has.Pvalue = TRUE,
+      ...
+    )
+    cat("\n")
   }
 
   cat("--- \n")

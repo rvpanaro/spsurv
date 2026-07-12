@@ -10,6 +10,7 @@
   compact = TRUE,
   show_call = TRUE,
   show_intervals = TRUE,
+  show_baseline = FALSE,
   mle_test = c("lr", "wald"),
   bayes_criterion = c("waic", "dic", "lpml"),
   ...
@@ -25,6 +26,9 @@
 \item{show_call}{logical; include the model call in printed summary.}
 
 \item{show_intervals}{logical; include interval table in printed summary.}
+
+\item{show_baseline}{logical; include Bernstein baseline (\code{gamma}) Wald
+table in printed summary (MLE only).}
 
 \item{mle_test}{global test to print for MLE summaries: "lr" or "wald".}
 

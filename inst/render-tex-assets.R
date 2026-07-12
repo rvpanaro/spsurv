@@ -1,5 +1,6 @@
-# Regenerate spsurv.TeX illustration figures (001--005) and verbatim outputs.
-# Monte Carlo figures 007/008 require external simulation scripts (see spsurv.TeX).
+# Regenerate paper/spsurv.TeX illustration figures (001--006) and verbatim outputs.
+# Figures 007--008 need simulation artifacts in paper/; use inst/render-paper-figures.R
+# for the full 001--008 pipeline. PDFs are written to figures/ for paper/spsurv.TeX.
 # Usage (from package root):
 #   Rscript inst/render-tex-assets.R
 
@@ -430,6 +431,40 @@ source(file.path(pkg_root, "inst", "render-larynx-degree-comparison.R"))
 render_larynx_degree_comparison(
   output = file.path(fig_dir, "006_larynx_degree_comparison.pdf")
 )
+
+mcsim_rds <- file.path(paper_dir, "bp-mcsim-results.rds")
+if (file.exists(mcsim_rds)) {
+  source(file.path(pkg_root, "inst", "render-bp-mcsim-abc.R"))
+  render_bp_mcsim_abc(
+    results_rds = mcsim_rds,
+    output = file.path(fig_dir, "007_bp_mcsim_abc.pdf")
+  )
+} else {
+  message(
+    "Skipping 007_bp_mcsim_abc.pdf (missing paper/bp-mcsim-results.rds)"
+  )
+}
+
+degree_csv <- file.path(paper_dir, "degree_llph_bpph.csv")
+if (file.exists(degree_csv)) {
+  source(file.path(pkg_root, "inst", "render-degree-llph-bpph.R"))
+  render_degree_llph_bpph(
+    csv_path = degree_csv,
+    output = file.path(fig_dir, "008_degree_llph_bpph.pdf")
+  )
+} else {
+  message(
+    "Skipping 008_degree_llph_bpph.pdf (missing paper/degree_llph_bpph.csv)"
+  )
+}
+
+mc_table_script <- file.path(pkg_root, "inst", "rebuild-mc-appendix-tables.R")
+if (file.exists(mcsim_rds) || file.exists(degree_csv)) {
+  status <- system2("Rscript", mc_table_script)
+  if (!identical(status, 0L)) {
+    stop("rebuild-mc-appendix-tables.R failed", call. = FALSE)
+  }
+}
 
 # --- Persist fragments for TeX patching -----------------------------------
 frag_path <- file.path(pkg_root, "paper", "tex-fragments.rds")

@@ -4,19 +4,21 @@
 \alias{confint.spbp}
 \title{Confidence intervals for the regression coefficients}
 \usage{
-\method{confint}{spbp}(object, parm = names(coef(object)), level = 0.95, ...)
+\method{confint}{spbp}(object, parm, level = 0.95, ...)
 }
 \arguments{
 \item{object}{a fitted model object.}
 
-\item{parm}{a specification of which parameters are to be given confidence intervals, either a vector of numbers or a vector of names. If missing, all parameters are considered.}
+\item{parm}{a specification of which parameters are to be given confidence
+intervals: regression coefficient names and/or Bernstein baseline names
+(e.g. \code{"gamma[1]"}). If missing, all regression coefficients are used.}
 
 \item{level}{the confidence level required.}
 
 \item{...}{further arguments passed to parent method}
 }
 \value{
-100(1-alpha) confidence intervals for the regression coefficients
+100(1-alpha) confidence intervals for the requested parameters.
 }
 \description{
 Confidence intervals for the regression coefficients

@@ -8,8 +8,10 @@
   object,
   newdata = NULL,
   times = NULL,
+  eval_time = NULL,
+  type = NULL,
+  conf_type = NULL,
   interval = 0.95,
-  type = c("log", "log-log", "plain"),
   interval.type = c("hpd", "quantile"),
   monotone = NULL,
   ...
@@ -25,14 +27,31 @@ time (suitable for smooth \code{ggplot2::geom_line} / \code{geom_ribbon} plots).
 Pass a long \code{seq(...)} to override resolution; use observed event times only
 if stepwise curves are intended.}
 
-\item{interval, type}{Passed to \code{\link{survfit.spbp}}.}
+\item{eval_time}{Evaluation times for \code{type = "survival"} (required).}
+
+\item{type}{Prediction type. For tidymodels/censored compatibility use
+\code{"survival"}, \code{"time"}, or \code{"linear_pred"}. For survival
+curves (default), use \code{NULL}, \code{"curve"}, or a confidence
+transformation (\code{"log"}, \code{"log-log"}, \code{"plain"}).}
+
+\item{conf_type}{Confidence interval transformation for curve predictions
+(\code{"log"}, \code{"log-log"}, \code{"plain"}). Used when \code{type} is
+\code{NULL}, \code{"curve"}, or a confidence transformation name.}
+
+\item{interval, type}{Alias: when \code{type} is a confidence transformation,
+it is passed as \code{conf_type}. \code{interval} is passed to
+\code{\link{survfit.spbp}} for curve predictions.}
 
 \item{interval.type, monotone}{Passed to \code{\link{survfit.spbp}} (Bayesian fits).}
 
-\item{...}{Passed to \code{\link{survfit.spbp}}.}
+\item{...}{Passed to \code{\link{survfit.spbp}} for curve predictions.}
 }
 \value{
-Same structure as \code{\link{as.data.frame.survfitbp}}.
+For curve predictions, same structure as \code{\link{as.data.frame.survfitbp}}.
+  For \code{type = "survival"}, a tibble with list-column \code{.pred} (elements
+  contain \code{.eval_time} and \code{.pred_survival}). For \code{type = "time"},
+  a tibble with \code{.pred_time}. For \code{type = "linear_pred"}, a tibble with
+  \code{.pred_linear_pred}.
 }
 \description{
 Survival (and optional CI) on a time grid, as a \code{data.frame} for
@@ -42,11 +61,13 @@ Survival (and optional CI) on a time grid, as a \code{data.frame} for
 data(veteran, package = "survival")
 fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
 pr <- predict(fit, times = seq(0, 400, by = 2))
+predict(fit, veteran[1:2, ], type = "survival", eval_time = c(100, 200))
+predict(fit, veteran[1:2, ], type = "time")
 \dontrun{
   ggplot2::ggplot(pr, ggplot2::aes(time, surv)) + ggplot2::geom_line()
 }
 
 }
 \seealso{
-\code{\link{survfit.spbp}}
+\code{\link{survfit.spbp}}, \code{\link{augment.spbp}}
 }

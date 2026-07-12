@@ -1,3 +1,10 @@
+# spsurv 1.1.0
+
+* **tidymodels:** parsnip engines `spsurv` (MLE) and `spsurv_bayes` for `proportional_hazards()`, new `proportional_odds()`, and `survival_reg()`; `bp_survival_reg()` convenience constructor; `workflow` / `predict(type = "survival")` support.
+* **tidybayes:** `as_draws_df.spbp()`, `spread_surv_draws.spbp()`, and S3 hooks for `tidy_draws` / `spread_draws` / `gather_draws` on Bayes fits; posterior draw indices (`.chain`, `.iteration`, `.draw`).
+* **Prediction:** censored-style `predict.spbp()` types (`survival`, `time`, `linear_pred`); `augment.spbp()`.
+* **Vignette:** `vignette("tidymodels")`.
+
 # spsurv 1.0.2
 
 * **Vignettes:** Expanded with EDA plots, visual checks, and decision guidance across all seven articles.

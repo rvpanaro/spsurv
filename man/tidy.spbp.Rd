@@ -4,7 +4,14 @@
 \alias{tidy.spbp}
 \title{Tidy summary for fitted spbp models}
 \usage{
-\method{tidy}{spbp}(x, conf.int = FALSE, conf.level = 0.95, exponentiate = FALSE, ...)
+\method{tidy}{spbp}(
+  x,
+  conf.int = FALSE,
+  conf.level = 0.95,
+  exponentiate = FALSE,
+  component = c("coef", "baseline", "all"),
+  ...
+)
 }
 \arguments{
 \item{x}{A fitted \code{"spbp"} object.}
@@ -14,7 +21,10 @@
 \item{conf.level}{Interval coverage level.}
 
 \item{exponentiate}{Logical; if \code{TRUE}, exponentiate the estimate and
-interval columns.}
+interval columns (regression coefficients only).}
+
+\item{component}{Which parameters to return: \code{"coef"} (default),
+\code{"baseline"} (Bernstein \code{gamma} weights), or \code{"all"}.}
 
 \item{...}{Currently unused.}
 }

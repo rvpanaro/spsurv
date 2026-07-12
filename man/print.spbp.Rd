@@ -7,6 +7,7 @@
 \method{print}{spbp}(
   x,
   bp.param = FALSE,
+  show_baseline = FALSE,
   digits = 2,
   signif.stars = getOption("show.signif.stars"),
   what = "summary",
@@ -16,7 +17,11 @@
 \arguments{
 \item{x}{an object of class spbp.}
 
-\item{bp.param}{print BP parameters.}
+\item{bp.param}{print BP parameters only (alias for baseline-only display).}
+
+\item{show_baseline}{logical; append Bernstein baseline Wald table after
+regression coefficients (MLE only). See also \code{print(fit, bp.param = TRUE)}
+for baseline-only output.}
 
 \item{digits}{number of digits to display; defaults to \code{2}.}
 

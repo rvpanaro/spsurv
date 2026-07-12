@@ -110,6 +110,58 @@ ggplot(td, aes(x = estimate, y = term)) +
 
 For publication-ready tables, pipe `tidy()` output into [gt](https://gt.rstudio.com/) or similar packages.
 
+### Baseline inference, diagnostics, and model ranking
+
+```r
+# Baseline gamma weights with Wald table (survstan-style summary)
+summary(fit, show_baseline = TRUE)
+print(fit, show_baseline = TRUE)   # same via print()
+print(fit, bp.param = TRUE)        # baseline-only table
+
+# Tidy baseline weights
+tidy(fit, component = "baseline", conf.int = TRUE)
+confint(fit, parm = names(fit$bp.param))
+
+# Rank nested models by AIC
+f0 <- bpph(Surv(time, delta) ~ 1, data = larynx, degree = 5)
+f1 <- bpph(Surv(time, delta) ~ age, data = larynx, degree = 5)
+rank_models(f0, f1)                # or AIC(f0, f1)
+
+# Baseline survival S0(t) at event times
+survfit(fit, baseline = TRUE, tidy = TRUE)
+
+# ggplot2 residual plots (requires ggplot2)
+ggresiduals(fit, type = "martingale")
+```
+
+If you also use the **survstan** package, qualify spsurv helpers after
+`library(survstan)` — e.g. `spsurv::estimates(fit)` and `spsurv::se(fit)`.
+
+### tidymodels and tidybayes
+
+Load **parsnip** (or **tidymodels**) before **spsurv** so censored-regression
+engines register. Use `scale = FALSE` when preprocessing with **recipes**.
+
+```r
+library(parsnip)
+library(censored)
+library(workflows)
+library(spsurv)
+
+wf <- workflow() |>
+  add_formula(Surv(time, status) ~ karno) |>
+  add_model(
+    proportional_hazards() |>
+      set_engine("spsurv", degree = 5, scale = FALSE, init = 0)
+  )
+
+fit_wf <- fit(wf, data = veteran)
+predict(fit_wf, veteran[1:2, ], type = "survival", eval_time = 100)
+```
+
+Bayesian fits support **tidybayes** via `as_draws_df.spbp()`, `spread_draws()`,
+and `spread_surv_draws.spbp()`. See `vignette("tidymodels", package = "spsurv")`.
+
 ## Troubleshooting
 
 ### Bayesian convergence checks

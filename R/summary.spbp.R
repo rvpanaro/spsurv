@@ -6,6 +6,8 @@
 #' @param compact logical; if TRUE, print.summary methods show essential output only.
 #' @param show_call logical; include the model call in printed summary.
 #' @param show_intervals logical; include interval table in printed summary.
+#' @param show_baseline logical; include Bernstein baseline (\code{gamma}) Wald
+#'   table in printed summary (MLE only).
 #' @param mle_test global test to print for MLE summaries: "lr" or "wald".
 #' @param bayes_criterion global criterion to print for Bayesian summaries: "waic", "dic", or "lpml".
 #' @param ... further arguments passed to or from other methods
@@ -17,6 +19,7 @@ summary.spbp <- function(object, interval = 0.95,
                          compact = TRUE,
                          show_call = TRUE,
                          show_intervals = TRUE,
+                         show_baseline = FALSE,
                          mle_test = c("lr", "wald"),
                          bayes_criterion = c("waic", "dic", "lpml"),
                          ...) {
@@ -94,9 +97,14 @@ summary.spbp <- function(object, interval = 0.95,
       compact = isTRUE(compact),
       show_call = isTRUE(show_call),
       show_intervals = isTRUE(show_intervals),
+      show_baseline = isTRUE(show_baseline),
       mle_test = mle_test,
       bayes_criterion = bayes_criterion
     )
+
+    if (isTRUE(show_baseline)) {
+      output$baseline <- .spbp_baseline_mle_table(object)
+    }
 
     class(output) <- switch(object$call$model,
       "po" = "summary.bppo.mle",
@@ -152,6 +160,7 @@ summary.spbp <- function(object, interval = 0.95,
       compact = isTRUE(compact),
       show_call = isTRUE(show_call),
       show_intervals = isTRUE(show_intervals),
+      show_baseline = isTRUE(show_baseline),
       mle_test = mle_test,
       bayes_criterion = bayes_criterion
     )

@@ -3,38 +3,76 @@
 #' @aliases confint.spbp
 #' @export
 #' @param object a fitted model object.
-#' @param parm a specification of which parameters are to be given confidence intervals, either a vector of numbers or a vector of names. If missing, all parameters are considered.
+#' @param parm a specification of which parameters are to be given confidence
+#'   intervals: regression coefficient names and/or Bernstein baseline names
+#'   (e.g. \code{"gamma[1]"}). If missing, all regression coefficients are used.
 #' @param level the confidence level required.
 #' @param ... further arguments passed to parent method
-#' @return 100(1-alpha) confidence intervals for the regression coefficients
-confint.spbp <- function(object, parm = names(coef(object)), level = 0.95, ...) {
-  if (sum(object$features) != 0) {
-    if (object$call$approach == "mle") {
-      se <- sqrt(diag(as.matrix(vcov(object))))
-      alpha <- 1 - level
-      CI <- as.vector(coef(object)) + se %o% c(-qnorm(1 - alpha / 2), qnorm(1 - alpha / 2))
+#' @return 100(1-alpha) confidence intervals for the requested parameters.
+confint.spbp <- function(object, parm, level = 0.95, ...) {
+  beta_nms <- names(coef(object))
+  gamma_nms <- names(object$bp.param)
+  has_covariates <- !is.null(object$features) && sum(object$features) != 0
 
-      labels <- round(100 * (c(alpha / 2, 1 - alpha / 2)), 1)
-      colnames(CI) <- paste0(labels, "%")
-      return(CI)
-    } else {
-      warning("not applicable, calling credint.spbp to get credible intervals instead")
-      credint.spbp(object, prob = level)
+  if (missing(parm)) {
+    parm <- if (has_covariates) beta_nms else gamma_nms
+  } else if (is.numeric(parm)) {
+    all_nms <- c(beta_nms, gamma_nms)
+    parm <- all_nms[parm]
+  }
+
+  beta_parm <- intersect(as.character(parm), beta_nms)
+  gamma_parm <- intersect(as.character(parm), gamma_nms)
+
+  if (!length(beta_parm) && !length(gamma_parm)) {
+    stop("No matching parameters in 'parm'.", call. = FALSE)
+  }
+
+  alpha <- 1 - level
+  crit <- c(-qnorm(1 - alpha / 2), qnorm(1 - alpha / 2))
+  labels <- round(100 * (c(alpha / 2, 1 - alpha / 2)), 1)
+  colnms <- paste0(labels, "%")
+
+  pieces <- list()
+
+  if (length(beta_parm)) {
+    if (!has_covariates) {
+      stop("No regression coefficients in this model.", call. = FALSE)
     }
-  } else {
     if (object$call$approach == "mle") {
-      se <- sqrt(diag(as.matrix(vcov(object, bp.param = TRUE)))) / object$bp.param
-      alpha <- 1 - level
-      CI <- as.vector(log(object$bp.param)) + se %o% c(-qnorm(1 - alpha / 2), qnorm(1 - alpha / 2))
-
-      labels <- round(100 * (c(alpha / 2, 1 - alpha / 2)), 1)
-      colnames(CI) <- paste0(labels, "%")
-      return(exp(CI))
+      se <- sqrt(diag(as.matrix(vcov(object))))[beta_parm]
+      est <- coef(object)[beta_parm]
+      CI <- as.vector(est) + se %o% crit
+      rownames(CI) <- beta_parm
+      colnames(CI) <- colnms
+      pieces$beta <- CI
     } else {
       warning("not applicable, calling credint.spbp to get credible intervals instead")
-      credint.spbp(object, prob = level)
+      return(credint.spbp(object, prob = level))
     }
   }
+
+  if (length(gamma_parm)) {
+    if (object$call$approach == "mle") {
+      V <- vcov(object, bp.param = TRUE)
+      se <- sqrt(diag(as.matrix(V)))[gamma_parm]
+      est <- log(object$bp.param[gamma_parm])
+      CI <- as.vector(est) + se %o% crit
+      rownames(CI) <- gamma_parm
+      colnames(CI) <- colnms
+      pieces$gamma <- exp(CI)
+    } else {
+      warning("not applicable, calling credint.spbp to get credible intervals instead")
+      return(credint.spbp(object, prob = level))
+    }
+  }
+
+  if (length(pieces) == 1L) {
+    return(pieces[[1L]])
+  }
+
+  CI <- do.call(rbind, pieces[intersect(c("beta", "gamma"), names(pieces))])
+  CI[parm, , drop = FALSE]
 }
 
 #' Generic S3 method credint

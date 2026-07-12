@@ -37,28 +37,61 @@ AIC.spbp <- function(object, ..., k = 2) {
     warning("Only k = 2 (AIC) is supported for spbp objects.", call. = FALSE)
   }
   dots <- list(...)
-  if (length(dots) == 0L) {
+  if (missing(object)) {
+    if (length(dots) == 0L) {
+      stop("No fitted model supplied.", call. = FALSE)
+    }
+    fits <- dots
+  } else if (length(dots) == 0L) {
     .spbp_check_mle(object)
     return(.spbp_aic(object))
+  } else {
+    fits <- c(list(object), dots)
   }
 
-  fits <- c(list(object), dots)
   for (fit in fits) {
     .spbp_check_mle(fit)
   }
 
-  nms <- names(fits)
-  if (is.null(nms)) {
-    nms <- as.character(seq_along(fits))
-  }
+  tab <- .spbp_aic_comparison_table(fits)
+  tab <- tab[order(tab$aic), , drop = FALSE]
+  row.names(tab) <- NULL
+  tab
+}
 
-  data.frame(
-    fit = nms,
-    aic = vapply(fits, .spbp_aic, numeric(1)),
-    npars = vapply(fits, .spbp_nparams, integer(1)),
-    row.names = NULL,
-    stringsAsFactors = FALSE
-  )
+#' Rank fitted spbp models by AIC
+#'
+#' Convenience wrapper around \code{\link{AIC}} that returns models sorted from
+#' lowest to highest AIC.
+#'
+#' @param ... One or more fitted \code{"spbp"} objects (MLE).
+#' @return A \code{data.frame} with columns \code{fit}, \code{model},
+#'   \code{degree}, \code{aic}, and \code{npars}.
+#' @export
+#' @examples
+#' \dontrun{
+#' library(spsurv)
+#' data(veteran, package = "survival")
+#' f1 <- bpph(Surv(time, status) ~ 1, data = veteran, degree = 4)
+#' f2 <- bpph(Surv(time, status) ~ karno, data = veteran, degree = 4)
+#' rank_models(f1, f2)
+#' }
+rank_models <- function(...) {
+  fits <- list(...)
+  if (!length(fits)) {
+    stop("No models supplied.", call. = FALSE)
+  }
+  for (fit in fits) {
+    .spbp_check_mle(fit)
+  }
+  tab <- if (length(fits) == 1L) {
+    .spbp_aic_comparison_table(fits)
+  } else {
+    do.call(AIC, fits)
+  }
+  tab <- tab[order(tab$aic), , drop = FALSE]
+  row.names(tab) <- NULL
+  tab
 }
 
 #' Extract AIC from a fitted spbp model

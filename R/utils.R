@@ -110,6 +110,30 @@ read_prior <- function(prior) {
   )
 }
 
+#' Draw index metadata for Bayesian spbp fits
+#' @keywords internal
+#' @noRd
+.spbp_posterior_draw_indices <- function(stanfit, n_draws) {
+  n_chains <- stanfit@sim$chains
+  n_iter <- stanfit@sim$iter - stanfit@sim$warmup
+  if (n_chains >= 1L && n_iter >= 1L && n_chains * n_iter == n_draws) {
+    chain <- rep(seq_len(n_chains), each = n_iter)
+    iteration <- rep(seq_len(n_iter), times = n_chains)
+    return(data.frame(
+      .chain = chain,
+      .iteration = iteration,
+      .draw = seq_len(n_draws),
+      stringsAsFactors = FALSE
+    ))
+  }
+  data.frame(
+    .chain = 1L,
+    .iteration = seq_len(n_draws),
+    .draw = seq_len(n_draws),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Posterior interval for one vector of draws (internal).
 #' @keywords internal
 #' @noRd
@@ -217,6 +241,19 @@ WAIC <- function(loglik) {
   } else {
     list(tau_a = tau_a, tau_b = tau_b)
   }
+}
+
+#' Ensure a symmetric matrix is positive semi-definite (internal).
+#' @keywords internal
+#' @noRd
+.spbp_near_pd_sym <- function(V, eps = 1e-8) {
+  V <- (V + t(V)) / 2
+  ev <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
+  min_ev <- min(ev)
+  if (is.finite(min_ev) && min_ev < 0) {
+    V <- V + diag(abs(min_ev) + eps, nrow(V))
+  }
+  V
 }
 
 #' Symmetric matrix inverse: Cholesky if SPD, else full-rank QR solve, else pivoted-QR pseudoinverse.

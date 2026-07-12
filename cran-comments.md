@@ -4,18 +4,11 @@
 * rhub: run `rhub::check_for_cran()` before upload
 * win-builder: run before upload
 
-## R CMD check results (spsurv 1.0.2)
+## R CMD check results (spsurv 1.1.0)
 
 ```
-Status: 2 NOTEs, 0 warnings, 0 errors
+Status: (run R CMD check --as-cran before upload)
 ```
-
-Local check on 2026-06-29:
-
-* **INFO** GNU make is a SystemRequirements (expected; Stan build).
-* **NOTE** HTML manual validation skipped (no recent `tidy` on this machine).
-
-All other `--as-cran` checks passed, including examples and tests.
 
 ## revdepcheck
 
@@ -23,7 +16,10 @@ No reverse dependencies known at time of release.
 
 ## Submission notes
 
-* Resubmission of 1.0.2 with tidy/glance/AIC helpers, `bernstein()` baseline
-  syntax, and improved `survfit`/`residuals`.
+* Minor release 1.1.0: tidymodels integration (parsnip engines `spsurv` and
+  `spsurv_bayes`, `proportional_odds()`, `survival_reg()`, `bp_survival_reg()`),
+  tidybayes/posterior draw helpers, censored-style `predict()` types
+  (`survival`, `time`, `linear_pred`), and `augment.spbp()`.
+* New vignette `vignette("tidymodels")`.
 * Installed size is dominated by compiled Stan code in `libs/` (expected).
 * Bayesian tests use reduced `iter`/`chains` for speed.

@@ -362,6 +362,10 @@
 #'   \code{approach = "bayes"}.
 #' @param tidy Logical; if \code{TRUE}, return a \code{data.frame} for ggplot2.
 #'   instead of a \code{"survfit"} object.
+#' @param baseline Logical; if \code{TRUE}, return the baseline survival curve
+#'   \eqn{S_0(t)} at observed event times (or \code{times}) with no covariate
+#'   effect. When \code{tidy = TRUE}, returns a simple \code{data.frame} with
+#'   columns \code{time} and \code{surv}.
 #' @param ... Further arguments passed to \code{\link[survival:survfit]{survfit.coxph}} for the
 #'   reference Cox object (e.g. \code{conf.type} is ignored; use \code{type} instead).
 #' @importFrom coda mcmc
@@ -381,12 +385,65 @@ survfit.spbp <- function(formula, newdata = NULL, times = NULL,
                          interval.type = c("hpd", "quantile"),
                          monotone = NULL,
                          tidy = FALSE,
+                         baseline = FALSE,
                          ...) {
   x <- formula
   type <- match.arg(type)
   interval.type <- match.arg(interval.type)
   if (is.null(monotone)) {
     monotone <- identical(x$call$approach, "bayes")
+  }
+
+  if (isTRUE(baseline)) {
+    p <- length(x$coefficients)
+    if (is.null(times)) {
+      times <- sort(unique(x$y[, 1L]))
+    } else if (inherits(times, "Surv")) {
+      times <- sort(times[, 1L])
+    } else {
+      times <- sort(unique(as.numeric(times)))
+      times <- times[is.finite(times) & times >= 0]
+    }
+    if (!length(times)) {
+      stop("No valid times for baseline survival.", call. = FALSE)
+    }
+    if (p == 0L) {
+      X <- matrix(numeric(0), nrow = 1L, ncol = 0L)
+    } else {
+      X <- matrix(0, nrow = 1L, ncol = p)
+    }
+    est <- .spbp_eval_survival(
+      x,
+      time = times,
+      X = X,
+      type = type,
+      interval = interval,
+      logse = TRUE,
+      interval.type = interval.type,
+      monotone = monotone
+    )
+    if (isTRUE(tidy)) {
+      return(data.frame(
+        time = times,
+        surv = as.numeric(est$surv[, 1L]),
+        stringsAsFactors = FALSE
+      ))
+    }
+    out <- data.frame(
+      time = times,
+      surv = as.numeric(est$surv[, 1L]),
+      stringsAsFactors = FALSE
+    )
+    if (isTRUE(se.fit)) {
+      out$std.err <- as.numeric(est$std.err[, 1L])
+      out$lower <- as.numeric(est$lower[, 1L])
+      out$upper <- as.numeric(est$upper[, 1L])
+    }
+    class(out) <- c("survfitbp", "survfit")
+    attr(out, "conf.type") <- type
+    attr(out, "conf.int") <- interval
+    attr(out, "call") <- match.call()
+    return(out)
   }
 
   data <- .spbp_training_data(x)
@@ -554,26 +611,62 @@ as.data.frame.survfitbp <- function(x, row.names = NULL, optional = FALSE, ...) 
 #'   time (suitable for smooth \code{ggplot2::geom_line} / \code{geom_ribbon} plots).
 #'   Pass a long \code{seq(...)} to override resolution; use observed event times only
 #'   if stepwise curves are intended.
-#' @param interval,type Passed to \code{\link{survfit.spbp}}.
+#' @param type Prediction type. For tidymodels/censored compatibility use
+#'   \code{"survival"}, \code{"time"}, or \code{"linear_pred"}. For survival
+#'   curves (default), use \code{NULL}, \code{"curve"}, or a confidence
+#'   transformation (\code{"log"}, \code{"log-log"}, \code{"plain"}).
+#' @param eval_time Evaluation times for \code{type = "survival"} (required).
+#' @param conf_type Confidence interval transformation for curve predictions
+#'   (\code{"log"}, \code{"log-log"}, \code{"plain"}). Used when \code{type} is
+#'   \code{NULL}, \code{"curve"}, or a confidence transformation name.
+#' @param interval,type Alias: when \code{type} is a confidence transformation,
+#'   it is passed as \code{conf_type}. \code{interval} is passed to
+#'   \code{\link{survfit.spbp}} for curve predictions.
 #' @param interval.type,monotone Passed to \code{\link{survfit.spbp}} (Bayesian fits).
-#' @param ... Passed to \code{\link{survfit.spbp}}.
-#' @return Same structure as \code{\link{as.data.frame.survfitbp}}.
-#' @seealso \code{\link{survfit.spbp}}
+#' @param ... Passed to \code{\link{survfit.spbp}} for curve predictions.
+#' @return For curve predictions, same structure as \code{\link{as.data.frame.survfitbp}}.
+#'   For \code{type = "survival"}, a tibble with list-column \code{.pred} (elements
+#'   contain \code{.eval_time} and \code{.pred_survival}). For \code{type = "time"},
+#'   a tibble with \code{.pred_time}. For \code{type = "linear_pred"}, a tibble with
+#'   \code{.pred_linear_pred}.
+#' @seealso \code{\link{survfit.spbp}}, \code{\link{augment.spbp}}
 #' @examples
 #' data(veteran, package = "survival")
 #' fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
 #' pr <- predict(fit, times = seq(0, 400, by = 2))
+#' predict(fit, veteran[1:2, ], type = "survival", eval_time = c(100, 200))
+#' predict(fit, veteran[1:2, ], type = "time")
 #' \dontrun{
 #'   ggplot2::ggplot(pr, ggplot2::aes(time, surv)) + ggplot2::geom_line()
 #' }
 #'
-predict.spbp <- function(object, newdata = NULL, times = NULL, interval = .95,
-                         type = c("log", "log-log", "plain"),
+predict.spbp <- function(object, newdata = NULL, times = NULL, eval_time = NULL,
+                         type = NULL, conf_type = NULL, interval = .95,
                          interval.type = c("hpd", "quantile"),
                          monotone = NULL,
                          ...) {
-  type <- match.arg(type)
+  mode_info <- .spbp_resolve_predict_mode(type)
+  pred_mode <- mode_info$mode
+  curve_conf <- if (!is.null(conf_type)) {
+    match.arg(conf_type, .spbp_curve_conf_types())
+  } else {
+    mode_info$conf_type
+  }
   interval.type <- match.arg(interval.type)
+
+  if (pred_mode == "survival") {
+    if (is.null(eval_time)) {
+      stop("'eval_time' must be specified when type = 'survival'.", call. = FALSE)
+    }
+    return(.spbp_predict_survival_censored(object, newdata, eval_time))
+  }
+  if (pred_mode == "time") {
+    return(.spbp_predict_time_censored(object, newdata))
+  }
+  if (pred_mode == "linear_pred") {
+    return(.spbp_predict_linear_pred_censored(object, newdata))
+  }
+
   if (is.null(times)) {
     times <- .spbp_default_survfit_times(object)
   } else {
@@ -589,7 +682,7 @@ predict.spbp <- function(object, newdata = NULL, times = NULL, interval = .95,
       object,
       times = times,
       interval = interval,
-      type = type,
+      type = curve_conf,
       interval.type = interval.type,
       monotone = monotone,
       tidy = TRUE,
@@ -601,7 +694,7 @@ predict.spbp <- function(object, newdata = NULL, times = NULL, interval = .95,
       newdata = newdata,
       times = times,
       interval = interval,
-      type = type,
+      type = curve_conf,
       interval.type = interval.type,
       monotone = monotone,
       tidy = TRUE,

@@ -162,6 +162,27 @@ mcmc_pairs(fit$posterior$beta, off_diag_fun = "hex")
 
 Always inspect divergences, split R-hat, and ESS before interpreting results.
 
+## tidybayes posterior draws
+
+Install **posterior** and **tidybayes** for long-format draws and interval plots.
+After `library(spsurv)`, `spread_draws()` and `tidy_draws()` dispatch on Bayes
+fits when **tidybayes** is loaded.
+
+```{r tidybayes, eval = requireNamespace("tidybayes", quietly = TRUE) && requireNamespace("posterior", quietly = TRUE)}
+library(tidybayes)
+dr <- as_draws_df.spbp(fit)
+spread_draws(fit, `beta[age]`)
+```
+
+Draw-level survival curves:
+
+```{r spread-surv, eval = requireNamespace("tidybayes", quietly = TRUE)}
+head(spread_surv_draws.spbp(fit, times = c(1, 2, 3), newdata = larynx[1, ]))
+```
+
+See `vignette("tidymodels", package = "spsurv")` for workflows and parsnip
+engines.
+
 ## Survival prediction
 
 ```{r predict-bayes}

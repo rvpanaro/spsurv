@@ -136,7 +136,10 @@
 #' @param x an object of class spbp.
 #' @param digits number of digits to display; defaults to \code{2}.
 #' @param signif.stars see \code{\link{getOption}}.
-#' @param bp.param print BP parameters.
+#' @param bp.param print BP parameters only (alias for baseline-only display).
+#' @param show_baseline logical; append Bernstein baseline Wald table after
+#'   regression coefficients (MLE only). See also \code{print(fit, bp.param = TRUE)}
+#'   for baseline-only output.
 #' @param what character vector; any of \code{"summary"}, \code{"tidy"},
 #'   and \code{"glance"} for broom-style coefficient and model-level tables.
 #' @param ... further arguments passed to \code{\link{summary.spbp}}.
@@ -146,6 +149,7 @@
 
 print.spbp <-
   function(x, bp.param = FALSE,
+           show_baseline = FALSE,
            digits = 2,
            signif.stars = getOption("show.signif.stars"),
            what = "summary", ...) {
@@ -162,13 +166,13 @@ print.spbp <-
     }
 
     if ("summary" %in% what) {
-      sm <- summary(x, ...)
+      sm <- summary(x, show_baseline = isTRUE(show_baseline), ...)
       print(sm, digits = digits, signif.stars = signif.stars)
     }
     if ("tidy" %in% what || "glance" %in% what) {
       if ("tidy" %in% what) {
         tidy_df <- .spbp_drop_all_na_cols(
-          tidy(x, conf.int = TRUE, exponentiate = TRUE)
+          tidy(x, conf.int = TRUE, exponentiate = TRUE, component = "coef")
         )
         num <- vapply(tidy_df, is.numeric, logical(1))
         tidy_df[num] <- lapply(tidy_df[num], round, digits = digits)

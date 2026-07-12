@@ -4,7 +4,7 @@
 \alias{vcov.spbp}
 \title{Covariance of the regression coefficients}
 \usage{
-\method{vcov}{spbp}(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
+\method{vcov}{spbp}(object, bp.param = FALSE, mask_unstable_gamma = TRUE, polish = TRUE, ...)
 }
 \arguments{
 \item{object}{an object of the class spbp}
@@ -15,6 +15,9 @@
 \eqn{\gamma}-related entries to \code{NA} if the Bernstein information block
 is ill-conditioned. Set \code{FALSE} internally when propagating survival
 uncertainty despite instability.}
+
+\item{polish}{when \code{TRUE} (default), add a small diagonal ridge if the
+returned matrix is slightly indefinite.}
 
 \item{...}{arguments passed to parent method.}
 }

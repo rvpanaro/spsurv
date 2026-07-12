@@ -15,6 +15,7 @@
   interval.type = c("hpd", "quantile"),
   monotone = NULL,
   tidy = FALSE,
+  baseline = FALSE,
   ...
 )
 
@@ -43,6 +44,11 @@ time so ribbons plot smoothly with \code{ggplot2::geom_line}. Defaults to \code{
 
 \item{tidy}{Logical; if \code{TRUE}, return a \code{data.frame} for ggplot2.
 instead of a \code{"survfit"} object.}
+
+\item{baseline}{Logical; if \code{TRUE}, return the baseline survival curve
+\eqn{S_0(t)} at observed event times (or \code{times}) with no covariate
+effect. When \code{tidy = TRUE}, returns a simple \code{data.frame} with
+columns \code{time} and \code{surv}.}
 
 \item{...}{Further arguments passed to \code{\link[survival:survfit]{survfit.coxph}} for the
 reference Cox object (e.g. \code{conf.type} is ignored; use \code{type} instead).}
