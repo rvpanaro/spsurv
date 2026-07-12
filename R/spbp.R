@@ -1,11 +1,28 @@
 #' Semiparametric Survival Analysis Using Bernstein Polynomial
 #'
-#' Fits Bernstein Polynomial based Proportional regression to survival data.
+#' Fits Bernstein PH, PO, or AFT models to survival data via Stan (MLE or
+#' Bayesian).
 #'
 #' @title spbp: The BP Based Survival Analysis Function
-#' @param formula a Surv object with time to event, status and explanatory terms.
-#' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.
-#' @seealso \code{\link[spsurv]{spbp.default}}
+#' @param formula a \code{\link[survival]{Surv}} response with event time,
+#'   censoring status, and optional covariates.
+#' @param ... Arguments passed to \code{\link{spbp.default}}, including
+#'   \code{data}, \code{model}, \code{approach}, and \code{degree}. Further
+#'   arguments in \code{...} are passed to \code{rstan::optimizing} (MLE) or
+#'   \code{rstan::sampling} (Bayes), e.g. \code{iter}, \code{chains}, \code{init}.
+#' @details
+#' The generic dispatches to \code{\link{spbp.default}} for formula objects.
+#' Convenience wrappers \code{\link{bpph}}, \code{\link{bppo}}, and
+#' \code{\link{bpaft}} fix the model family. See
+#' \code{vignette("getting-started", package = "spsurv")} for a tutorial,
+#' \code{vignette("model-families", package = "spsurv")} for PH / PO / AFT
+#' comparison, and \code{vignette("bp-degree", package = "spsurv")} for
+#' choosing the Bernstein polynomial degree.
+#' @return An object of class \code{"spbp"}. See \code{\link{spbp.default}} for
+#'   the list of components (\code{coefficients}, \code{bp.param},
+#'   \code{degree}, etc.).
+#' @seealso \code{\link{spbp.default}}, \code{\link{bpph}}, \code{\link{bppo}},
+#'   \code{\link{bpaft}}, \code{\link{bernstein}}
 #' @examples
 #'
 #' library("spsurv")
@@ -28,9 +45,7 @@
 #' summary(fit_bayes)
 #' @rdname spbp
 #' @export spbp
-#' @importFrom magrittr `%>%`
-#' @seealso  \code{\link[spsurv]{spbp.default}},  \code{\link[spsurv]{bpph}},  \code{\link[spsurv]{bppo}}, \code{\link[spsurv]{bpaft}}, \url{https://mc-stan.org/users/documentation/}
-#' @return An object of class 'spbp'.
+#' @importFrom stats terms
 
 spbp <- function(formula, ...) {
   UseMethod("spbp", formula)
@@ -38,25 +53,49 @@ spbp <- function(formula, ...) {
 
 #' @title spbp: The BP Based Semiparametric Survival Analysis Function
 #' @param formula a Surv object with time to event, status and explanatory terms
-#' @param degree Bernstein Polynomial degree
+#' @param degree Bernstein polynomial degree (integer). If omitted and neither
+#'   \code{dist} nor \code{baseline} supplies \code{\link{bernstein}(m)}, the
+#'   default is \code{ceiling(sqrt(n))} where \code{n} is the number of rows in
+#'   \code{data}.
 #' @param data a data.frame object
-#' @param approach Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"
-#' @param model Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"
+#' @param approach Bayesian or Maximum Likelihood estimation methods; default is \code{"mle"}
+#' @param model Bernstein PH (\code{"ph"}), PO (\code{"po"}), or AFT (\code{"aft"}) model; default is \code{"ph"}
 #' @param priors prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients)
 #' @param scale logical; indicates whether to center and scale the data
-#' @param ... further arguments passed to or from other methods
-#' @param cores number of core threads to use
-#' @param verbose verbose passed to stan
-#' @param chains number of chains passed to stan
-#' @return An object of class \code{spbp}
+#' @param dist optional baseline specification; use \code{\link{bernstein}(m)} for the Bernstein polynomial degree
+#' @param baseline optional alias for \code{dist}
+#' @param ... further arguments passed to \code{rstan::optimizing} (MLE) or
+#'   \code{rstan::sampling} (Bayes), e.g. \code{iter}, \code{warmup}, \code{init}.
+#' @param cores number of core threads to use (Bayes sampling)
+#' @param verbose passed to Stan
+#' @param chains number of MCMC chains (Bayes)
+#' @details
+#' Right-censored survival data are modeled with a Bernstein-polynomial baseline
+#' and regression on covariates. With \code{approach = "mle"}, parameters are
+#' estimated by Stan's optimizer and approximate inference uses the Hessian when
+#' available. With \code{approach = "bayes"}, posterior samples are drawn with
+#' NUTS; use \code{summary}, \code{\link{tidy.spbp}}, and \code{\link{glance.spbp}}
+#' for output. Covariates are centered and scaled when \code{scale = TRUE}
+#' (default).
+#'
+#' The returned object includes:
+#' \describe{
+#'   \item{\code{coefficients}}{Regression estimates on the original covariate scale.}
+#'   \item{\code{bp.param}}{Bernstein baseline coefficients (\code{gamma}).}
+#'   \item{\code{degree}}{Polynomial degree used (also in \code{call$degree}).}
+#'   \item{\code{loglik}}{MLE: intercept-only and full-model log-likelihoods;
+#'     Bayes: posterior mean pointwise log-likelihoods.}
+#'   \item{\code{call}}{Matched call with \code{approach}, \code{model}, and \code{degree}.}
+#' }
+#' @return An object of class \code{spbp}. Component \code{degree} records the
+#'   Bernstein polynomial degree used in the fit (also stored in \code{call$degree}).
+#' @seealso \code{\link{bpph}}, \code{\link{bppo}}, \code{\link{bpaft}},
+#'   \code{\link{bernstein}}, \code{\link{summary.spbp}}
 #' @method spbp default
 #' @export
 #' @importFrom rstan stan sampling optimizing
 #' @importFrom survival Surv frailty
-#' @importFrom MASS ginv
-#' @importFrom mnormt pd.solve
-#' @importFrom loo waic loo
-#' @importFrom coda  HPDinterval
+#' @importFrom coda HPDinterval
 #' @importFrom stats .getXlevels as.formula contrasts dbeta density dist formula median model.extract pbeta pchisq printCoefmat qnorm rlogis rnorm rweibull sd terms
 #'
 
@@ -71,12 +110,24 @@ spbp.default <-
              gamma = c("lognormal(0,4)"),
              frailty = c("gamma(0.01,0.01)")
            ),
-           cores = min(parallel::detectCores() - 1, 4),
+           cores = .spbp_default_cores(),
            scale = TRUE,
+           dist = NULL,
+           baseline = NULL,
            verbose = FALSE, chains = 4,
            ...) {
     # ---------------Definitions + error handling  ---------------
     Call <- match.call()
+
+    if (anyNA(cores) || length(cores) < 1L || cores[1L] < 1L) {
+      dc <- suppressWarnings(parallel::detectCores())
+      cores <- if (length(dc) != 1L || is.na(dc) || dc < 2L) {
+        1L
+      } else {
+        min(as.integer(dc - 1L), 4L)
+      }
+    }
+    cores <- as.integer(cores[1L])
 
     if (length(model) == 3) {
       model_flag <- "ph"
@@ -96,19 +147,24 @@ spbp.default <-
     temp[[1L]] <- quote(stats::model.frame) # model frame call
     special <- c("frailty", "frailty.gamma", "frailty.gaussian", "frailty.t")
     temp$formula <- terms(formula, special, data = data)
-    temp$formula <- terms(formula, data = data)
     stanArgs <- list(...)
 
     mf <- eval(temp, parent.frame())
     Terms <- terms(mf)
     Y <- model.extract(mf, "response")
+    if (!inherits(Y, "Surv")) {
+      stop("Response must be a survival object")
+    }
     type <- attr(Y, "type")
 
     time <- as.vector(Y[, 1])
     tau <- max(time)
     status <- as.vector(Y[, 2])
 
-    if (missing(degree)) degree <- ceiling(nrow(data)^(0.5))
+    degree <- .spbp_resolve_degree(degree, dist = dist, baseline = baseline)
+    if (is.null(degree)) {
+      degree <- ceiling(nrow(data)^(0.5))
+    }
 
     # Frailty: id, distribution, column index
     id <- NULL
@@ -120,9 +176,9 @@ spbp.default <-
       frailty_idx <- attr(temp$formula, "specials")$frailty.gamma
       id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gamma]
       rand <- 1L
-    } else if (!is.null(attr(temp$formula, "specials")$frailty.gauss)) {
-      frailty_idx <- attr(temp$formula, "specials")$frailty.gauss
-      id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gauss]
+    } else if (!is.null(attr(temp$formula, "specials")$frailty.gaussian)) {
+      frailty_idx <- attr(temp$formula, "specials")$frailty.gaussian
+      id <- model.matrix(formula)[, attr(temp$formula, "specials")$frailty.gaussian]
       rand <- 2L
     } else if (!is.null(attr(temp$formula, "specials")$frailty.t)) {
       frailty_idx <- attr(temp$formula, "specials")$frailty.t
@@ -161,9 +217,8 @@ spbp.default <-
 
     # Model frame / response validation
     if (nrow(mf) == 0) stop("Only missing observations")
-    if (!inherits(Y, "Surv")) stop("Response must be a survival object")
-    if (type != "right" && type != "counting") {
-      stop(paste("spsurv doesn't support \"", type, "\" survival data", sep = ""))
+    if (!type %in% c("right", "counting")) {
+      stop(paste0("spsurv doesn't support \"", type, "\" survival data"))
     }
     if (length(attr(Terms, "variables")) > 2) {
       ytemp <- terms.inner(formula)[1:2]
@@ -200,7 +255,7 @@ spbp.default <-
     assign <- attrassign(X, Terms)
     p <- ncol(X)
 
-    if (scale & (null == 0)) {
+    if (scale && null == 0L) {
       X <- scale(X, center = TRUE)
       means <- array(attr(X, "scaled:center"))
       sdv <- array(attr(X, "scaled:scale"))
@@ -282,7 +337,7 @@ spbp.default <-
     # --------------- Fit  ---------------
     if (approach == 0) {
       tryCatch(
-        expr = .spbp_mle(standata = standata, hessian = T, verbose = verbose, ...),
+        expr = .spbp_mle(standata = standata, hessian = TRUE, verbose = verbose, ...),
         error = function(e) {
           warning(e)
           return(NaN)
@@ -290,7 +345,7 @@ spbp.default <-
       )
     } else {
       tryCatch(
-        expr = .spbp_bayes(standata = standata, hessian = F, verbose = verbose, chains = chains, ...),
+        expr = .spbp_bayes(standata = standata, hessian = FALSE, verbose = verbose, chains = chains, ...),
         error = function(e) {
           warning(e)
           return(NaN)
@@ -307,12 +362,6 @@ spbp.default <-
 .spbp_initial_values <- function(standata) {
   p <- standata$p
   m <- standata$m
-  loc_beta <- standata$location_beta
-  scale_beta <- standata$scale_beta
-  priordist_beta <- standata$priordist_beta
-  loc_gamma <- standata$location_gamma
-  scale_gamma <- standata$scale_gamma
-  priordist_gamma <- standata$priordist_gamma
 
   beta_init <- numeric(p)
   for (j in seq_len(p)) {
@@ -321,17 +370,25 @@ spbp.default <-
   }
 
   gamma_init <- numeric(m)
-
   for (j in seq_len(m)) {
-    gamma_init[j] <- exp( stats::rnorm(1, mean = 0, sd = 1))
+    gamma_init[j] <- exp(stats::rnorm(1, mean = 0, sd = 1))
   }
 
-  list(beta = beta_init, gamma = gamma_init)
+  # rstan::optimizing expects a *flat* list (beta[1], ..., gamma[1], ...), not
+  # list(beta = ..., gamma = ...); the latter breaks for vector length 1
+  # (declared dim 1, found empty) in recent rstan.
+  init_beta <- if (p > 0L) {
+    stats::setNames(as.list(beta_init), paste0("beta[", seq_len(p), "]"))
+  } else {
+    list()
+  }
+  init_gamma <- stats::setNames(as.list(gamma_init), paste0("gamma[", seq_len(m), "]"))
+  c(init_beta, init_gamma)
 }
 
-#' Internal: compute survival CI bands (survfit-style)
-#'
+#' MLE fit for spbp (internal)
 #' @keywords internal
+#' @noRd
 .spbp_mle <-
   function(standata, hessian = TRUE, verbose = FALSE, ...) {
     e <- parent.frame() # "sourcing" the parent.frame
@@ -344,22 +401,50 @@ spbp.default <-
       message("Frailty ignored, change approach to `bayes` for frailty estimation.")
     }
 
-    c <- 0
+    dots <- list(...)
+    user_init <- dots$init
+    dots$init <- NULL
+
+    hessian_run <- hessian
+    attempt <- 0L
     stanfit <- list(return_code = 70)
 
-    while (stanfit$return_code != 0 && c < 3) {
-      # Initial values from prior (one draw per attempt so retries try different starts)
-      init <- .spbp_initial_values(standata)
-      stanfit <- suppressWarnings(
-        do.call(rstan::optimizing, c(list(
-          object  = stanmodels$spbp,
-          data    = standata,
-          init    = init,
-          hessian = hessian,
-          verbose = verbose
-        ), ...))
+    fit_opt <- function(init, h) {
+      suppressWarnings(do.call(rstan::optimizing, c(list(
+        object  = stanmodels$spbp,
+        data    = standata,
+        init    = init,
+        hessian = h,
+        verbose = verbose
+      ), dots)))
+    }
+
+    while (stanfit$return_code != 0 && attempt < 3L) {
+      attempt <- attempt + 1L
+      # Initial values: caller may pass init=... to rstan::optimizing (e.g. init = 0 in tests);
+      # otherwise draw a flat list (beta[1], ..., gamma[1], ...) required by rstan::optimizing.
+      init <- if (!is.null(user_init)) {
+        user_init
+      } else {
+        .spbp_initial_values(standata)
+      }
+      stanfit <- tryCatch(
+        fit_opt(init, hessian_run),
+        error = function(e) {
+          msg <- conditionMessage(e)
+          if (isTRUE(hessian_run) && isTRUE(hessian) &&
+                grepl("optimHess|non-finite|hessian|finite difference", msg, ignore.case = TRUE)) {
+            hessian_run <<- FALSE
+            warning(
+              "Hessian computation failed; refitting without Hessian. ",
+              call. = FALSE
+            )
+            fit_opt(init, FALSE)
+          } else {
+            stop(e)
+          }
+        }
       )
-      c <- c + 1
     }
 
     if (stanfit$return_code != 0) {
@@ -374,14 +459,31 @@ spbp.default <-
     names(coef) <- colnames(X)
     names(gamma) <- paste0("gamma[", 1:degree, "]")
 
-    if (hessian == FALSE) {
-      stanfit$hessian <- matrix(rep(NA, p^2), ncol = 1:p, nrow = 1:p)
+    n_full <- 1L + standata$p + standata$m
+    n_bg <- standata$p + standata$m
+    h_mat <- stanfit$hessian
+    has_hess <- !is.null(h_mat) && is.matrix(h_mat) && nrow(h_mat) == ncol(h_mat)
+    dim_ok <- has_hess && (nrow(h_mat) == n_full || nrow(h_mat) == n_bg)
+    if (!hessian_run || !dim_ok) {
+      stanfit$hessian <- matrix(NA_real_, n_full, n_full)
     }
 
     nulldata <- standata
     nulldata$X <- matrix(0, ncol = ncol(X), nrow = data.n)
 
-    nullfit <- tryCatch(rstan::optimizing(stanmodels$spbp, data = nulldata, hessian = hessian, ...),
+    nullfit <- tryCatch(
+      do.call(
+        rstan::optimizing,
+        c(
+          list(
+            object = stanmodels$spbp,
+            data = nulldata,
+            hessian = hessian_run,
+            init = if (!is.null(user_init)) user_init else "random"
+          ),
+          dots
+        )
+      ),
       error = function(e) {
         return(list(value = NULL))
       }
@@ -390,6 +492,7 @@ spbp.default <-
     output <- list(
       coefficients = coef,
       bp.param = gamma,
+      degree = degree,
       alpha = alpha,
       hessian = stanfit$hessian,
       loglik = c(nullfit$value, stanfit$value),
@@ -408,7 +511,8 @@ spbp.default <-
       standata = standata,
       tau_a = 0,
       tau_b = tau,
-      stanfit = stanfit
+      stanfit = stanfit,
+      data = data
     )
 
     if (model_flag == "aft") {
@@ -424,6 +528,7 @@ spbp.default <-
 
     output$call$approach <- approach_flag
     output$call$model <- model_flag
+    output$call$degree <- degree
 
     class(output) <- c("spbp")
     message("Priors are ignored because the MLE approach is used.")
@@ -431,7 +536,7 @@ spbp.default <-
     return(output)
   }
 
-#' Internal: compute survival CI bands (survfit-style)
+#' Bayesian fit for spbp (internal)
 #'
 #' @keywords internal
 .spbp_bayes <- function(standata, hessian = FALSE, verbose = FALSE, chains = 1, ...) {
@@ -486,6 +591,7 @@ spbp.default <-
   output <- list(
     coefficients = colMeans(posterior$beta),
     bp.param = colMeans(posterior$gamma),
+    degree = degree,
     loglik = colMeans(posterior$log_lik),
     features = features,
     n = data.n,
@@ -502,12 +608,13 @@ spbp.default <-
     posterior = posterior,
     tau_a = 0,
     tau_b = tau,
-    stanfit = stanfit
+    stanfit = stanfit,
+    data = data
   )
 
   if (model_flag == "aft") {
     z <- matrix(nrow = nrow(posterior$beta), ncol = length(Y[, 1]))
-    for (i in 1:nrow(posterior$beta)) {
+    for (i in seq_len(nrow(posterior$beta))) {
       z[i, ] <- (features %*% posterior$beta[i, ])
     }
     output$tau_a <- min(log(Y[, 1]) - colMeans(z))
@@ -521,6 +628,7 @@ spbp.default <-
   output$call <- Call
   output$call$approach <- approach_flag
   output$call$model <- model_flag
+  output$call$degree <- degree
 
   class(output) <- c("spbp")
 

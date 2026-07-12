@@ -8,8 +8,8 @@
   x,
   main,
   graph = c("baseline", "basis"),
-  cumulative = F,
-  frame = F,
+  cumulative = FALSE,
+  frame = FALSE,
   lwd = 3,
   ...
 )

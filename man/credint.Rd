@@ -12,7 +12,7 @@ credint(x, ...)
 \item{...}{further arguments passed to parent method}
 }
 \value{
-the estimated regression coefficients
+Generic function dispatching to \code{credint.spbp}.
 }
 \description{
 Generic S3 method credint

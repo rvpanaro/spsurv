@@ -4,7 +4,7 @@
 #' @param degree Bernstein polynomial degree
 #' @param tau must be greater than times maximum value observed.
 #' @return A list containing matrices g and G corresponding BP basis and corresponding tau value used to compute them.
-#' @importFrom viridis scale_color_viridis
+#' @importFrom viridis viridis
 #'
 bp.basis <- function(time, degree, tau = max(time)) {
   n <- length(time)
@@ -14,23 +14,16 @@ bp.basis <- function(time, degree, tau = max(time)) {
   if (!(degree %% 1 == 0)) stop("polynomial degree must be integer.")
   if (tau < max(time)) stop("tau must be greater than the last time.")
 
-  k <- 1:degree
-  g <- matrix(NA, n, degree)
-  G <- matrix(NA, n, degree)
+  k <- seq_len(degree)
   y <- time / tau
 
   g <- sapply(k, function(k) {
     dbeta(y, k, degree - k + 1) / tau
   })
-  G <- sapply(k, function(k) pbeta(y, k, degree - k + 1))
-  # Equivalent to
-  # for (i in 1:n){
-  #   for(k in 1:degree){
-  #     g[i,k] <- dbeta(y[i], k, degree - k + 1) / tau
-  #     G[i,k] <- pbeta(y[i], k, degree - k + 1)
-  #   }
-  # }
-  return(list(g = g, G = G, degree = degree, tau = tau))
+  G <- sapply(k, function(k) {
+    pbeta(y, k, degree - k + 1)
+  })
+  list(g = g, G = G, degree = degree, tau = tau)
 }
 
 #' @export
@@ -57,72 +50,82 @@ bp.basis <- function(time, degree, tau = max(time)) {
 #' plot(fit)
 plot.spbp <- function(x, main,
                       graph = c("baseline", "basis"),
-                      cumulative = F,
-                      frame = F,
+                      cumulative = FALSE,
+                      frame = FALSE,
                       lwd = 3,
                       ...) {
   graph <- match.arg(graph)
   m <- length(x$bp.param)
   tau_a <- x$tau_a
   tau_b <- x$tau_b
-  approach <- x$call$approach
   gamma <- x$bp.param
+  pal <- viridis::viridis(m + 1)
 
   if (missing(main)) {
     if (graph == "basis") {
-      if (cumulative) {
-        main <- "Cumulative Basis"
-      } else {
-        main <- "Basis"
-      }
+      main <- if (cumulative) "Cumulative Basis" else "Basis"
     } else if (cumulative) {
-      if (x$call$model %in% c("ph", "aft")) {
-        main <- "Baseline cumulative hazard"
+      main <- if (x$call$model %in% c("ph", "aft")) {
+        "Baseline cumulative hazard"
       } else {
-        main <- "Baseline odds"
+        "Baseline odds"
       }
     } else {
-      if (x$call$model %in% c("ph", "aft")) {
-        main <- "Baseline hazard"
+      main <- if (x$call$model %in% c("ph", "aft")) {
+        "Baseline hazard"
       } else {
-        main <- "Baseline derivative odds"
+        "Baseline derivative odds"
       }
     }
   }
 
   portion <- function(x, k) {
+    u <- (x - tau_a) / (tau_b - tau_a)
     if (graph == "baseline") {
       if (cumulative) {
-        gamma[k] * pbeta((x - tau_a) / (tau_b - tau_a), k, m - k + 1)
+        gamma[k] * pbeta(u, k, m - k + 1)
       } else {
-        gamma[k] * dbeta((x - tau_a) / (tau_b - tau_a), k, m - k + 1) / (tau_b - tau_a)
+        gamma[k] * dbeta(u, k, m - k + 1) / (tau_b - tau_a)
       }
+    } else if (cumulative) {
+      pbeta(u, k, m - k + 1)
     } else {
-      if (cumulative) {
-        pbeta((x - tau_a) / (tau_b - tau_a), k, m - k + 1)
-      } else {
-        dbeta((x - tau_a) / (tau_b - tau_a), k, m - k + 1) / (tau_b - tau_a)
-      }
+      dbeta(u, k, m - k + 1) / (tau_b - tau_a)
     }
   }
 
   summation <- function(x) {
-    sapply(x, function(i) {
-      sum(portion(i, 1:m))
-    })
+    vapply(x, function(i) sum(portion(i, seq_len(m))), numeric(1))
   }
 
-  curve(portion(x, 1),
+  y_max <- if (graph == "basis" && cumulative) {
+    1
+  } else if (graph == "basis") {
+    xs <- seq(tau_a, tau_b, length.out = 500)
+    component_max <- max(vapply(seq_len(m), function(k) max(portion(xs, k)), numeric(1)))
+    max(component_max, max(summation(xs)))
+  } else if (cumulative) {
+    max(x$bp.param)
+  } else {
+    max(x$bp.param) * m / (tau_b - tau_a)
+  }
+
+  curve(
+    portion(x, 1),
     xlim = c(tau_a, tau_b),
-    ylim = c(0, cumulative * ifelse(graph == "basis", 1, max(x$bp.param)) + (!cumulative) * ifelse(graph == "basis", 1, max(x$bp.param)) * m / (tau_b - tau_a)),
-    frame = frame, lwd = lwd,
-    col = viridis::viridis(m + 1)[1], ylab = "BP", xlab = "Time",
-    main = main, ...
+    ylim = c(0, y_max),
+    frame = frame,
+    lwd = lwd,
+    col = pal[1],
+    ylab = "BP",
+    xlab = "Time",
+    main = main,
+    ...
   )
 
-  for (k in 1:m) {
-    curve(portion(x, k), add = T, col = viridis::viridis(m + 1)[k + 1], lwd = lwd)
+  for (k in seq_len(m)) {
+    curve(portion(x, k), add = TRUE, col = pal[k + 1], lwd = lwd)
   }
 
-  curve(summation, add = T, lwd = lwd, lty = 2)
+  curve(summation, add = TRUE, lwd = lwd, lty = 2)
 }

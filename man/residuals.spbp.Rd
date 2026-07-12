@@ -4,7 +4,11 @@
 \alias{residuals.spbp}
 \title{BP based models residuals.}
 \usage{
-\method{residuals}{spbp}(object, type = c("martingale", "deviance", "coobject-snell"), ...)
+\method{residuals}{spbp}(
+  object,
+  type = c("martingale", "deviance", "cox-snell", "coxsnell"),
+  ...
+)
 }
 \arguments{
 \item{object}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}

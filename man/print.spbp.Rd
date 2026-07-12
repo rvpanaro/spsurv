@@ -7,8 +7,9 @@
 \method{print}{spbp}(
   x,
   bp.param = FALSE,
-  digits = max(getOption("digits") - 4, 3),
+  digits = 2,
   signif.stars = getOption("show.signif.stars"),
+  what = "summary",
   ...
 )
 }
@@ -17,11 +18,14 @@
 
 \item{bp.param}{print BP parameters.}
 
-\item{digits}{number of digits to display.}
+\item{digits}{number of digits to display; defaults to \code{2}.}
 
 \item{signif.stars}{see \code{\link{getOption}}.}
 
-\item{...}{further arguments passed to or from other methods.}
+\item{what}{character vector; any of \code{"summary"}, \code{"tidy"},
+and \code{"glance"} for broom-style coefficient and model-level tables.}
+
+\item{...}{further arguments passed to \code{\link{summary.spbp}}.}
 }
 \value{
 none

@@ -34,37 +34,100 @@ devtools::install_github("rvpanaro/spsurv")
 
 ## Usage
 
-Fit a BP-based survival regression PH model:
+Fit a BP-based survival regression PH model. If `degree` is omitted, the default
+is `ceiling(sqrt(n))` where `n` is the number of rows in `data`; the resolved
+value is stored on the fit as `fit$degree`.
 
 ```r
 library("KMsurv")
 data("larynx")
+larynx$stage <- factor(larynx$stage)
 
 library(spsurv)
 
-fit <- bpph(Surv(time, delta) ~ age + factor(stage), model = "ph", data = larynx)
+fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle")
 summary(fit)
+fit$degree   # Bernstein polynomial degree used
 ```
 
-Alternatively, use the `spbp` function:
+Alternatively, use the `spbp` function or set the degree with `bernstein(m)`:
 
 ```r
-fit <- spbp(Surv(time, delta) ~ age + factor(stage), model = "ph", data = larynx)
+fit <- spbp(Surv(time, delta) ~ age + stage, model = "ph", data = larynx,
+            dist = bernstein(5), approach = "mle")
 summary(fit)
 ```
 
 Bayesian analysis with the `approach` argument:
 
 ```r
-fit2 <- spbp(Surv(time, delta) ~ age + factor(stage),
+fit2 <- spbp(Surv(time, delta) ~ age + stage,
              approach = "bayes", data = larynx,
              iter = 2000, chains = 1, warmup = 1000)
 summary(fit2)
 ```
 
-See the [reference manual](https://rvpanaro.github.io/spsurv/reference/index.html) for more examples.
+Nested model comparison (MLE) follows the same `anova()` patterns as
+`survival::survreg`:
+
+```r
+fit0 <- bpph(Surv(time, delta) ~ 1, data = larynx, approach = "mle", degree = 5)
+fit1 <- bpph(Surv(time, delta) ~ age, data = larynx, approach = "mle", degree = 5)
+fit2 <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle", degree = 5)
+
+anova(fit0, fit1)
+anova(fit1, fit2)
+anova(fit2)   # sequential term-wise table
+```
+
+See the [reference manual](https://rvpanaro.github.io/spsurv/reference/index.html) and
+vignette `vignette("getting-started", package = "spsurv")` for more examples.
+
+### Tidy model summaries
+
+Coefficient and model-level summaries follow the [generics](https://generics.r-lib.org/) / broom convention:
+
+```r
+library(generics)
+library(ggplot2)
+
+fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle")
+
+# One row per term (hazard ratios with 95% CI)
+td <- tidy(fit, conf.int = TRUE, exponentiate = TRUE)
+print(td)
+
+# One-row model summary (n, log-likelihood, global LR test, AIC, ...)
+glance(fit)
+
+# Forest plot
+ggplot(td, aes(x = estimate, y = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  labs(x = "Hazard ratio", y = NULL)
+```
+
+For publication-ready tables, pipe `tidy()` output into [gt](https://gt.rstudio.com/) or similar packages.
 
 ## Troubleshooting
+
+### Bayesian convergence checks
+
+For Bayesian fits, always check:
+
+- divergent transitions (target: 0)
+- split-\(\hat R\) (target: close to 1, typically < 1.01)
+- effective sample sizes (avoid very low bulk/tail ESS)
+
+If warnings appear, use this escalation order:
+
+1. increase `adapt_delta` (for example, from 0.8 to 0.9 or 0.95)
+2. increase `iter` and `warmup`
+3. re-check divergences, `Rhat`, and ESS before interpretation
+
+Higher `adapt_delta` usually reduces divergences but increases runtime,
+so tuning should balance stability and compute cost.
 
 Please report issues at [https://github.com/rvpanaro/spsurv/issues](https://github.com/rvpanaro/spsurv/issues) or contact the maintainer (see DESCRIPTION).
 

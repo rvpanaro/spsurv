@@ -15,5 +15,4 @@ pw.basis <- function(degree) {
       ((-1)^(j - k)) * choose(degree - k, j - k) / beta(k, degree - k + 1)
     })
   }) |> as.matrix()
-
 }

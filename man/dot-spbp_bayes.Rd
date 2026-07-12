@@ -2,11 +2,11 @@
 % Please edit documentation in R/spbp.R
 \name{.spbp_bayes}
 \alias{.spbp_bayes}
-\title{Internal: compute survival CI bands (survfit-style)}
+\title{Bayesian fit for spbp (internal)}
 \usage{
 .spbp_bayes(standata, hessian = FALSE, verbose = FALSE, chains = 1, ...)
 }
 \description{
-Internal: compute survival CI bands (survfit-style)
+Bayesian fit for spbp (internal)
 }
 \keyword{internal}

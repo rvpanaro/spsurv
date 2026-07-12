@@ -7,18 +7,34 @@
 spbp(formula, ...)
 }
 \arguments{
-\item{formula}{a Surv object with time to event, status and explanatory terms.}
+\item{formula}{a \code{\link[survival]{Surv}} response with event time,
+censoring status, and optional covariates.}
 
-\item{...}{Arguments passed to `rstan::sampling` (e.g. iter, chains) or `rstan::optimizing`.}
+\item{...}{Arguments passed to \code{\link{spbp.default}}, including
+\code{data}, \code{model}, \code{approach}, and \code{degree}. Further
+arguments in \code{...} are passed to \code{rstan::optimizing} (MLE) or
+\code{rstan::sampling} (Bayes), e.g. \code{iter}, \code{chains}, \code{init}.}
 }
 \value{
-An object of class 'spbp'.
+An object of class \code{"spbp"}. See \code{\link{spbp.default}} for
+  the list of components (\code{coefficients}, \code{bp.param},
+  \code{degree}, etc.).
 }
 \description{
 Semiparametric Survival Analysis Using Bernstein Polynomial
 }
 \details{
-Fits Bernstein Polynomial based Proportional regression to survival data.
+Fits Bernstein PH, PO, or AFT models to survival data via Stan (MLE or
+Bayesian).
+
+
+The generic dispatches to \code{\link{spbp.default}} for formula objects.
+Convenience wrappers \code{\link{bpph}}, \code{\link{bppo}}, and
+\code{\link{bpaft}} fix the model family. See
+\code{vignette("getting-started", package = "spsurv")} for a tutorial,
+\code{vignette("model-families", package = "spsurv")} for PH / PO / AFT
+comparison, and \code{vignette("bp-degree", package = "spsurv")} for
+choosing the Bernstein polynomial degree.
 }
 \examples{
 
@@ -42,7 +58,6 @@ fit_bayes <- spbp(Surv(time, status) ~ karno + factor(celltype),
 summary(fit_bayes)
 }
 \seealso{
-\code{\link[spsurv]{spbp.default}}
-
-\code{\link[spsurv]{spbp.default}},  \code{\link[spsurv]{bpph}},  \code{\link[spsurv]{bppo}}, \code{\link[spsurv]{bpaft}}, \url{https://mc-stan.org/users/documentation/}
+\code{\link{spbp.default}}, \code{\link{bpph}}, \code{\link{bppo}},
+  \code{\link{bpaft}}, \code{\link{bernstein}}
 }

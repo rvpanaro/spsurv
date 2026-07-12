@@ -1,12 +1,21 @@
 # spsurv 1.0.2
 
+* **Vignettes:** Expanded with EDA plots, visual checks, and decision guidance across all seven articles.
+* **tidy/broom:** `tidy()`, `glance()`, `logLik()`, `AIC()`, `anova()`, `estimates()`, and `se()` methods for `spbp` objects; `bernstein()` baseline specification.
+* **Prediction:** `predict()` and improved `survfit()` (tidy output, newdata covariates, Bayesian monotone bands).
+* **Residuals:** `residuals()` supports martingale, deviance, and Cox-Snell types; martingale diagnostics fixed in examples.
 * **Handlers:** Removed `handlers.R`; validation and setup logic inlined in `spbp.default`.
 * **vcov:** Block-wise inversion of the Hessian (regression vs Bernstein polynomial blocks) in `vcov.spbp`.
+* **Stan:** Slim `transformed parameters` (only `alpha` stored); pointwise `log_lik` moved to `generated quantities`; likelihood via `bp_pointwise_log_lik()` in the model block.
 * **Stan (AFT):** No clamping of `u` to avoid boundary bias; minimum feasible divisor (`min_range`) only when range is degenerate.
 * **MLE:** Initial values for the optimizer drawn from prior distributions; retries limited to 3 attempts.
+* **`spbp` objects:** Component `degree` on fits and in `call$degree`; default Bernstein degree `ceiling(sqrt(n))` when omitted (documented in help, README, and vignettes).
+* **`anova.spbp`:** Pairwise and sequential analysis-of-deviance tables aligned with `survival::survreg` (`Terms`, `Test`, `Df`, `Deviance`, etc.).
+* **`bpph` / `bppo` / `bpaft`:** User-facing `match.call()` without unevaluated `dist`/`baseline` symbols; optional `degree` argument.
+* **Documentation:** Expanded `spbp` / `spbp.default` help (`@details`, return components, vignette links); README usage and model-comparison examples updated.
 * **Examples:** `data("veteran", package = "survival")` in docs and examples.
-* **pkgdown:** Reference index updated to match current package; Bootstrap 5 / default template; logo size and alt-text; README aligned with site style; itsamp removed from index.
-* **Git:** `.gitignore` updated (rj/, .Rcheck, etc.); GitHub Action for pkgdown deploy to gh-pages.
+* **pkgdown:** Reference index updated to match current package; Bootstrap 5 / default template; logo size and alt-text; README aligned with site style.
+* **Repository:** CRAN submission hygiene (`.gitignore`, `.Rbuildignore`, `LICENSE`).
 
 # spsurv 1.0.1
 

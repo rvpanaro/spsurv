@@ -7,35 +7,30 @@ Authors@R:
            family = "Panaro",
            role = c("aut", "cre", "cph"),
            email = "rvpanaro@gmail.com",
-           comment = c(ORCID = "0000-0002-1903-2091", URL= "https://rvpanaro.github.io/")),
-	person(given = "Fábio",
+           comment = c(ORCID = "0000-0002-1903-2091", URL = "https://rvpanaro.github.io/")),
+    person(given = "Fábio",
            family = "Demarqui",
            role = c("ctb", "ths"),
            email = "fndemarqui@gmail.com",
-           comment = c(ORCID = "0000-0001-9236-1986", URL= "http://www.est.ufmg.br/~fndemarqui/")),
-	person(given = "Vinicius",
+           comment = c(ORCID = "0000-0001-9236-1986", URL = "http://www.est.ufmg.br/~fndemarqui/")),
+    person(given = "Vinicius",
            family = "Mayrink",
            role = c("ths"),
            email = "vdinizm@gmail.com",
-           comment = c(ORCID = "0000-0002-5683-8326", URL= "http://www.est.ufmg.br/~vdinizm/")))
-Author: Renato Panaro [aut, cre, cph], Fábio Demarqui [ctb, ths], Vinicius Mayrink [ths]
-Maintainer: Renato Panaro <rvpanaro@gmail.com>
+           comment = c(ORCID = "0000-0002-5683-8326", URL = "http://www.est.ufmg.br/~vdinizm/")))
 Description: Semiparametric survival analysis based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
-License: GPL-3
+License: GPL-3 + file LICENSE
 Biarch: true
 Depends: 
-    R (>= 3.5.0),
+    R (>= 4.1.0),
     survival (>= 2.44-1.1),
-    loo (>= 2.9.0),
-    coda (>= 0.19-3),
-    MASS (>= 7.3-51.4)				
+    coda (>= 0.19-3)
 Imports: 
     methods,
     Rcpp (>= 0.12.0),
     rstan (>= 2.18.1),
-    magrittr,
-    viridis,
-    mnormt
+    generics,
+    viridis
 LinkingTo: 
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
@@ -48,10 +43,13 @@ Suggests:
     testthat (>= 2.1.0),
     KMsurv,
     covr,
-    rmarkdown 	
+    knitr,
+    rmarkdown (>= 2.31),
+    ggplot2 (>= 3.3.0),
+    ggsurvfit
+VignetteBuilder: knitr
 Encoding: UTF-8
-LazyData: true
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
-RoxygenNote: 7.3.3
 URL: https://github.com/rvpanaro/spsurv, https://rvpanaro.github.io/spsurv
+Config/roxygen2/version: 8.0.0

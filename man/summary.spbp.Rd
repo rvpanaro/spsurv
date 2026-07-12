@@ -4,12 +4,31 @@
 \alias{summary.spbp}
 \title{Bernstein Polynomial Based Regression Object Summary}
 \usage{
-\method{summary}{spbp}(object, interval = 0.95, ...)
+\method{summary}{spbp}(
+  object,
+  interval = 0.95,
+  compact = TRUE,
+  show_call = TRUE,
+  show_intervals = TRUE,
+  mle_test = c("lr", "wald"),
+  bayes_criterion = c("waic", "dic", "lpml"),
+  ...
+)
 }
 \arguments{
 \item{object}{an object of class spbp}
 
 \item{interval}{interval coverage (confidence or credibility)}
+
+\item{compact}{logical; if TRUE, print.summary methods show essential output only.}
+
+\item{show_call}{logical; include the model call in printed summary.}
+
+\item{show_intervals}{logical; include interval table in printed summary.}
+
+\item{mle_test}{global test to print for MLE summaries: "lr" or "wald".}
+
+\item{bayes_criterion}{global criterion to print for Bayesian summaries: "waic", "dic", or "lpml".}
 
 \item{...}{further arguments passed to or from other methods}
 }

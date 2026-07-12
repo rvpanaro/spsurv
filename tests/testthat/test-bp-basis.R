@@ -166,6 +166,21 @@ test_that("plot.spbp graph = basis, cumulative = FALSE", {
   expect_silent(plot(fit, graph = "basis", cumulative = FALSE))
 })
 
+test_that("plot.spbp basis non-cumulative ylim scales to density not c(0, 1)", {
+  fit <- bpph(Surv(time, status) ~ karno, degree = 8, data = veteran, approach = "mle")
+  m <- length(fit$bp.param)
+  tau_a <- fit$tau_a
+  tau_b <- fit$tau_b
+  xs <- seq(tau_a, tau_b, length.out = 500)
+  scale <- 1 / (tau_b - tau_a)
+  u <- (xs - tau_a) / (tau_b - tau_a)
+  basis_max <- max(vapply(seq_len(m), function(k) {
+    max(dbeta(u, k, m - k + 1) * scale)
+  }, numeric(1)))
+  expect_lt(basis_max, 1)
+  expect_silent(plot(fit, graph = "basis", cumulative = FALSE))
+})
+
 # main title when missing: PH/aft -> baseline hazard vs cumulative hazard; PO -> baseline odds vs derivative odds
 test_that("plot.spbp PH model uses baseline hazard titles when main missing", {
   fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle")

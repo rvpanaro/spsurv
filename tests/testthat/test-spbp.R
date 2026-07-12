@@ -26,13 +26,52 @@ test_that("spbp.default with model ph, po, aft", {
 })
 
 test_that("spbp.default Bayes with short run", {
-  fit <- expect_warning(spbp(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  fit <- quick_bayes(spbp, Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1)
   expect_s3_class(fit, "spbp")
   expect_true(!is.null(fit$posterior$beta) || !is.null(fit$posterior$gamma))
 })
 
 test_that("spbp.default uses default degree when missing", {
-  fit <- spbp(Surv(time, status) ~ karno, data = veteran, approach = "mle")
-  expect_true(!is.null(fit$bp.param))
-  expect_true(length(fit$bp.param) >= 1L)
+  fit <- spbp(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
+  default_degree <- as.integer(ceiling(sqrt(nrow(veteran))))
+  expect_equal(fit$degree, default_degree)
+  expect_equal(fit$call$degree, default_degree)
+  expect_equal(length(fit$bp.param), default_degree)
+})
+
+test_that("spbp stores explicit degree in object and call", {
+  fit <- spbp(
+    Surv(time, status) ~ karno,
+    data = veteran,
+    approach = "mle",
+    degree = 5L,
+    init = 0
+  )
+  expect_equal(fit$degree, 5L)
+  expect_equal(fit$call$degree, 5L)
+  expect_equal(length(fit$bp.param), 5L)
+})
+
+test_that("spbp accepts dist = bernstein(m)", {
+  fit <- spbp(
+    Surv(time, status) ~ karno,
+    data = veteran,
+    approach = "mle",
+    model = "ph",
+    dist = bernstein(4),
+    init = 0
+  )
+  expect_equal(length(fit$bp.param), 4L)
+})
+
+test_that("spbp baseline = bernstein(m) equivalent to dist", {
+  fit <- spbp(
+    Surv(time, status) ~ karno,
+    data = veteran,
+    approach = "mle",
+    model = "ph",
+    baseline = bernstein(4),
+    init = 0
+  )
+  expect_equal(length(fit$bp.param), 4L)
 })

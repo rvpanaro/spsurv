@@ -44,10 +44,10 @@ test_that("spbp bayes accepts custom priors", {
     iter = 100,
     refresh = 0
   )
-  expect_equal(fit$standata$location_beta, 0)
-  expect_equal(fit$standata$scale_beta, 4)
-  expect_equal(fit$standata$location_gamma, 0)
-  expect_equal(fit$standata$scale_gamma, 4)
+  expect_true(all(fit$standata$location_beta == 0))
+  expect_true(all(fit$standata$scale_beta == 4))
+  expect_true(all(fit$standata$location_gamma == 0))
+  expect_true(all(fit$standata$scale_gamma == 4))
 })
 
 # --- Model frame / response validation (formerly .handler4) via spbp ---

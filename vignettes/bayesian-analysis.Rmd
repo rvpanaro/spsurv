@@ -1,0 +1,172 @@
+---
+title: "Bayesian analysis with Stan"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bayesian analysis with Stan}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  dpi = 96,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+Bayesian fits use the **same Stan likelihood** as MLE but sample from the
+posterior with `rstan::sampling`.
+
+## Before you model
+
+Brief exploratory context for the larynx data (see *Getting started* for full
+EDA):
+
+```{r setup}
+library(spsurv)
+library(generics)
+library(KMsurv)
+library(survival)
+library(ggplot2)
+data(larynx)
+larynx$stage <- factor(larynx$stage)
+```
+
+```{r eda-km, fig.cap = "Kaplan-Meier by stage (unadjusted)."}
+km_stage <- survfit(Surv(time, delta) ~ stage, data = larynx)
+km_long <- data.frame(
+  time = km_stage$time,
+  surv = km_stage$surv,
+  stage = rep(levels(larynx$stage), km_stage$strata)
+)
+ggplot(km_long, aes(x = time, y = surv, color = stage)) +
+  geom_step(linewidth = 0.6) +
+  labs(x = "Time (years)", y = "Survival probability", color = "Stage") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+### What to decide
+
+- Stage separation motivates the same formula used in the getting-started vignette.
+- Small sample → posteriors may be wide; priors matter more.
+
+## Fit and summarize
+
+```{r fit-bayes, cache = TRUE}
+fit <- bpph(
+  Surv(time, delta) ~ age + stage,
+  degree = 5,
+  data = larynx,
+  approach = "bayes",
+  iter = 400,
+  warmup = 200,
+  chains = 1,
+  cores = 1,
+  init = 0,
+  priors = list(
+    beta = c("normal(0,4)"),
+    gamma = c("lognormal(0,4)")
+  )
+)
+summary(fit)
+```
+
+```{r fit-mle}
+fit_mle <- bpph(
+  Surv(time, delta) ~ age + stage,
+  degree = 5,
+  data = larynx,
+  approach = "mle",
+  init = 0
+)
+```
+
+## Visual check — posterior forest plot
+
+```{r forest-bayes, fig.cap = "Posterior medians with 95% HPD intervals (exponentiated)."}
+td_b <- tidy(fit, conf.int = TRUE, exponentiate = TRUE)
+hpd <- credint(fit, prob = 0.95, type = "HPD")
+td_b$hpd.low <- exp(hpd[, 1])
+td_b$hpd.high <- exp(hpd[, 2])
+td_b$term <- factor(td_b$term, levels = rev(td_b$term))
+
+ggplot(td_b, aes(x = estimate, y = term)) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "grey50") +
+  geom_pointrange(aes(xmin = hpd.low, xmax = hpd.high), linewidth = 0.4, color = "steelblue") +
+  labs(x = "Hazard ratio (posterior median)", y = NULL, title = "95% HPD intervals") +
+  theme_bw()
+```
+
+## Visual check — MLE vs Bayes
+
+```{r mle-bayes-compare, fig.cap = "MLE 95% CI vs Bayesian 95% HPD (exponentiated)."}
+td_m <- tidy(fit_mle, conf.int = TRUE, exponentiate = TRUE)
+cmp <- merge(
+  td_m[, c("term", "estimate", "conf.low", "conf.high")],
+  td_b[, c("term", "estimate", "hpd.low", "hpd.high")],
+  by = "term",
+  suffixes = c("_mle", "_bayes")
+)
+cmp_long <- rbind(
+  data.frame(term = cmp$term, method = "MLE", low = cmp$conf.low, high = cmp$conf.high,
+             est = cmp$estimate_mle),
+  data.frame(term = cmp$term, method = "Bayes", low = cmp$hpd.low, high = cmp$hpd.high,
+             est = cmp$estimate_bayes)
+)
+cmp_long$term <- factor(cmp_long$term, levels = rev(unique(cmp$term)))
+
+ggplot(cmp_long, aes(x = est, y = term, color = method)) +
+  geom_vline(xintercept = 1, linetype = "dashed", color = "grey50") +
+  geom_pointrange(aes(xmin = low, xmax = high), position = position_dodge(width = 0.5), linewidth = 0.4) +
+  labs(x = "Hazard ratio", y = NULL, color = NULL) +
+  theme_bw()
+```
+
+### Why this is insightful
+
+Posterior intervals show whether data overwhelm priors. Agreement between MLE and
+Bayes supports data-driven conclusions; wide HPDs flag weak information.
+
+### What to decide
+
+- Posterior ≈ MLE → conclusion robust to prior choice.
+- Wide HPD + low ESS → do not report precise HRs; tune Stan (`adapt_delta`, more
+  `iter`).
+- WAIC/DIC for comparing models **within the same family** at the same degree.
+
+## Credible intervals and criteria
+
+```{r credint}
+credint(fit, prob = 0.95, type = "HPD")
+```
+
+```{r criteria}
+sm <- summary(fit)
+c(DIC = sm$dic, WAIC = sm$waic, LPML = sm$lpml)
+```
+
+## Convergence (optional deep dive)
+
+Install `bayesplot` for trace and pairs plots:
+
+```{r stanfit, eval = FALSE}
+library(bayesplot)
+mcmc_pairs(fit$posterior$beta, off_diag_fun = "hex")
+```
+
+Always inspect divergences, split R-hat, and ESS before interpreting results.
+
+## Survival prediction
+
+```{r predict-bayes}
+pr <- predict(fit, times = seq(0, max(larynx$time), length.out = 50))
+head(pr)
+```
+
+See the *Survival prediction and ggplot* vignette for ribbon workflows.

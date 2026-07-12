@@ -134,3 +134,26 @@ test_that(".survfit_confint invalid conf.type stops (lines 118-119)", {
     "invalid conf.int type"
   )
 })
+
+test_that(".spbp_drop_all_na_cols removes all-NA columns", {
+  x <- data.frame(
+    a = c(1, 2),
+    b = c(NA_real_, NA_real_),
+    c = c("mle", "mle"),
+    stringsAsFactors = FALSE
+  )
+  out <- spsurv:::.spbp_drop_all_na_cols(x)
+  expect_equal(names(out), c("a", "c"))
+})
+
+test_that(".spbp_summary_message uses Bernstein PH/PO/AFT model labels", {
+  msg <- function(cls) {
+    spsurv:::.spbp_summary_message(structure(list(), class = cls))
+  }
+  expect_equal(msg("summary.bpph.mle"), "Bernstein PH model: \n")
+  expect_equal(msg("summary.bpph.bayes"), "Bayesian Bernstein PH model: \n")
+  expect_equal(msg("summary.bppo.mle"), "Bernstein PO model: \n")
+  expect_equal(msg("summary.bppo.bayes"), "Bayesian Bernstein PO model: \n")
+  expect_equal(msg("summary.bpaft.mle"), "Bernstein AFT model: \n")
+  expect_equal(msg("summary.bpaft.bayes"), "Bayesian Bernstein AFT model: \n")
+})

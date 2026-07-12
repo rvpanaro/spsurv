@@ -1,26 +1,29 @@
 ## Test environments
 
-* using R version 3.5.2 (2018-12-20)
-* using platform: x86_64-pc-linux-gnu (64-bit)
-* using session charset: UTF-8
+* local: R 4.5.x (macOS, aarch64), `R CMD check --as-cran`
+* rhub: run `rhub::check_for_cran()` before upload
+* win-builder: run before upload
 
-## ── R CMD check results  spsurv 1.0───
-Duration: 3m 48.4s
+## R CMD check results (spsurv 1.0.2)
 
-* checking compilation flags used ... WARNING
-  Compilation used the following non-portable flag(s):
-    ‘-Wdate-time’ ‘-Werror=format-security’ ‘-Wformat’
+```
+Status: 2 NOTEs, 0 warnings, 0 errors
+```
 
-* checking compiled code ... OK
-   WARNING
-  ‘qpdf’ is needed for checks on size reduction of PDFs
+Local check on 2026-06-29:
 
-* checking installed package size ... NOTE
-    installed size is 77.7Mb
-    sub-directories of 1Mb or more:
-      libs  77.4Mb
+* **INFO** GNU make is a SystemRequirements (expected; Stan build).
+* **NOTE** HTML manual validation skipped (no recent `tidy` on this machine).
 
-* checking for GNU extensions in Makefiles ... NOTE
-  GNU make is a SystemRequirements.
+All other `--as-cran` checks passed, including examples and tests.
 
-0 errors ✓ | 2 warnings x | 2 notes x
+## revdepcheck
+
+No reverse dependencies known at time of release.
+
+## Submission notes
+
+* Resubmission of 1.0.2 with tidy/glance/AIC helpers, `bernstein()` baseline
+  syntax, and improved `survfit`/`residuals`.
+* Installed size is dominated by compiled Stan code in `libs/` (expected).
+* Bayesian tests use reduced `iter`/`chains` for speed.

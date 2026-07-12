@@ -1,0 +1,184 @@
+---
+title: "Survival prediction and ggplot workflows"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Survival prediction and ggplot workflows}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  dpi = 96,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+Unlike stepwise Cox `survfit` curves, `spsurv` evaluates survival on a **dense
+time grid** using the fitted Bernstein baseline. This vignette connects observed
+Kaplan-Meier curves to model-based predictions.
+
+## Before you model
+
+```{r setup}
+library(spsurv)
+library(KMsurv)
+library(survival)
+library(ggplot2)
+data(larynx)
+larynx$stage <- factor(larynx$stage)
+```
+
+```{r eda-km, fig.cap = "Kaplan-Meier by stage with censoring marks (+)."}
+km_stage <- survfit(Surv(time, delta) ~ stage, data = larynx)
+km_long <- data.frame(
+  time = km_stage$time,
+  surv = km_stage$surv,
+  stage = rep(levels(larynx$stage), km_stage$strata)
+)
+ggplot(km_long, aes(x = time, y = surv, color = stage)) +
+  geom_step(linewidth = 0.6) +
+  geom_point(
+    data = subset(larynx, delta == 0),
+    aes(x = time, y = 0, color = stage),
+    shape = 3,
+    size = 1.5,
+    alpha = 0.5,
+    inherit.aes = FALSE
+  ) +
+  labs(x = "Time (years)", y = "Survival probability", color = "Stage") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+We compare predictions at **age = 70** across all stages — a clinically
+interpretable profile that holds age fixed while varying disease stage.
+
+### Why this is insightful
+
+KM curves show **unadjusted** stage separation. Censoring marks (`+`) remind you
+that late follow-up estimates rest on fewer subjects.
+
+### What to decide
+
+- Clear stage ordering in KM → including `stage` in the model is justified.
+- Crossing KM curves → proportional hazards may be questionable; see the
+  *Choosing PH, PO, and AFT models* vignette.
+
+## Fit and summarize
+
+```{r fit}
+fit <- bpph(
+  Surv(time, delta) ~ age + stage,
+  degree = 5,
+  data = larynx,
+  approach = "mle",
+  init = 0
+)
+summary(fit)
+```
+
+## Prediction grid
+
+```{r times}
+plot_times <- seq(0, max(larynx$time), length.out = 121)
+newdata <- data.frame(age = 70, stage = levels(larynx$stage))
+newdata
+```
+
+## `predict()` — tidy data frame
+
+```{r predict}
+pr <- predict(fit, newdata = newdata, times = plot_times)
+head(pr)
+```
+
+## Visual check — KM vs model overlay
+
+**Panel A:** observed KM (step) vs model prediction (dashed) per stage.
+
+```{r km-model-overlay, fig.cap = "Observed KM (solid) vs model prediction at age 70 (dashed)."}
+curve_labs <- paste("Stage", newdata$stage)
+pr$series <- curve_labs[match(as.character(pr$id), as.character(seq_len(nrow(newdata))))]
+
+ggplot() +
+  geom_step(
+    data = km_long,
+    aes(x = time, y = surv, color = stage),
+    linewidth = 0.5,
+    alpha = 0.8
+  ) +
+  geom_line(
+    data = pr,
+    aes(x = time, y = surv, color = series),
+    linetype = "dashed",
+    linewidth = 0.6
+  ) +
+  labs(x = "Time (years)", y = "Survival probability", color = NULL) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+**Panel B:** model-based ribbons (adjusted prediction with uncertainty).
+
+```{r ggplot, fig.cap = "Stage-specific survival curves with 95% intervals."}
+ggplot(pr, aes(x = time, y = surv, color = series, fill = series)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, colour = NA) +
+  geom_line(linewidth = 0.5) +
+  labs(x = "Time (years)", y = "Survival probability", color = NULL, fill = NULL) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+### Why this is insightful
+
+Panel A connects the **smooth BP fit** to observed risk sets. Panel B shows
+**covariate-adjusted** uncertainty — ribbons often widen late in follow-up when
+data are sparse.
+
+### What to decide
+
+- Model curves systematically below KM → check covariate adjustment or
+  misspecification.
+- Wide bands late in follow-up → avoid over-interpreting tail survival.
+- For publication → export `predict()` output directly to your ggplot pipeline.
+
+## `survfit()` with `tidy = TRUE`
+
+```{r survfit-tidy}
+sf <- survfit(fit, newdata = newdata, times = plot_times, tidy = TRUE)
+head(sf)
+```
+
+## Bayesian fits
+
+For `approach = "bayes"`, credible bands use posterior draws with
+`interval.type = "hpd"` and `monotone = TRUE` (default for Bayes).
+
+```{r bayes-note, eval = FALSE}
+fit_bayes <- bpph(
+  Surv(time, delta) ~ age + stage,
+  degree = 5,
+  data = larynx,
+  approach = "bayes",
+  iter = 400,
+  chains = 1,
+  cores = 1
+)
+predict(fit_bayes, newdata = newdata, times = plot_times, interval.type = "hpd")
+```
+
+## Interval types (MLE)
+
+Log–log intervals are undefined at `S = 1` (`time = 0`), so we evaluate at
+`time > 0` only:
+
+```{r interval-type}
+loglog_times <- plot_times[plot_times > 0]
+head(predict(fit, newdata = newdata, times = loglog_times, type = "log-log"))
+```

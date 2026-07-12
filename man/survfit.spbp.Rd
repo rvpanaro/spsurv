@@ -2,24 +2,32 @@
 % Please edit documentation in R/survfit.R
 \name{survfit.spbp}
 \alias{survfit.spbp}
+\alias{as.data.frame.survfitbp}
 \title{BP-based model survival curves}
 \usage{
 \method{survfit}{spbp}(
   formula,
-  newdata,
-  times,
+  newdata = NULL,
+  times = NULL,
   se.fit = TRUE,
   interval = 0.95,
   type = c("log", "log-log", "plain"),
+  interval.type = c("hpd", "quantile"),
+  monotone = NULL,
+  tidy = FALSE,
   ...
 )
+
+\method{as.data.frame}{survfitbp}(x, row.names = NULL, optional = FALSE, ...)
 }
 \arguments{
 \item{formula}{An object of class \code{"spbp"} returned by \code{\link[spsurv:spbp]{spbp}}.}
 
 \item{newdata}{Optional data frame used to obtain survival curves for specific covariate values.}
 
-\item{times}{Optional numeric vector of time points at which to return estimates.}
+\item{times}{Optional evaluation times: a \code{\link[survival:Surv]{Surv}} object (legacy),
+or a non-negative \strong{numeric} vector (unique values are used; suitable for smooth
+\code{ggplot2::geom_line} plots via \code{\link{predict.spbp}} or \code{\link{as.data.frame.survfitbp}}).}
 
 \item{se.fit}{Logical; if \code{TRUE}, compute standard errors.}
 
@@ -27,21 +35,49 @@
 
 \item{type}{Character; confidence interval transformation. One of \code{"log"}, \code{"log-log"}, or \code{"plain"}.}
 
-\item{...}{Further arguments (currently ignored or reserved for future use).}
+\item{interval.type}{For Bayesian fits only: \code{"hpd"} (default) or \code{"quantile"} (equal-tailed).}
+
+\item{monotone}{Logical; for Bayesian fits, enforce non-increasing credible-band limits over
+time so ribbons plot smoothly with \code{ggplot2::geom_line}. Defaults to \code{TRUE} when
+\code{approach = "bayes"}.}
+
+\item{tidy}{Logical; if \code{TRUE}, return a \code{data.frame} for ggplot2.
+instead of a \code{"survfit"} object.}
+
+\item{...}{Further arguments passed to \code{\link[survival:survfit]{survfit.coxph}} for the
+reference Cox object (e.g. \code{conf.type} is ignored; use \code{type} instead).}
+
+\item{x}{Object from \code{\link{survfit.spbp}}.}
+
+\item{row.names, optional}{Unused; included for S3 consistency.}
 }
 \value{
-An object of class \code{"survfit"}.
+An object of class \code{"survfit"} (with classes \code{survfitbp}, \code{survfitcox}, \code{survfit}).
+
+A \code{data.frame} with columns \code{id} (curve index), \code{time}, \code{surv},
+  \code{lower}, \code{upper}, \code{cumhaz}, \code{std.err}.
 }
 \description{
 Compute survival curves for a fitted \code{\link[spsurv:spbp]{spbp}} model.
 }
+\section{Functions}{
+\itemize{
+\item \code{as.data.frame(survfitbp)}: Tidy survival curves for \code{ggplot2::geom_line} / \code{geom_ribbon}.
+
+}}
 \examples{
 library(spsurv)
 data(veteran, package = "survival")
 fit <- bpph(Surv(time, status) ~ karno + factor(celltype), data = veteran)
 survfit(fit)
 
+data(veteran, package = "survival")
+fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
+sf <- survfit(fit, times = seq(0, max(veteran$time), length.out = 80))
+head(as.data.frame(sf))
+
 }
 \seealso{
-\code{\link[spsurv:spbp]{spbp}}, \code{\link[survival:survfit]{survfit}}.
+\code{\link[spsurv:spbp]{spbp}}, \code{\link[survival:survfit]{survfit}},
+  \code{\link{predict.spbp}}, \code{\link{survfit.spbp}} (\code{as.data.frame} method).
 }

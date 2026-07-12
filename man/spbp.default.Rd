@@ -12,8 +12,10 @@
   model = c("ph", "po", "aft"),
   priors = list(beta = c("normal(0,4)"), gamma = c("lognormal(0,4)"), frailty =
     c("gamma(0.01,0.01)")),
-  cores = min(parallel::detectCores() - 1, 4),
+  cores = .spbp_default_cores(),
   scale = TRUE,
+  dist = NULL,
+  baseline = NULL,
   verbose = FALSE,
   chains = 4,
   ...
@@ -22,29 +24,61 @@
 \arguments{
 \item{formula}{a Surv object with time to event, status and explanatory terms}
 
-\item{degree}{Bernstein Polynomial degree}
+\item{degree}{Bernstein polynomial degree (integer). If omitted and neither
+\code{dist} nor \code{baseline} supplies \code{\link{bernstein}(m)}, the
+default is \code{ceiling(sqrt(n))} where \code{n} is the number of rows in
+\code{data}.}
 
 \item{data}{a data.frame object}
 
-\item{approach}{Bayesian or Maximum Likelihood estimation methods, default is approach = "bayes"}
+\item{approach}{Bayesian or Maximum Likelihood estimation methods; default is \code{"mle"}}
 
-\item{model}{Proportional Hazards or Proportional Odds BP based regression, default is model = "ph"}
+\item{model}{Bernstein PH (\code{"ph"}), PO (\code{"po"}), or AFT (\code{"aft"}) model; default is \code{"ph"}}
 
 \item{priors}{prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients)}
 
-\item{cores}{number of core threads to use}
+\item{cores}{number of core threads to use (Bayes sampling)}
 
 \item{scale}{logical; indicates whether to center and scale the data}
 
-\item{verbose}{verbose passed to stan}
+\item{dist}{optional baseline specification; use \code{\link{bernstein}(m)} for the Bernstein polynomial degree}
 
-\item{chains}{number of chains passed to stan}
+\item{baseline}{optional alias for \code{dist}}
 
-\item{...}{further arguments passed to or from other methods}
+\item{verbose}{passed to Stan}
+
+\item{chains}{number of MCMC chains (Bayes)}
+
+\item{...}{further arguments passed to \code{rstan::optimizing} (MLE) or
+\code{rstan::sampling} (Bayes), e.g. \code{iter}, \code{warmup}, \code{init}.}
 }
 \value{
-An object of class \code{spbp}
+An object of class \code{spbp}. Component \code{degree} records the
+  Bernstein polynomial degree used in the fit (also stored in \code{call$degree}).
 }
 \description{
 spbp: The BP Based Semiparametric Survival Analysis Function
+}
+\details{
+Right-censored survival data are modeled with a Bernstein-polynomial baseline
+and regression on covariates. With \code{approach = "mle"}, parameters are
+estimated by Stan's optimizer and approximate inference uses the Hessian when
+available. With \code{approach = "bayes"}, posterior samples are drawn with
+NUTS; use \code{summary}, \code{\link{tidy.spbp}}, and \code{\link{glance.spbp}}
+for output. Covariates are centered and scaled when \code{scale = TRUE}
+(default).
+
+The returned object includes:
+\describe{
+  \item{\code{coefficients}}{Regression estimates on the original covariate scale.}
+  \item{\code{bp.param}}{Bernstein baseline coefficients (\code{gamma}).}
+  \item{\code{degree}}{Polynomial degree used (also in \code{call$degree}).}
+  \item{\code{loglik}}{MLE: intercept-only and full-model log-likelihoods;
+    Bayes: posterior mean pointwise log-likelihoods.}
+  \item{\code{call}}{Matched call with \code{approach}, \code{model}, and \code{degree}.}
+}
+}
+\seealso{
+\code{\link{bpph}}, \code{\link{bppo}}, \code{\link{bpaft}},
+  \code{\link{bernstein}}, \code{\link{summary.spbp}}
 }

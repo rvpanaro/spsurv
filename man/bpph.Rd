@@ -2,23 +2,36 @@
 % Please edit documentation in R/bpfits.R
 \name{bpph}
 \alias{bpph}
-\title{Bernstein Polynomial Based Proportional Hazards Model}
+\title{Bernstein PH Model}
 \usage{
-bpph(formula, degree, data, approach = c("mle", "bayes"), ...)
+bpph(
+  formula,
+  degree = NULL,
+  data,
+  approach = c("mle", "bayes"),
+  dist = NULL,
+  baseline = NULL,
+  ...
+)
 }
 \arguments{
 \item{formula}{a Surv object with time to event observations, right censoring status and explanatory terms.}
 
-\item{degree}{Bernstein polynomial degree.}
+\item{degree}{Bernstein polynomial degree. If omitted, defaults to
+\code{ceiling(sqrt(n))} for \code{n = nrow(data)} (see \code{\link{spbp}}).}
 
 \item{data}{a data.frame object.}
 
 \item{approach}{Bayesian or maximum likelihood estimation methods, default is approach = "mle".}
 
+\item{dist}{optional baseline specification; use \code{\link{bernstein}(m)} for the Bernstein polynomial degree.}
+
+\item{baseline}{optional alias for \code{dist}.}
+
 \item{...}{further arguments passed to or from other methods}
 }
 \value{
-An object of class `spbp`.
+An object of class \code{spbp}, including component \code{degree}.
 }
 \description{
 Fits the BPPH model to time-to-event data.

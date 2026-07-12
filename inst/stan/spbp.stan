@@ -44,51 +44,13 @@ parameters {
 }
 
 transformed parameters {
-  vector[n] eta   = X * beta;      // = sum_j beta_j (x_ij - mu_j)
-  real alpha      = 0.0;
-
-  vector[n] H;
-  vector[n] log_h;
-
-  if (M == 2) {
-    matrix[n,m] b;
-    matrix[n,m] B;
-
-    vector[n] y = log_time - eta;
-
-    real tau_a = min(y);
-    real tau_b = max(y);
-
-    real range = tau_b - tau_a;
-    vector[n] u = (y - tau_a) / range;
-
-    for (j in 1:m) {
-      b[,j] = pow(u, j - 1);       // n-vector
-      B[,j] = pow(u, j) / j;       // integral in u
-    }
-
-    b = (b * P) / range;
-    B = (B * P);
-    H = cumhaz(B, gamma, eta, M);
-
-    if (min(u) < 0 || max(u) > 1){
-      log_h = rep_vector(negative_infinity(), n);
-    } else {
-      log_h = log_haz(b, B, gamma, eta, log_time, M);
-    }
-
-  } else {
-
-    alpha = sum(beta .* means ./ sdv);
-    H     = cumhaz(G, gamma, eta, M);     // No matrix copies here: just use g, G directly
-    log_h = log_haz(g, G, gamma, eta, log_time, M);
-  }
-
-  vector[n] log_lik = -H + status .* log_h;
+  real alpha = (M == 2) ? 0.0 : sum(beta .* means ./ sdv);
 }
 
 model {
-  target += sum(log_lik);          // likelihood
+  target += sum(
+    bp_pointwise_log_lik(M, status, log_time, X, g, G, P, beta, gamma)
+  );
 
   if (approach == 1) {             // priors
     for (j in 1:p) {
@@ -105,6 +67,15 @@ model {
         gamma[j] ~ normal(location_gamma[j], scale_gamma[j]);
       }
     }
+  }
+}
+
+generated quantities {
+  vector[approach == 1 ? n : 0] log_lik;
+  if (approach == 1) {
+    log_lik = bp_pointwise_log_lik(
+      M, status, log_time, X, g, G, P, beta, gamma
+    );
   }
 }
 

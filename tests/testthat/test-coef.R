@@ -19,7 +19,7 @@ test_that("coef returns coefficients for MLE null model", {
 })
 
 test_that("coef with summary mean for Bayes fit (line 19-20)", {
-  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  fit <- quick_bayes(bpph, Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1, init = 0)
   b <- coef(fit, summary = "mean")
   expect_true(is.vector(b))
   expect_equal(length(b), ncol(fit$posterior$beta))
@@ -27,7 +27,7 @@ test_that("coef with summary mean for Bayes fit (line 19-20)", {
 })
 
 test_that("coef with summary median for Bayes fit (line 21-22)", {
-  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  fit <- quick_bayes(bpph, Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1, init = 0)
   b <- coef(fit, summary = "median")
   expect_true(is.vector(b))
   expect_equal(length(b), ncol(fit$posterior$beta))
@@ -35,7 +35,7 @@ test_that("coef with summary median for Bayes fit (line 21-22)", {
 })
 
 test_that("coef with summary mode for Bayes fit (line 23-24)", {
-  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  fit <- quick_bayes(bpph, Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1, init = 0)
   b <- coef(fit, summary = "mode")
   expect_true(is.vector(b))
   expect_equal(length(b), ncol(fit$posterior$beta))
@@ -43,6 +43,6 @@ test_that("coef with summary mode for Bayes fit (line 23-24)", {
 })
 
 test_that("coef default summary is mean for Bayes fit (line 16-17)", {
-  fit <- expect_warning(bpph(Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1))
+  fit <- quick_bayes(bpph, Surv(time, status) ~ karno, data = veteran, approach = "bayes", iter = 10, chains = 1, cores = 1, init = 0)
   expect_equal(coef(fit), coef(fit, summary = "mean"))
 })

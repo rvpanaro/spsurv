@@ -11,6 +11,35 @@ authors:
     href: http://www.est.ufmg.br/~fndemarqui/
 development:
   mode: auto
+articles:
+- title: "Getting started"
+  desc: "EDA, first fit, forest plots, and decision prompts"
+  contents:
+    - getting-started
+- title: "Model families"
+  desc: "Veteran EDA, PH/PO/AFT survival overlays, and AIC commentary"
+  contents:
+    - model-families
+- title: "Bernstein polynomial"
+  desc: "Event-time EDA, baseline overlays, and kappa stability"
+  contents:
+    - bp-degree
+- title: "Survival curves"
+  desc: "KM vs model overlay, ribbons, and ggplot workflows"
+  contents:
+    - survival-ggplot
+- title: "MLE inference"
+  desc: "Forest plots, criterion comparison, and df interpretation"
+  contents:
+    - mle-inference
+- title: "Bayesian analysis"
+  desc: "Posterior forests, MLE vs Bayes comparison, and convergence"
+  contents:
+    - bayesian-analysis
+- title: "Diagnostics"
+  desc: "Martingale, Cox-Snell calibration, deviance, and decision table"
+  contents:
+    - diagnostics
 reference:
 - title: "Details"
   contents:
@@ -33,7 +62,20 @@ reference:
     - vcov.spbp
     - residuals.spbp
     - survfit.spbp
+    - predict.spbp
+    - tidy.spbp
+    - glance.spbp
     - model.matrix.spbp
+- title: "Model comparison and extraction"
+  desc: "Bernstein baseline helper, parameter estimates, and information criteria."
+  contents:
+    - bernstein
+    - estimates
+    - se
+    - logLik.spbp
+    - AIC.spbp
+    - extractAIC.spbp
+    - anova.spbp
 - title: "Bernstein polynomial basis"
   desc: "Functions for the BP basis."
   contents:

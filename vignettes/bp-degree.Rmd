@@ -1,0 +1,152 @@
+---
+title: "Bernstein polynomial degree and baseline plots"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Bernstein polynomial degree and baseline plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5,
+  dpi = 96,
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+The unknown baseline is approximated by a **Bernstein polynomial** of degree `m`.
+The vector `bp.param` holds the `m` baseline coefficients (`gamma`).
+
+## Before you model
+
+```{r setup}
+library(spsurv)
+library(survival)
+library(ggplot2)
+data(veteran)
+```
+
+```{r eda-event-times, fig.cap = "Distribution of observed event times."}
+ggplot(subset(veteran, status == 1), aes(x = time)) +
+  geom_histogram(bins = 25, fill = "steelblue", color = "white", alpha = 0.8) +
+  labs(x = "Time (days)", y = "Count", title = "Event times only") +
+  theme_bw()
+```
+
+The support of event times motivates the upper limit `tau` used in Bernstein
+basis evaluation (`max(time)` by default).
+
+### Why this is insightful
+
+Sparse events at long follow-up times limit how wiggly a high-degree baseline can
+be estimated reliably.
+
+### What to decide
+
+- Very few late events → prefer moderate degree; inspect baseline smoothness.
+
+## Fit and summarize
+
+```{r fit-degrees}
+fit_low <- bpph(
+  Surv(time, status) ~ karno,
+  degree = 3,
+  data = veteran,
+  approach = "mle",
+  init = 0
+)
+fit_high <- bpph(
+  Surv(time, status) ~ karno,
+  degree = 8,
+  data = veteran,
+  approach = "mle",
+  init = 0
+)
+c(low = length(fit_low$bp.param), high = length(fit_high$bp.param))
+```
+
+```{r aic-compare}
+AIC(fit_low, fit_high)
+```
+
+## Visual check — baseline overlay
+
+```{r baseline-overlay, fig.cap = "Cumulative baseline hazard: degree 3 vs degree 8."}
+times <- seq(0, max(veteran$time), length.out = 100)
+tau <- max(veteran$time)
+
+baseline_curve <- function(fit, times, tau) {
+  bb <- bp.basis(times, degree = length(fit$bp.param), tau = tau)
+  data.frame(
+    time = times,
+    cumhaz = as.vector(bb$G %*% fit$bp.param),
+    degree = paste0("m = ", length(fit$bp.param))
+  )
+}
+
+bl_df <- rbind(
+  baseline_curve(fit_low, times, tau),
+  baseline_curve(fit_high, times, tau)
+)
+
+ggplot(bl_df, aes(x = time, y = cumhaz, color = degree)) +
+  geom_line(linewidth = 0.7) +
+  labs(x = "Time (days)", y = "Cumulative baseline hazard", color = NULL) +
+  theme_bw()
+```
+
+```{r plot-baseline, fig.cap = "Estimated baseline hazard components (degree 8)."}
+plot(fit_high, graph = "baseline", cumulative = FALSE)
+```
+
+```{r plot-basis, fig.cap = "Bernstein basis functions on [0, tau]."}
+plot(fit_high, graph = "basis", cumulative = FALSE)
+```
+
+### Why this is insightful
+
+A wiggly high-degree baseline is an **overfitting signal**. Flat or unstable AIC
+combined with high gamma condition numbers suggests reducing `m`.
+
+### What to decide
+
+- Oscillating baseline hazard → lower degree.
+- AIC improves but kappa explodes → prefer parsimony; bands may be unreliable.
+- Stable baseline shape across nearby degrees → degree choice is robust.
+
+## Gamma information stability
+
+```{r kappa-table}
+kappa_tbl <- data.frame(
+  degree = c(3, 8),
+  gamma_information_stable = c(
+    attr(vcov(fit_low, bp.param = TRUE), "gamma_information_stable"),
+    attr(vcov(fit_high, bp.param = TRUE), "gamma_information_stable")
+  ),
+  kappa_gamma = c(
+    signif(attr(vcov(fit_low, bp.param = TRUE), "gamma_information_kappa"), 4),
+    signif(attr(vcov(fit_high, bp.param = TRUE), "gamma_information_kappa"), 4)
+  )
+)
+kappa_tbl
+```
+
+## Basis functions
+
+```{r bp-basis}
+times <- seq(0, max(veteran$time), length.out = 50)
+bb <- bp.basis(times, degree = 5, tau = max(veteran$time))
+dim(bb$g)
+```
+
+For AFT models, the internal power-basis matrix comes from `pw.basis()`:
+
+```{r pw-basis}
+pw <- pw.basis(degree = 5)
+dim(pw)
+```

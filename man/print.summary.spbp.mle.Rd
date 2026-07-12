@@ -4,12 +4,7 @@
 \alias{print.summary.spbp.mle}
 \title{Bernstein Polynomial Based Regression Object Summary MLE}
 \usage{
-\method{print}{summary.spbp.mle}(
-  x,
-  digits = max(getOption("digits") - 4, 3),
-  signif.stars = getOption("show.signif.stars"),
-  ...
-)
+\method{print}{summary.spbp.mle}(x, digits = 2, signif.stars = getOption("show.signif.stars"), ...)
 }
 \arguments{
 \item{x}{a summary.spbp.mle object}

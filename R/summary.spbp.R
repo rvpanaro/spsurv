@@ -3,12 +3,25 @@
 #' @export
 #' @param object an object of class spbp
 #' @param interval interval coverage (confidence or credibility)
+#' @param compact logical; if TRUE, print.summary methods show essential output only.
+#' @param show_call logical; include the model call in printed summary.
+#' @param show_intervals logical; include interval table in printed summary.
+#' @param mle_test global test to print for MLE summaries: "lr" or "wald".
+#' @param bayes_criterion global criterion to print for Bayesian summaries: "waic", "dic", or "lpml".
 #' @param ... further arguments passed to or from other methods
 #' @method summary spbp
 #' @importFrom stats vcov
 #' @return An object of class analogous to for e.g. 'summary.bppo.bayes'.
 
-summary.spbp <- function(object, interval = 0.95, ...) {
+summary.spbp <- function(object, interval = 0.95,
+                         compact = TRUE,
+                         show_call = TRUE,
+                         show_intervals = TRUE,
+                         mle_test = c("lr", "wald"),
+                         bayes_criterion = c("waic", "dic", "lpml"),
+                         ...) {
+  mle_test <- match.arg(mle_test)
+  bayes_criterion <- match.arg(bayes_criterion)
   # Null model
   if (is.null(object$coefficients)) {
     return(object)
@@ -21,7 +34,7 @@ summary.spbp <- function(object, interval = 0.95, ...) {
 
     ### Error handling ###
     beta2 <- beta[!(is.na(beta))] # non-missing coefs
-    if (is.null(beta) | is.null(var)) stop("Input is not valid")
+    if (is.null(beta) || is.null(var)) stop("Input is not valid")
 
     se <- sqrt(diag(var))
 
@@ -67,14 +80,23 @@ summary.spbp <- function(object, interval = 0.95, ...) {
       rsq = 1 - exp(-logtest / object$n),
       maxrsq = 1 - exp(2 * object$loglik[1] / object$n)
     )
+    wald_stat <- coxph.wtest(vcov(object), as.numeric(unname(coef(object))))
     output$waldtest <- c(
-      test = as.vector(round(coxph.wtest(vcov(object), coef(object))$test, 2)),
+      test = as.vector(round(wald_stat$test, 2)),
       df = df,
-      pvalue = pchisq(as.vector(round(coxph.wtest(vcov(object), coef(object))$test, 2)), df,
+      pvalue = pchisq(as.vector(round(wald_stat$test, 2)), df,
         lower.tail = FALSE
       )
     )
+    output$nparams <- .spbp_nparams(object)
     output$p <- ncol(vcov(object))
+    output$controls <- list(
+      compact = isTRUE(compact),
+      show_call = isTRUE(show_call),
+      show_intervals = isTRUE(show_intervals),
+      mle_test = mle_test,
+      bayes_criterion = bayes_criterion
+    )
 
     class(output) <- switch(object$call$model,
       "po" = "summary.bppo.mle",
@@ -84,7 +106,7 @@ summary.spbp <- function(object, interval = 0.95, ...) {
   } else {
     ### Error handling ###
     beta2 <- beta[!(is.na(beta))] # non-missing coefs
-    if (is.null(beta) | is.null(object$posterior)) stop("Input is not valid")
+    if (is.null(beta) || is.null(object$posterior)) stop("Input is not valid")
 
     output <- list(
       call = object$call,
@@ -110,8 +132,10 @@ summary.spbp <- function(object, interval = 0.95, ...) {
     output$interval <- cbind(
       colMeans(exp(object$posterior$beta)),
       colMeans(exp(-object$posterior$beta)),
-      HPDinterval(coda::mcmc(exp(object$posterior$beta)))[, 1],
-      HPDinterval(coda::mcmc(exp(object$posterior$beta)))[, 2]
+      {
+        hpd <- coda::HPDinterval(coda::mcmc(exp(object$posterior$beta)))
+        cbind(hpd[, 1], hpd[, 2])
+      }
     )
     dimnames(output$interval) <- list(names(beta), c(
       "mean(exp(coef))", "mean(exp(-coef))",
@@ -124,6 +148,13 @@ summary.spbp <- function(object, interval = 0.95, ...) {
       output$waic <- WAIC(object$posterior$log_lik)[1, 1]
       output$lpml <- LPML(object$posterior$log_lik)[1]
     }
+    output$controls <- list(
+      compact = isTRUE(compact),
+      show_call = isTRUE(show_call),
+      show_intervals = isTRUE(show_intervals),
+      mle_test = mle_test,
+      bayes_criterion = bayes_criterion
+    )
 
     class(output) <- switch(object$call$model,
       "po" = "summary.bppo.bayes",
@@ -131,5 +162,5 @@ summary.spbp <- function(object, interval = 0.95, ...) {
       "aft" = "summary.bpaft.bayes"
     )
   }
-  return(output)
+  output
 }

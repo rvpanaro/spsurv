@@ -9,8 +9,8 @@ none
 }
 \description{
 A set of flexible routines to allow semiparametric
-survival regression modeling based on Bernstein polynomial, including Bernstein based proportinal hazards model (BPPH), Bernstein polynomial based proportional odds model (BPPO) and
-Bernstein based accelerated failure time model (BPAFT) for right-censored data.
+survival regression modeling based on Bernstein polynomial, including Bernstein PH model (BPPH), Bernstein PO model (BPPO), and
+Bernstein AFT model (BPAFT) for right-censored data.
 }
 \details{
 \code{\link[spsurv]{spbp}} fits semi-parametric models for time-to-event survival data.
@@ -20,9 +20,9 @@ be user-defined using an arbitrary degree, i.e. highest basis polynomials order.
 The framework takes advantage of fully likelihood methods since the polynomial parameters are used
 to estimate the baseline functions. Even so, this is said to be semi-parametric since this approach
 does not rely on any distribution. Unlike the Cox model, the BP based models provide smooth hazard and survival curve estimates.
-
-
-_PACKAGE
+For Bayesian fits, users should routinely inspect divergences, split-\eqn{\hat R},
+and effective sample sizes, and tighten NUTS controls (e.g., increasing
+\code{adapt_delta}, \code{iter}, and \code{warmup}) when warnings are present.
 }
 \references{
 Panaro R.V. (2020). spsurv: An R package for semi-parametric survival analysis. arXiv preprint arXiv:2003.10548.

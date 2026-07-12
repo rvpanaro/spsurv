@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{an object of the class spbp}
 
-\item{summary}{posterior summary if method ="bayes" in x}
+\item{summary}{posterior summary if method = "bayes" in x}
 
 \item{...}{further arguments passed to or from other methods}
 }

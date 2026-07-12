@@ -4,12 +4,17 @@
 \alias{vcov.spbp}
 \title{Covariance of the regression coefficients}
 \usage{
-\method{vcov}{spbp}(object, bp.param = FALSE, ...)
+\method{vcov}{spbp}(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
 }
 \arguments{
 \item{object}{an object of the class spbp}
 
 \item{bp.param}{return Bernstein Polynomial variance.}
+
+\item{mask_unstable_gamma}{when \code{TRUE} (default), set
+\eqn{\gamma}-related entries to \code{NA} if the Bernstein information block
+is ill-conditioned. Set \code{FALSE} internally when propagating survival
+uncertainty despite instability.}
 
 \item{...}{arguments passed to parent method.}
 }

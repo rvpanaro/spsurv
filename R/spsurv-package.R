@@ -1,8 +1,8 @@
 #' The 'spsurv' package.
 #'
 #' @description A set of flexible routines to allow semiparametric
-#' survival regression modeling based on Bernstein polynomial, including Bernstein based proportinal hazards model (BPPH), Bernstein polynomial based proportional odds model (BPPO) and
-#' Bernstein based accelerated failure time model (BPAFT) for right-censored data.
+#' survival regression modeling based on Bernstein polynomial, including Bernstein PH model (BPPH), Bernstein PO model (BPPO), and
+#' Bernstein AFT model (BPAFT) for right-censored data.
 #'
 #' @details \code{\link[spsurv]{spbp}} fits semi-parametric models for time-to-event survival data.
 #' Non-informative right-censoring assumption is available. Any user-defined Bernstein polynomial can
@@ -11,9 +11,10 @@
 #' The framework takes advantage of fully likelihood methods since the polynomial parameters are used
 #' to estimate the baseline functions. Even so, this is said to be semi-parametric since this approach
 #' does not rely on any distribution. Unlike the Cox model, the BP based models provide smooth hazard and survival curve estimates.
+#' For Bayesian fits, users should routinely inspect divergences, split-\eqn{\hat R},
+#' and effective sample sizes, and tighten NUTS controls (e.g., increasing
+#' \code{adapt_delta}, \code{iter}, and \code{warmup}) when warnings are present.
 #'
-#'
-#' _PACKAGE
 #' @name spsurv-package
 #' @aliases spsurv
 #' @useDynLib spsurv, .registration = TRUE
@@ -42,12 +43,12 @@ if (getRversion() >= "2.15.1") {
   utils::globalVariables(c(
     "Call", "Terms", "X", "Y",
     "approach", "approach_flag",
-    "aux", "cores", "data.n", "degree",
+    "aux", "cores", "data", "data.n", "degree",
     "features", "frailty_idx",
     "mf", "model_flag", "null",
     "priorpars", "priors",
     "stanArgs", "status", "std",
     "tau", "temp", "type",
-    "xlevels"
+    "xlevels", "logLik"
   ))
 }
