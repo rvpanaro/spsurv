@@ -1,4 +1,7 @@
-utils::globalVariables(c("means", "sdv", "p", "rand", "signif.stars"))
+utils::globalVariables(c("means", "sdv", "p", "rand", "signif.stars", "x", "y"))
+
+#' @importFrom stats AIC confint predict residuals
+NULL
 
 .onLoad <- function(libname, pkgname) {
   spsurv_register_parsnip()

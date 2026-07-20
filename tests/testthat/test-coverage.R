@@ -13,8 +13,8 @@ test_that("code coverage is maintained", {
   cov <- covr::package_coverage(
     path = pkg_root,
     type = "tests",
-    line_exclusions = c("R/stanmodels.R")
+    line_exclusions = c("R/stanmodels.R", "src/", "R/zzz.r")
   )
   pct <- covr::percent_coverage(cov)
-  expect_gt(pct, 80)
+  expect_gt(pct, 95)
 })

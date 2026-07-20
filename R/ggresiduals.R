@@ -46,7 +46,7 @@ ggresiduals <- function(object,
   }
 
   df <- data.frame(x = xvar, y = res)
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$x, y = .data$y)) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = x, y = y)) +
     ggplot2::geom_point(alpha = 0.6, size = 1.8) +
     ggplot2::labs(
       x = xlab,

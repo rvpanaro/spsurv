@@ -20,3 +20,5 @@
 ^\.\.pdf$
 ^\.DS_Store$
 ^\*\*/\.DS_Store$
+^coverage\.html$
+^coverage-summary\.(rds|md)$

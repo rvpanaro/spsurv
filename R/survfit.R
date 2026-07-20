@@ -623,9 +623,8 @@ as.data.frame.survfitbp <- function(x, row.names = NULL, optional = FALSE, ...) 
 #' @param conf_type Confidence interval transformation for curve predictions
 #'   (\code{"log"}, \code{"log-log"}, \code{"plain"}). Used when \code{type} is
 #'   \code{NULL}, \code{"curve"}, or a confidence transformation name.
-#' @param interval,type Alias: when \code{type} is a confidence transformation,
-#'   it is passed as \code{conf_type}. \code{interval} is passed to
-#'   \code{\link{survfit.spbp}} for curve predictions.
+#' @param interval Confidence level for curve predictions; passed to
+#'   \code{\link{survfit.spbp}}.
 #' @param interval.type,monotone Passed to \code{\link{survfit.spbp}} (Bayesian fits).
 #' @param ... Passed to \code{\link{survfit.spbp}} for curve predictions.
 #' @return For curve predictions, same structure as \code{\link{as.data.frame.survfitbp}}.

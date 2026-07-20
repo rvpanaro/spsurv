@@ -16,8 +16,6 @@ bp_survival_reg(
 \item{mode}{Model mode (default \code{"censored regression"}).}
 
 \item{engine}{parsnip engine (default \code{"spsurv"} for MLE).}
-
-\item{...}{Passed to \code{\link[parsnip]{set_engine}} when fitting.}
 }
 \value{
 A parsnip model specification.

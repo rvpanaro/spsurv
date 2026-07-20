@@ -38,9 +38,8 @@ transformation (\code{"log"}, \code{"log-log"}, \code{"plain"}).}
 (\code{"log"}, \code{"log-log"}, \code{"plain"}). Used when \code{type} is
 \code{NULL}, \code{"curve"}, or a confidence transformation name.}
 
-\item{interval, type}{Alias: when \code{type} is a confidence transformation,
-it is passed as \code{conf_type}. \code{interval} is passed to
-\code{\link{survfit.spbp}} for curve predictions.}
+\item{interval}{Confidence level for curve predictions; passed to
+\code{\link{survfit.spbp}}.}
 
 \item{interval.type, monotone}{Passed to \code{\link{survfit.spbp}} (Bayesian fits).}
 

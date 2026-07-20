@@ -30,7 +30,6 @@ proportional_odds <- function(mode = "censored regression", engine = "spsurv") {
 #' @param family Model family: \code{"ph"}, \code{"po"}, or \code{"aft"}.
 #' @param mode Model mode (default \code{"censored regression"}).
 #' @param engine parsnip engine (default \code{"spsurv"} for MLE).
-#' @param ... Passed to \code{\link[parsnip]{set_engine}} when fitting.
 #' @return A parsnip model specification.
 #' @export
 bp_survival_reg <- function(family = c("ph", "po", "aft"),
@@ -56,7 +55,7 @@ spsurv_register_parsnip <- function() {
   }
 
   po_exists <- tryCatch({
-    parsnip::check_model_exists("proportional_odds")
+    parsnip::show_engines("proportional_odds")
     TRUE
   }, error = function(e) FALSE)
   if (!po_exists) {
