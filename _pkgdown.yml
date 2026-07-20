@@ -88,6 +88,7 @@ reference:
     - AIC.spbp
     - extractAIC.spbp
     - anova.spbp
+    - rank_models
 - title: "Bernstein polynomial basis"
   desc: "Functions for the BP basis."
   contents:
@@ -97,6 +98,7 @@ reference:
   desc: "S3 methods for spbp objects."
   contents:
     - plot.spbp
+    - ggresiduals
     - print.spbp
     - summary.spbp
     - starts_with("print.summary")
