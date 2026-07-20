@@ -1,0 +1,1808 @@
+\documentclass[5p,lefttitle]{elsarticle}
+
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{dsfont}
+\usepackage{amsmath,amssymb}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{calc}
+\usepackage{float}
+\usepackage{needspace}
+\usepackage{multirow}
+\usepackage{url}
+\usepackage{hyperref}
+
+\usepackage{listings}
+\lstset{basicstyle=\footnotesize\ttfamily,
+        keywordstyle=,
+        showstringspaces=false,
+        literate={~}{{\fontfamily{ptm}\selectfont \textasciitilde}}1}
+
+\providecommand{\pkg}[1]{\textsf{#1}}
+\providecommand{\normaldistn}{\mathrm{Normal}}
+\providecommand{\real}[1]{#1}
+
+\title{Using the \texttt{spsurv} \textsf{R}~package for semi-parametric time-to-event analysis}
+
+\author[Renato Valladares Panaro]{Renato Valladares Panaro\corref{cor1}}
+\ead{rvpanaro@gmail.com}
+\address{Department of Medical Statistics, University Medical Center G\"{o}ttingen,~G\"{o}ttingen, Germany}
+
+\author{Vin\'{i}cius Mayrink}
+\ead{vdinizm@gmail.com}
+\address{Departamento de Estat\'{i}stica, Universidade Federal de Minas Gerais, Belo Horizonte, Brazil}
+
+\author{F\'{a}bio Demarqui}
+\ead{fndemarqui@gmail.com}
+\address{Departamento de Estat\'{i}stica, Universidade Federal de Minas Gerais, Belo Horizonte, Brazil}
+
+\cortext[cor1]{Corresponding author}
+\date{\today}
+
+\begin{document}
+\begin{abstract}
+We present \pkg{spsurv}, an \textsf{R} package for semi-parametric time-to-event regression based on Bernstein-polynomial estimation of unknown baseline functions. The package provides a unified modelling interface for proportional hazards (PH), proportional odds (PO), and accelerated failure time (AFT) models for right-censored data, with either maximum likelihood or Bayesian estimation via Stan. Smooth baseline hazard, odds-function, or log-time structures are estimated without assuming a parametric baseline family, while retaining familiar hazard-ratio, odds-ratio, and time-ratio interpretations. We describe methodology, implementation, and syntax; evaluate finite-sample behaviour in a Monte Carlo study; and illustrate usage with oncology trials.
+\end{abstract}
+\begin{keyword}
+proportional hazards \sep proportional odds \sep accelerated failure time \sep Bernstein-polynomial \sep R \sep Stan
+\end{keyword}
+\maketitle
+
+%The following chunk inserts \LaTeX{} preamble helpers needed for section numbering and PDF compatibility in the \emph{R Journal} build.
+
+\setcounter{section}{0}
+\renewcommand{\thesection}{\arabic{section}}
+% Pandoc 3.x longtable may set \LTcaptype{none}; define stub counter for pdf build.
+\newcounter{none}
+
+\section{Introduction: Semi-parametric survival analysis in R}\label{sec:intro}
+
+Several R packages \citep{R:2025} support survival regression, each built around a different modelling goal. \pkg{survival} \citep{survival:2000} is the standard tool for Cox regression and classical parametric/AFT models; \pkg{flexsurv} \citep{flexsurv:2016} emphasises flexible parametric survival models; \pkg{timereg} \citep{timereg} offers semi-parametric regression under alternative estimating frameworks; \pkg{ggsurvfit} \citep{ggsurvfit:2024} provides time-to-event visualisation tools that complement any of these; and \pkg{spBayesSurv} \citep{Zhou:2021} implements Bayesian semi-parametric survival models whose baseline is centred on a parametric family. \pkg{spsurv} occupies a different niche: it provides one interface for PH, PO, and AFT models under both maximum likelihood and Bayesian estimation. This unified design is motivated by two practical facts, the proportional hazards assumption is frequently violated in applied work \citep{kalbfleisch2002statistical}, and choosing between regression families is easier when every candidate model is fit on the same data within a consistent framework. Estimation in \pkg{spsurv} uses full likelihoods with smooth Bernstein-polynomial (BP) baselines for the hazard, odds, or log-time structure.
+
+The BP itself is well established for regression \citep{Tenbusch:1997, Chang:2007} and density estimation \citep{Vitale:1975, Petrone:1999, Babu:2002}, but its application to survival analysis specifically has received comparatively less attention, and almost always as an alternative to Cox's partial-likelihood estimator \citep{Cox:1972}. \citet{Chang:2005} treated the polynomial degree as random and modelled the failure rate with a Beta-process prior for homogeneous populations. \citet{Osman:2012} used sieve estimation based on Bernstein approximation to recover the baseline hazard, and \citet{Mclain:2013} applied the same idea to time-transformation models. \citet{Chen:2014} centred a transformed BP at a standard parametric family to build a Bayesian nonparametric prior for smooth densities in the accelerated hazards model, using a Dirichlet process because the polynomial degree itself was treated as random. \citet{Zhou:2018} placed a prior directly on the baseline hazard function. The \pkg{spBayesSurv} package \citep{Zhou:2021} follows a related strategy, assuming a parametric distribution (e.g., Weibull or log-logistic) as the central model and using the BP to allow flexible deviations around it. \pkg{spsurv} differs from each of these in scope: rather than committing to one baseline-modelling strategy for one regression family, it applies the same BP machinery across PH, PO, and AFT alike.
+
+We describe methodology and implementation, report a Monte Carlo study
+of bias, coverage, and uncertainty calibration, and give two clinical
+illustrations. Three features distinguish \pkg{spsurv} from related
+software: (i) all three regression families share a single likelihood
+framework and syntax, so analysts can switch between PH, PO, and AFT
+without changing data preparation; PH and PO use a precomputed
+beta-mixture Bernstein basis on the fixed time scale, whereas the AFT
+implementation uses an equivalent monomial basis on the adaptive log-time
+domain (Section \ref{sec:bp-domain});
+(ii) covariates are automatically standardised internally and all
+results back-transformed to the original covariate scale, intended to
+improve numerical conditioning \citep{nocedal2006numerical} without requiring
+any action from the user (Section \ref{sec:varscale});
+(iii) priors are specified on the standardised scale, making them weakly
+informative on a comparable scale \citep{bedrick1996priors, gelman2008weakly} and
+facilitating comparison between Bayesian posterior summaries and maximum
+likelihood estimates from the same model (Section \ref{sec:priors}). Survival uncertainty is also handled differently by estimation approach,
+with maximum-likelihood and Bayesian \texttt{survfit.spbp} relying on distinct
+uncertainty-propagation strategies; we return to this point once the
+necessary notation is in place (Section~\ref{sec:delta}).
+
+The remainder of the paper is organised as follows. Section
+\ref{sec:models} introduces notation for right-censored data and
+describes the Bernstein-based likelihood formulations for PH, PO, and
+AFT models, including implementation details. Section
+\ref{sec:simulation} reports a Monte Carlo study of Bernstein-based
+fits across aligned generator--model settings. Section
+\ref{sec:illustrations} demonstrates the package on two clinical data
+sets. Section \ref{sec:discussion} concludes the study.
+
+\section{Models and software}\label{sec:models}
+
+This section introduces the BP framework used to model baseline
+functions in semi-parametric survival regression. The key idea is to
+approximate the unknown baseline function with a finite-degree
+polynomial. We present key time-to-event analysis identities by linking
+cumulative-function representations to other quantities such as hazard,
+odds, and log survival times, through derivative properties. The
+resulting sieve gives a smooth baseline without specifying a parametric
+family: higher degrees can increase flexibility. For survival models,
+the BP derivative property is useful because many baseline quantities
+are cumulative (e.g., cumulative hazards \(H_0\) or odds function \(R_0 = F_0(t)/S_0(t)\)) and must be monotone by
+construction, which non-negative BP parameters guarantee when estimating
+the baseline from the data.
+
+\subsection{Regression model classes: PH, PO, and AFT}
+
+The \texttt{spsurv} package implements three common classes of survival
+regression models: proportional hazards (PH), proportional odds (PO), and
+accelerated failure time (AFT). These models all relate the time until an
+event to a set of covariates, but they differ in the scale on which the
+covariates act. General introductions to these model classes can be found in
+standard survival-analysis texts \citep{Klein:1997,kalbfleisch2002statistical,Collett2015}.
+
+In the proportional hazards model, covariates act on the instantaneous event
+rate. The hazard function \(h(t \mid x)\) represents the event rate at time
+\(t\), among subjects who have survived up to that time. If \(h_0(t)\) is the
+baseline hazard, the PH model is written as
+{\footnotesize\begin{align}
+h(t \mid x) = h_0(t)e^{\beta'x}.
+\end{align}}
+Thus, \(e^{\beta_j}\) is interpreted as a hazard ratio. A value larger than
+one indicates a higher instantaneous risk of the event for a one-unit increase
+in the covariate, holding the other covariates fixed; a value smaller than one
+indicates a lower instantaneous risk. The term proportional hazards means that
+this hazard ratio is constant over time, although the baseline hazard
+\(h_0(t)\) itself may vary with time \citep{Cox:1972}.
+
+In the proportional odds model, covariates act on the odds function of
+failure rather than on the instantaneous hazard. Let \(R_0(t)\) denote the
+baseline odds function. The PO model can be written as
+{\footnotesize\begin{align}
+S(t \mid x) = \{1 + R_0(t)e^{\beta'x}\}^{-1}.
+\end{align}}
+In this model, \(e^{\beta_j}\) is interpreted as an odds ratio for the
+odds function of having experienced the event by time \(t\). Therefore, the
+PO model imposes proportionality on the odds-function scale rather than on
+the hazard scale \citep{Bennett:1983}. This provides an alternative regression
+structure when the PH interpretation or assumption is not appropriate.
+
+In the accelerated failure time model, covariates act directly on the
+survival-time scale rather than on instantaneous risk or odds function of
+failure: each covariate accelerates or decelerates the time to the event, and
+\(e^{\beta_j}\) is interpreted as a time ratio. In \pkg{spsurv}, this structure
+is written in terms of log-time residuals,
+{\footnotesize\begin{align}
+w_i = \log(y_i) - \beta'x_i,
+\end{align}}
+where \(y_i\) is the observed follow-up time and \(x_i\) is the covariate
+vector for subject \(i\). The baseline component is then defined through the
+distribution of \(w_i\). A value of this ratio larger than one indicates that
+the covariate is associated with longer survival times, whereas a value
+smaller than one indicates shorter survival times
+\citep{Prentice:1973,kalbfleisch2002statistical}.
+
+Therefore, PH, PO, and AFT models answer related but distinct scientific
+questions. PH models compare instantaneous event rates, PO models compare
+odds function of failure, and AFT models compare survival times. The
+Bernstein-polynomial versions implemented in \texttt{spsurv} preserve these
+standard interpretations while replacing the unknown baseline hazard,
+odds function, or log-time residual distribution with a flexible polynomial
+approximation.
+
+\subsection{Bernstein-polynomials in time-to-event analysis}\label{bernstein-polynomials-in-time-to-event-analysis}
+
+We first review the polynomial construction and its key properties, which enable flexible estimation of baseline functions. Bernstein developed this polynomial to approximate a continuous function \(c(t)\) whose domain is restricted to the unit interval \citep{Lorentz:1953}. The Bernstein-polynomial of degree m for the function \(c(t)\) is given by
+{\footnotesize\begin{align}
+B(t;m;c) = B_m^c(t) = \sum \limits_{i=0}^m c\left(\frac{i}{m}\right)b_{i,m}(t);   t \in [0,1],
+\end{align}}
+where \(b_{i,m}(t) = {{m}\choose{i}}t^i(1-t)^{m-i}\),
+\(i = 1, 2, \ldots, m\), are the Bernstein basis polynomials. What makes
+this representation useful for survival modelling is its derivative:
+differentiating term by term and re-indexing shows that the derivative
+of a degree-\(m\) Bernstein approximation is itself a Bernstein expansion
+of degree \(m-1\), with coefficients given by simple first differences of
+\(c\),
+{\footnotesize\begin{align}
+d B_m^c(t) = m \sum_{i=0}^{m-1} \Delta c_i^1\, b_{i,m-1}(t)\,dt,
+\qquad
+\Delta c^1_{i} = c\left(\frac{i+1}{m}\right)-c\left(\frac{i}{m}\right),
+\end{align}}
+where \(\Delta c^1_i\) is the first-order difference of \(c(t)\) at
+\(t=i/m\) \citep{Lorentz:1953}. The full term-by-term derivation is given
+in~\ref{app:derivative-derivation}. This is the property that lets us move
+cleanly between a cumulative baseline function and its derivative (for
+example, between $h_{0}(\cdot)$ and $H_{0}(\cdot)$).
+
+We follow \citet{Farouki:1987} for real-valued bounded functions on an interval
+\([\tau_a,\tau_b]\subset\mathbb{R}\), with \(\tau_a<\tau_b\). For a function
+\(c:[\tau_a,\tau_b]\to\mathbb{R}\), the Bernstein approximation of degree
+\(m\) is
+
+{\footnotesize\begin{align}
+B_m^c(t)
+=
+\sum_{i=0}^m
+c\!\left(\tau_a+\frac{i}{m}(\tau_b-\tau_a)\right)
+\,b_{i,m}\!\left(\frac{t-\tau_a}{\tau_b-\tau_a}\right),
+\qquad t\in[\tau_a,\tau_b],
+\end{align}}
+where \(b_{i,m}(\cdot)\) denotes the Bernstein basis
+polynomial of degree \(m\). Classical results, including those discussed
+in \citet{Lorentz:1953}, show that \(B_m^c(t)\) converges uniformly to \(c(t)\) as
+\(m\) increases, provided \(c\) is continuous on {[}\(\tau_a,\tau_b\){]}. This
+approximation property supports the use of the basis for modelling
+unknown functions (and their derivatives) such as hazards and odds
+\citep{shen1994convergence, chen2007sieve}.
+
+\subsubsection{Bernstein-polynomial derivative property for cumulative baseline functions}\label{app:derivative}
+
+In the time-to-event regression models considered here, the same
+construction is used to represent the baseline function. The derivative
+property is central and allows the derivative of a Bernstein
+approximation to be expressed as a weighted sum of beta densities. This
+representation lets us model baseline hazards and cumulative hazards
+within a survival-regression framework; see also \citet{Osman:2012}.
+
+Let \(c:=H_0\) be the cumulative baseline hazard on
+\([\tau_a,\tau_b]=[0,\tau]\). The derivative of its Bernstein
+approximation can be written as
+
+{\footnotesize\begin{align}
+dB_m^{H_0}(t)
+&=
+\frac{m}{\tau}
+\sum_{i=0}^{m-1}
+\left\{
+H_0\!\left(\frac{i+1}{m}\tau\right)
+-
+H_0\!\left(\frac{i}{m}\tau\right)
+\right\}
+b_{i,m-1}(t/\tau)\,dt \nonumber \\
+&=
+\sum_{k=1}^m
+\left\{
+H_0\!\left(\frac{k}{m}\tau\right)
+-
+H_0\!\left(\frac{k-1}{m}\tau\right)
+\right\}
+\frac{f_{\beta}(t/\tau\mid k,\;m-k+1)}{\tau}\,dt \nonumber \\
+&=
+\sum_{k=1}^m \gamma_k g_{k,m}(t) =\boldsymbol{\gamma}'\boldsymbol{g}_{m}(t)\,dt,
+\end{align}\label{eq:deriv} where
+\(g_{k,m}(t)=f_{\beta}(t/\tau\mid k,\;m-k+1)\tau^{-1},\) and
+\(f_{\beta}(\cdot\mid a,b)\) denotes the beta density with shape
+parameters \(a\) and \(b\). The Bernstein coefficients are positive differences between cumulative hazard functions given by
+\(\gamma_k=H_0\!\left(\frac{k}{m}\tau\right)-H_0\!\left(\frac{k-1}{m}\tau\right), k=1,\dots,m.\)
+These coefficients depend on the polynomial degree \(m\) but not on time
+\(t\). In practice, because the true cumulative hazard is unknown, the
+coefficients \(\gamma_1,\dots,\gamma_m\) are estimated from the data for a
+chosen degree \(m\).
+
+To incorporate censored observations, let \((Y_1,\dots,Y_n)'\) denote the
+vector of observed follow-up times with \(Y_i=\min(T_i,C_i)\), where \(T_i\)
+is the event time, \(C_i\) is the censoring time, and
+\(\delta_i=I(T_i\le C_i)\) is the event indicator. Let
+\(S(y\mid\boldsymbol\theta)=P(T> y\mid\boldsymbol\theta)\) and
+\(h(y\mid\boldsymbol\theta)\) denote the event-time survival and hazard
+functions, respectively, where \(\boldsymbol\theta\) generically collects the
+baseline-function parameters in Table \ref{tab:models} (either \(\boldsymbol{\gamma}\) or \(\boldsymbol{\xi}\)) and \(\boldsymbol\beta\) the regression
+coefficients. Under non-informative censoring, the full likelihood is
+given by
+{\footnotesize\begin{align}
+p(\boldsymbol{y} \vert \boldsymbol \theta, \boldsymbol{\beta})
+&\propto \prod\limits_{i = 1}^{n} h(y_i \vert \boldsymbol \theta,\boldsymbol{\beta})^{\delta_i}  S(y_i \vert \boldsymbol \theta,\boldsymbol{\beta}),
+\end{align}}
+where \(\boldsymbol{y}=(y_1, y_2, \dots, y_n)'\) is the
+vector of observed times and \(\boldsymbol \beta\) is the vector of
+regression coefficients, see \citet{Klein:1997}. Table~\ref{tab:models}
+collects the resulting baseline approximation and survival/hazard
+expressions for all three model classes side by side, and is the
+reference point for the implementation details in
+Sections~\ref{sec:bp-domain}--\ref{sec:delta}.
+
+\begin{table}
+\footnotesize
+\centering
+\caption{Likelihood structures in \texttt{spsurv}. A degree-$m$ Bernstein basis $\boldsymbol{g}_m(\cdot)$ (cumulative $\boldsymbol{G}_m(\cdot)$, coefficients $\boldsymbol{\gamma}$ or $\boldsymbol{\xi}$) approximates the baseline quantities listed per model. BPPH: $h_0(y)$ and $H_0(y)$; BPPO: $R_0(y)$ and $r_0(y)$; BPAFT: $h_0^W(w)$ and $H_0^W(w)$ for $w_i=\log(y_i)-\boldsymbol{\beta}'\boldsymbol{x}_i$, with observed-time hazard $y_i^{-1}h_0^W(w_i)$.}
+\begin{tabularx}{\columnwidth}{%
+>{\raggedright\arraybackslash}p{0.1\columnwidth}
+>{\raggedright\arraybackslash}p{0.4\columnwidth}
+>{\raggedright\arraybackslash}X}
+\toprule
+Model & Baseline function approximated & Survival / hazard structure \\
+\midrule
+
+BPPH
+&
+\(h_0(y)=\boldsymbol{\gamma}'\boldsymbol g_m(y)\),
+\(H_0(y)=\boldsymbol{\gamma}'\boldsymbol G_m(y)\)
+&
+\(h(y\vert\boldsymbol x)=h_0(y)e^{\boldsymbol\beta'\boldsymbol x}\);
+\(S(y\vert\boldsymbol x)=e^{-H_0(y)\exp(\boldsymbol\beta'\boldsymbol x)}\)
+\\[0.8em]
+
+BPPO
+&
+\(R_0(y)=\boldsymbol{\xi}'\boldsymbol G_m(y)\),
+\(r_0(y)=\boldsymbol{\xi}'\boldsymbol g_m(y)\)
+&
+\(S(y\vert\boldsymbol x)=\{1+R_0(y)e^{\boldsymbol\beta'\boldsymbol x}\}^{-1}\)
+\\[0.8em]
+
+BPAFT
+&
+Log-time residuals baseline via
+\(h^{W}_0(w)=\boldsymbol{\gamma}'\boldsymbol g_m(w)\),
+\(H^{W}_0(w)=\boldsymbol{\gamma}'\boldsymbol G_m(w)\)
+&
+\(w_i=\log(y_i)-\boldsymbol\beta'\boldsymbol x_i\);
+\(S(y_i\vert\boldsymbol x_i)=S_0^{W}(w_i)\);
+\(h(y_i\vert\boldsymbol x_i)=y_i^{-1}h_0^{W}(w_i)\)
+\\
+
+\bottomrule
+\end{tabularx}\label{tab:models}
+\end{table}
+
+\subsubsection{Time rescaling and an efficient polynomial representation}\label{sec:bp-domain}
+
+BPs are originally defined on the unit interval. Therefore, when they
+are used to model functions of time or log-time, the relevant domain
+must first be transformed. For ordinary time scales, this is
+straightforward: the observed time range can be bounded by
+\(\tau=\max(y_i)\), giving the interval \([0,\tau]\), which is then mapped
+linearly to \([0,1]\). This is the approach used in the BPPO and BPPH
+models, where the time axis is fixed independently of the parameters.
+The function \texttt{bp.basis()} computes the polynomial basis matrices
+that, together with the vector of Bernstein coefficients, represent the
+baseline component of the model. More specifically, \texttt{bp.basis()}
+returns the hazard and cumulative-hazard basis matrices
+\(\boldsymbol{g}_m\) and \(\boldsymbol{G}_m\), built from scaled beta
+densities and beta cumulative distribution functions evaluated at
+\(y/\tau\).
+
+For log-time scales, the AFT case is less direct. In the AFT model, the
+baseline component is evaluated on the log-time residuals
+{\footnotesize\begin{align}
+w_i = \log(y_i)-\beta'x_i .
+\end{align}}
+Because these residuals depend on the regression coefficients, the interval
+used to map them to the unit domain also depends on the current value of
+\(\beta\). At a given parameter value, let
+{\footnotesize\begin{align}
+w_{\min}(\beta)=\min_i\{\log(y_i)-\beta'x_i\},\nonumber
+\\
+w_{\max}(\beta)=\max_i\{\log(y_i)-\beta'x_i\}.
+\end{align}}
+The residuals are then mapped to the unit interval through the affine
+transformation
+{\footnotesize\begin{align}
+u_i(\beta)
+=
+\frac{w_i-w_{\min}(\beta)}
+     {w_{\max}(\beta)-w_{\min}(\beta)} ,
+\qquad 0\leq u_i(\beta)\leq 1 .
+\end{align}}
+Thus, the polynomial baseline is evaluated at \(u_i(\beta)\), but the
+mapping itself must be recomputed whenever \(\beta\) changes. This differs
+from the PH and PO models, where the time range \([0,\tau]\), with
+\(\tau=\max_i y_i\), is fixed by the observed data and does not depend on the
+regression coefficients.
+
+For a differentiable baseline quantity \(q\) evaluated at the scaled
+argument \(u_i(\beta)\), the chain rule shows that the gradient depends on
+\(\boldsymbol{\beta}\) not only through the ordinary
+\(-\boldsymbol{x}_i\) term familiar from fixed-domain models, but also
+through two endpoint correction terms tied to the training subjects at
+the residual extremes, \(i^\ast=\arg\min_i w_i(\boldsymbol{\beta})\) and
+\(j^\ast=\arg\max_i w_i(\boldsymbol{\beta})\); these are the gradients used
+in \texttt{survfit.spbp} delta-method bands for BPAFT, and they reduce to
+the simpler frozen-endpoint form \(-h\,\boldsymbol{x}\) only if
+\(w_{\min}\) and \(w_{\max}\) are treated as fixed at the MLE. We use
+log-time residuals rather than covariate-scaled times because, once the
+affine map to \(u_i\) is held fixed, the regression parameters enter any
+baseline quantity only through the scalar index \(w_i\): every order of
+derivative with respect to \(\boldsymbol{\beta}\) then stops at
+\(\boldsymbol{x}_i\) or the outer-product form
+\(\boldsymbol{x}_i\boldsymbol{x}_i'\), whereas on a covariate-scaled-time
+index the scaling factor re-enters at every derivative order, adding
+multiplicative structure to the Hessian that the log-residual
+formulation avoids. The full chain-rule expressions and a term-by-term
+comparison of the two parameterizations are given
+in~\ref{app:aft-gradients}.
+
+This gives the same AFT interpretation as the
+usual covariate-scaled-time formulation \citep{kalbfleisch2002statistical},
+but a more convenient implementation. This parameter-dependent rescaling is the main implementation complication in
+the BPAFT model. For each new value of \(\boldsymbol{\beta}\), the
+endpoints \(w_{\min}(\boldsymbol{\beta})\) and
+\(w_{\max}(\boldsymbol{\beta})\), the scaled arguments
+\(u_i(\boldsymbol{\beta})\), and hence the entire basis must be
+re-evaluated. Precomputing a beta-mixture basis as in BPPH and BPPO is
+therefore not possible. Although any Bernstein polynomial can be rewritten
+equivalently in a monomial basis, this change of basis is more
+attractive in BPAFT because the fixed transformation matrix can be formed
+once from the polynomial degree, while the monomial powers
+\(u_i(\boldsymbol{\beta})^k\) are updated when \(\boldsymbol{\beta}\)
+changes. By contrast, evaluating the native beta basis through a beta mixture
+\(\mathrm{Beta}(u_i(\boldsymbol{\beta});k,m-k+1)\) at every iteration
+would repeat special-function calls on arguments that move with
+\(\boldsymbol{\beta}\). To keep this re-evaluation cheap, BPAFT instead
+uses a monomial representation, formed once from the polynomial degree
+and then updated only through the powers \(u_i(\boldsymbol{\beta})^k\)
+as \(\boldsymbol{\beta}\) changes.
+The Beta density appearing in \eqref{eq:deriv}, and used to construct the Bernstein basis, can be reexpressed in monomial form. Consequently, the Bernstein polynomial can be written equivalently as
+{\begin{align}
+B_m(t)=\sum_{i=0}^m c_i b_{i,m}(t)=\sum_{k=0}^m a_k t^k,
+\end{align}}
+where the monomial coefficients \(a_k\) are obtained from the Bernstein coefficients \(c_i\) through a closed-form binomial-sum transformation. This equivalence is purely algebraic; its derivation is provided in Appendix~\ref{app:monomial}.
+
+
+\subsection{Implementation details} \label{sec:implementation}
+
+\subsubsection{Covariate centring and standardisation}\label{sec:varscale}
+
+For numerical stability, estimation is carried out using standardised
+covariates rather than the original covariates (\texttt{scale = TRUE} in
+\texttt{spbp.default()}). Specifically, if
+\(\boldsymbol{x}_i\) denotes the original covariate vector for subject
+\(i\), the standardised covariates are defined as \(\boldsymbol{z}_i =
+\boldsymbol{s}_x^{-1} \circ
+(\boldsymbol{x}_i - \overline{\boldsymbol{x}}),\) where
+\(\overline{\boldsymbol{x}}\) is the vector of sample means,
+\(\boldsymbol{s}_x\) is the vector of sample standard deviations, and
+\(\circ\) denotes the Hadamard (element-wise) product. The models are
+therefore fitted in terms of a standardised parameterisation
+\((\boldsymbol{\psi}, \boldsymbol{\eta})\), where \(\boldsymbol{\psi}\)
+contains the baseline Bernstein parameters and \(\boldsymbol{\eta}\) the
+regression coefficients associated with the standardised covariates.
+After estimation, these quantities are transformed back to the original
+scale to recover the parameters of scientific interest.
+
+In all three models, the regression coefficients are re-scaled to the
+original covariate scale according to
+\(\boldsymbol{\beta} = \boldsymbol{\eta} \circ \boldsymbol{s}_x^{-1}.\)
+For the BPPH and BPPO models, centring the
+covariates also shifts the baseline component, so the Bernstein coefficients must be adjusted accordingly. The
+corresponding back-transformation is given by
+
+
+{\footnotesize
+\begin{align}
+g &\colon \mathbb{R}_+^m \times \mathbb{R}^p
+\to \mathbb{R}_+^m \times \mathbb{R}^p \nonumber \\
+(\boldsymbol{\psi}, \boldsymbol{\eta})'
+&\mapsto
+(\boldsymbol{\gamma}, \boldsymbol{\beta})'
+=
+\begin{cases}
+\left(
+\boldsymbol{\psi}e^{-\boldsymbol{\eta}'(\boldsymbol{s}_x^{-1} \circ
+\overline{\boldsymbol{x}})},
+\ \boldsymbol{\eta} \circ \boldsymbol{s}_x^{-1}
+\right)', \text{for BPPH, BPPO}, \\[1ex]
+\left(
+\boldsymbol{\psi},
+\ \boldsymbol{\eta} \circ \boldsymbol{s}_x^{-1}
+\right)',   \text{for BPAFT}.\label{transf}
+\end{cases}
+\end{align}}
+Covariate standardisation affects the regression coefficients in all
+models, but affects the baseline Bernstein parameters only in the BPPH
+and BPPO models. In the BPAFT model, those baseline parameters remain
+unchanged. The next two subsections use this standardised
+parameterisation in two different ways: Section~\ref{sec:delta} maps the
+observed information matrix back through \(g(\cdot)\) for
+maximum-likelihood inference, and Section~\ref{sec:priors} places priors
+directly on \((\boldsymbol{\psi}, \boldsymbol{\eta})'\) for Bayesian
+estimation.
+
+\subsubsection{Delta-method approximation of variance estimator}\label{sec:delta}
+
+Within the frequentist framework, maximum likelihood estimates are
+obtained with \texttt{rstan::optimizing()} on the compiled Stan model
+(\texttt{stanmodels\$spbp}), which supplies analytic gradients and
+(optionally) the Hessian matrix via reverse-mode automatic differentiation.
+For BPAFT, the likelihood block recomputes
+\(w_{\min}(\boldsymbol{\beta})\), \(w_{\max}(\boldsymbol{\beta})\), and
+\(u_i(\boldsymbol{\beta})\) at each iteration of the maximization algorithm (Section~\ref{sec:bp-domain}). Statistical inference on
+\((\boldsymbol{\beta},\boldsymbol{\gamma})\) can be performed using the likelihood ratio test and
+Wald-type tests; these behave differently under the package's internal
+standardisation, which is why the delta-method correction below is
+needed. The likelihood ratio test
+statistic is invariant under the standardisation procedure. In contrast,
+the Wald test statistic is affected by standardisation because the
+multivariate \(z\)-statistic is constructed from the observed Fisher
+information matrix. However, the observed information matrix that is
+obtained corresponds to the transformed parameterisation introduced in
+Section \ref{sec:varscale}.
+
+Consequently, the delta method is used to map the observed information
+matrix to the original parameterisation of interest \citep{oehlert1992note, Casella:2002}, which is also needed for confidence intervals. The
+multivariate delta method gives the parameter covariance as
+\(\mathrm{Cov}(\boldsymbol{\gamma},\boldsymbol{\beta}) = \nabla g(\hat{\boldsymbol{\psi}}, \hat{\boldsymbol{\eta}})\,
+\mathrm{Cov}(\boldsymbol{\psi},\boldsymbol{\eta})\,
+\nabla g(\hat{\boldsymbol{\psi}}, \hat{\boldsymbol{\eta}})'\),
+where \(g(\cdot)\) is the back-transformation in \eqref{transf}.
+The observed Hessian is inverted block-wise, using separate blocks for the
+regression coefficients \(\beta\) and the basis parameters \(\gamma\); this
+is a numerical stabilisation strategy for cases in which the full observed
+information matrix is singular or nearly singular, so that direct inversion
+may be unreliable \citep{nocedal2006numerical}. Further detail on the
+conditioning strategy for each block is given in~\ref{app:hessian-blocks}.
+
+For likelihood estimation of survival curves, the cumulative hazard
+\(H(t\mid\boldsymbol{x})\) (with the PH/PO/AFT constructions in
+Table~\ref{tab:models}) is treated as a smooth function of
+\((\boldsymbol{\beta},\boldsymbol{\gamma})\). Pointwise variance is obtained
+from the joint covariance after back-transformation, using gradients with
+respect to both blocks. Under PH and PO, covariate centring implies
+cross-derivatives \(\partial \gamma_k / \partial \beta_j =
+-\gamma_k\,\bar{x}_j/s_j\) in the Jacobian of \(g\), where \(\bar{x}_j\) and
+\(s_j\) are the sample mean and standard deviation of covariate \(j\).
+For BPAFT, \(\partial H/\partial\boldsymbol{\beta}\) follows the endpoint-corrected
+gradient of~\ref{app:aft-gradients}, evaluated at the MLE training-set
+endpoints \(i^\ast\) and \(j^\ast\); omitting the endpoint correction can
+materially inflate delta-method standard errors on moderate-sized datasets
+even when the \(\boldsymbol{\gamma}\) information block is well conditioned.
+Survival standard errors are computed on the log scale and passed to
+\texttt{survfit.spbp}-style intervals (default \texttt{type = "log"}).
+
+When the Bernstein-polynomial
+(\(\gamma\)) information block is ill-conditioned (large condition number), the
+package still reports delta-method survival standard errors and confidence bands
+but treats them as unreliable: \texttt{survfit.spbp} issues a warning when
+\texttt{survfit()} or \texttt{predict()} is called, not
+at model fitting time and not from \texttt{summary()}, \texttt{vcov()}, or
+coefficient interval routines, and the message names the fitted Bernstein
+\texttt{degree} and suggests refitting with a lower value.
+Regression-coefficient Wald intervals
+from \texttt{vcov()} remain available when the \(\beta\) block is well identified;
+\texttt{vcov(..., bp.param = TRUE)} sets \(\gamma\)-related entries to \texttt{NA}
+without warning when the \(\gamma\) block is unstable.
+For more trustworthy survival uncertainty in such cases, reducing the polynomial degree or using Bayesian posterior bands (Figure~\ref{fig:larynx-survfit-plot}, panel~(b)) are preferable; resampling methods are another option. Bayesian \texttt{survfit.spbp} bypasses the delta method:
+each posterior draw of \((\boldsymbol{\beta},\boldsymbol{\gamma})\) induces a
+survival curve, and pointwise highest posterior density (HPD) or equal-tailed credible bands are obtained
+from the resulting predictive sample (with optional monotone extrapolation over
+time).
+
+\subsubsection{Weakly informative default priors}\label{sec:priors}
+
+For Bayesian estimation, internal standardisation of the covariates is
+useful because it puts coefficients on a common scale, so that each
+coefficient represents the effect of a one-standard-deviation increase
+in the corresponding covariate scale \citep{gelman2008weakly}. We write
+\(\mathrm{Normal}(0,\sigma)\) for a normal distribution with variance
+\(\sigma^2\), so the standard deviation is \(\sigma\). Under this
+parameterisation, \(\eta_j \sim \mathrm{Normal}(0, 2)\) implies that
+approximately 95\% of the prior mass lies in \([-4, 4]\) and
+approximately 99\% lies in \([-5.15, 5.15]\). In the PH, PO, and AFT
+models, on the exponential scale the central 95\% interval corresponds
+approximately to ratios from \(e^{-4}\approx 0.018\) to
+\(e^{4}\approx 54.6\); the central 99\% interval corresponds
+approximately to ratios from \(e^{-5.15}\approx 0.0058\) to
+\(e^{5.15}\approx 172.4\). Hence, even the 95\% prior range already
+allows large effects on the hazard, odds, or AFT time scale, while still
+being weakly informative on the standardised covariate scale
+\citetext{\citealp[see also][ for related prior elicitation reasoning in
+regression models]{bedrick1996priors}; \citealp[and][ Chapter 3, for
+survival-specific prior specification]{ibrahim2001bayesian}}. In the
+Stan implementation, the default prior for standardised regression
+coefficients is passed as \texttt{normal(0, 2)}, because Stan's second
+\texttt{normal} parameter is the standard deviation.
+A weaker prior for \(\eta_j\), such as \(\eta_j \sim \mathrm{Normal}(0,4)\)
+or \(\eta_j \sim \mathrm{Normal}(0,10)\), is possible, but it allows
+very large values on the hazard, odds, or time-ratio scale and can
+reduce sampling efficiency.
+
+Standardisation of the covariates also affects the scale of the
+Bernstein coefficients in the PH and PO models, which means a poorly
+chosen weakly informative prior can make baseline estimation harder: a
+prior that discourages highly variable baseline estimates, that is,
+very large BP parameters \(\boldsymbol{\gamma}\), needs to account for
+the fact that values of those basis parameters close to zero are often
+the most plausible, so their corresponding logarithms are typically
+negative, sometimes substantially so. \pkg{spsurv} therefore uses
+\(\log(\psi_k) \sim \mathrm{Normal}(0,4)\) as a weakly informative prior on the
+baseline scale, alongside the default regression prior
+\(\eta_j \sim \mathrm{Normal}(0,2)\) on the standardised scale. Tightening the
+regression prior, for example to \(\eta_j \sim \mathrm{Normal}(0,1)\),
+reduces posterior standard deviations, but at the cost of a greater risk
+of prior--data conflict.
+
+In practice, sensitivity to the prior scale can be assessed by comparing
+results under alternative weakly informative choices, for example
+\(\mathrm{Normal}(0,2)\) versus \(\mathrm{Normal}(0,4)\) or
+\(\mathrm{Normal}(0,10)\). In moderate samples, posterior coefficient
+summaries often change little across such priors, whereas looser priors
+can increase Monte Carlo variability; the default \(\mathrm{Normal}(0, 2)\)
+specification was chosen to allow broad effects while avoiding the most
+extreme prior scales considered here.
+
+\section{Monte Carlo simulation}\label{sec:simulation}
+
+\subsection{Goal and limitations}\label{goal-and-limitations}
+
+The goal is to evaluate whether BP-based survival regression recovers
+regression coefficients accurately when the fitted model matches the
+data-generating link, for example, BPPH fitted to Weibull or
+log-logistic proportional-hazards data. This aligned design isolates
+finite-sample calibration from model misspecification and is the
+intended primary use case of \pkg{spsurv}. It does not assess
+baseline-shape recovery or robustness to link misspecification, which
+remain open questions for future work. Table \ref{tab:mc-design-events} reports the simulation
+design and realised event percentages. Failure times were generated with
+the \texttt{rsurv} package \citep{rsurv} using three generator functions:
+\texttt{rphreg} for PH data, \texttt{rporeg} for PO data, and
+\texttt{raftreg} for AFT data. In each case, the fitted model used the
+same regression link as the generator.
+
+The simulation design focuses on one intended use case of \pkg{spsurv}:
+smooth parametric generators, right-censored data, and a smaller than
+default polynomial degree (\(m = n^{0.4}\)). This design focuses on
+several analyst-facing choices: polynomial degree, sample size, and
+model family. Because the primary inferential target in this sensitivity analysis is
+the regression coefficients, degree effects are evaluated mainly through
+coefficient relative bias (\%), coverage, and SE calibration. Direct baseline-function
+recovery error (for example, hazard or survival-curve error) is not
+reported in this analysis, so baseline shape bias-variance trade-offs
+mentioned in Section~\ref{sec:degree} are treated as secondary to
+coefficient-level inferential calibration.
+
+Two baseline families were considered: Weibull and log-logistic. Thus, the six generator cells were Weibull-PH, Weibull-PO, Weibull-AFT, log-logistic-PH, log-logistic-PO, and log-logistic-AFT. Covariates were generated independently in every replicate, with
+\(x_{i1} \sim \mathrm{Normal}(0,1)\) and
+\(x_{i2} \sim \mathrm{Bernoulli}(0.5)\), for \(i=1,\ldots,n\). The same covariate-generation mechanism was used for all generator families, model classes, sample sizes, and estimation approaches. Independent administrative censoring was generated as
+\(C_i \sim \mathrm{Uniform}(0,10)\), and the observed data were \(Y_i=\min(T_i,C_i)\) and \(\delta_i=I(T_i\leq C_i)\).
+The same censoring mechanism was used for all generator families and model classes.
+
+\begin{table}[!h]
+\footnotesize
+\centering
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{\label{tab:mc-design-events} Monte Carlo design for Table~\ref{tab:bp-mcsim-abc}. Mean event percentages (\(100 \times \mathrm{E}(\#\text{events}/n)\)); MLE and Bayes share the same realisation; mean censoring is approximately \(100 -\) event rate.}
+\begin{tabularx}{\columnwidth}{@{}
+  >{\raggedright\arraybackslash}p{0.2\columnwidth}
+  >{\raggedright\arraybackslash}p{0.15\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.1\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.08\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.15\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.15\columnwidth}
+@{}}
+\toprule
+Generator family &
+Generator class/link &
+Shape &
+Scale &
+Mean event \% (\(n=50\)) &
+Mean event \% (\(n=100\)) \\
+\midrule
+Weibull      & PH  & 1.5 & 1 & 86.3 & 86.2 \\
+Weibull      & PO  & 1.5 & 1 & 91.3 & 91.3 \\
+Weibull      & AFT  & 1.5 & 1 & 68.8 & 69.3 \\
+Log-logistic      & PH  & 1.5 & 1 & 74.8 & 74.5 \\
+Log-logistic      & PO  & 1.5 & 1 & 79.6 & 79.2 \\
+Log-logistic      & AFT  & 1.5 & 1 & 62.6 & 62.9 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+For each generator cell, we used \(R=1000\) Monte Carlo replicates at sample sizes \(n\in{50,100}\). Both maximum likelihood and Bayesian fits were applied to the same simulated data within each replicate. The Bernstein-polynomial degree was set to \(m= n^{0.4} .\)
+The degree-sensitivity study used the same baseline parameters, regression coefficients, covariate distributions, and censoring mechanism, changing only the fitted polynomial degree. Table \ref{tab:mc-design-events} summarises the generator cells used in the simulation design and the corresponding realised mean event percentages at each sample size.
+
+We evaluate relative bias (\%) and coverage probability
+of nominal 95\% intervals, together with the \emph{standard error (SE)
+calibration ratio}. Relative bias is
+{\footnotesize\begin{align}\text{relative bias (\%)}=100\times\frac{\hat\beta-\beta_0}{\beta_0},\end{align}}
+where \(\beta_0\) is the data-generating coefficient. The SE calibration ratio is
+
+{\footnotesize\begin{align}\text{SE calibration ratio}=\frac{\overline{\text{reported SE}}}{\text{Monte Carlo standard deviation}},\end{align}}
+where \(\overline{\text{reported SE}}\) is the mean of the reported
+standard errors across replicates and the Monte Carlo standard deviation
+is the empirical standard deviation of the coefficient estimates. Ratios
+near \(1\) indicate well-calibrated uncertainty, values below \(1\) indicate
+underestimation, and values above \(1\) indicate overestimation. The
+summaries are computed from the data-link combinations in Table
+\ref{tab:mc-design-events}.
+
+\subsection{MLE--Bayes agreement and finite-sample calibration with a small polynomial degree}\label{sec:sim-results}
+
+Table~\ref{tab:bp-mcsim-abc} has two purposes. First, it compares
+maximum likelihood and Bayesian estimation under the weakly informative
+priors of Section \ref{sec:priors}. Second, it assesses finite-sample
+relative bias (\%), coverage, and SE calibration across the generator-model combinations.
+Close agreement between the MLE and Bayes columns is consistent with
+Bayesian fits behaving similarly to MLE while retaining mild
+regularisation against implausible coefficient or baseline-parameter
+values. Markov chain Monte Carlo (MCMC) settings for the Bayesian replicates use the
+\texttt{spbp}/\pkg{rstan} defaults (4 chains per fit, 2000 iterations per chain with
+1000 post-warmup draws) documented in Section~\ref{sec:mcmc}. The degree-sensitivity panels in
+Figure~\ref{fig:degree-llph-bpph-plot} use maximum likelihood only.
+
+\begin{table}[htbp]
+\footnotesize
+\centering
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.03}
+\caption{\label{tab:bp-mcsim-abc}
+MLE--Bayes agreement and finite-sample performance (\(R=1000\), \(m=n^{0.4}\)). Coverage: 95\% intervals (Wald MLE, HPD Bayes). Relative bias (\%): \(100(\hat\beta-\beta_0)/\beta_0\). SE ratio: mean reported SE divided by Monte Carlo SD. Generator labels: W = Weibull, LL = log-logistic; PH, PO, AFT.}
+\begin{tabularx}{\columnwidth}{@{}
+  >{\raggedright\arraybackslash}p{0.115\columnwidth}
+  >{\raggedright\arraybackslash}p{0.115\columnwidth}
+  >{\raggedright\arraybackslash}X
+  >{\raggedleft\arraybackslash}p{0.065\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.065\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.065\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.065\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.065\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.065\columnwidth}
+@{}}
+\toprule
+&&&
+\multicolumn{2}{c}{Coverage (\%)} &
+\multicolumn{2}{c}{Rel.\ bias (\%)} &
+\multicolumn{2}{c}{SE ratio} \\
+\cmidrule(lr){4-5}
+\cmidrule(lr){6-7}
+\cmidrule(l){8-9}
+Generator & Fit & Parameter & MLE & Bayes & MLE & Bayes & MLE & Bayes \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{\(n=50\)}} \\
+\cmidrule(lr){1-9}
+WPH   & BPPH  & Cont. (age) & 87.6 & 93.4 & -9.6 & -7.3 & 0.86 & 0.99 \\
+WPH   & BPPH  & Bin. (sex) & 91.3 & 92.3 &  9.9 &  7.7 & 0.90 & 0.92 \\
+WPO   & BPPO  & Cont. (age) & 92.7 & 95.8 & -5.0 & -1.7 & 0.93 & 1.04 \\
+WPO   & BPPO  & Bin. (sex) & 93.8 & 94.4 &  6.4 &  2.9 & 0.94 & 0.98 \\
+WAFT   & BPAFT  & Cont. (age) & 85.8 & 94.0 &  1.8 &  2.2 & 0.79 & 1.09 \\
+WAFT   & BPAFT  & Bin. (sex) & 90.7 & 96.1 & -3.3 & -3.1 & 0.89 & 1.11 \\
+LLPH   & BPPH  & Cont. (age) & 75.9 & 83.7 & -10.5 & -10.8 & 0.75 & 0.86 \\
+LLPH   & BPPH  & Bin. (sex) & 89.4 & 89.5 &  10.9 &  11.7 & 0.85 & 0.87 \\
+LLPO   & BPPO  & Cont. (age) & 89.0 & 94.6 & -7.3 & -6.2 & 0.86 & 1.00 \\
+LLPO   & BPPO  & Bin. (sex) & 93.0 & 93.6 &  9.4 &  8.0 & 0.90 & 0.94 \\
+LLAFT   & BPAFT  & Cont. (age) & 78.0 & 92.8 &  4.3 &  4.7 & 0.68 & 1.06 \\
+LLAFT   & BPAFT  & Bin. (sex) & 85.0 & 94.3 & -6.2 & -6.5 & 0.84 & 1.03 \\
+\addlinespace[4pt]
+\multicolumn{9}{@{}l}{\textit{\(n=100\)}} \\
+\cmidrule(lr){1-9}
+WPH   & BPPH  & Cont. (age) & 89.0 & 91.6 & -5.4 & -4.9 & 0.89 & 0.94 \\
+WPH   & BPPH  & Bin. (sex) & 92.7 & 93.1 &  6.6 &  6.4 & 0.94 & 0.96 \\
+WPO   & BPPO  & Cont. (age) & 93.3 & 95.4 & -2.8 & -0.8 & 0.95 & 1.01 \\
+WPO   & BPPO  & Bin. (sex) & 95.3 & 96.0 &  5.5 &  3.0 & 0.95 & 0.97 \\
+WAFT   & BPAFT  & Cont. (age) & 91.4 & 94.1 &  0.3 &  1.0 & 0.93 & 1.05 \\
+WAFT   & BPAFT  & Bin. (sex) & 93.3 & 95.6 & -2.5 & -2.3 & 0.72 & 1.06 \\
+LLPH   & BPPH  & Cont. (age) & 80.4 & 79.9 & -6.9 & -8.4 & 0.76 & 0.80 \\
+LLPH   & BPPH  & Bin. (sex) & 90.5 & 90.0 &  8.2 &  10.0 & 0.88 & 0.88 \\
+LLPO   & BPPO  & Cont. (age) & 90.8 & 92.4 & -4.2 & -4.8 & 0.90 & 0.95 \\
+LLPO   & BPPO  & Bin. (sex) & 94.6 & 94.3 &  6.6 &  6.8 & 0.95 & 0.95 \\
+LLAFT   & BPAFT  & Cont. (age) & 86.4 & 91.4 &  1.6 &  3.0 & 0.80 & 1.01 \\
+LLAFT   & BPAFT  & Bin. (sex) & 89.4 & 94.7 & -5.1 & -5.2 & 0.74 & 1.00 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Table~\ref{tab:bp-mcsim-abc} reports maximum likelihood and Bayesian estimation across the six generator combinations: WPH, WPO, WAFT, LLPH, LLPO, and LLAFT, where W denotes Weibull and LL denotes log-logistic baselines. Each row gives the fitted Bernstein-based model (BPPH, BPPO, or BPAFT), the covariate (continuous age or binary sex), and Monte Carlo summaries for \(n \in \{50, 100\}\): coverage probability of nominal 95\% intervals (Wald for MLE, HPD for Bayes), relative bias (\%), and the SE calibration ratio defined as the mean reported standard error divided by the Monte Carlo standard deviation of the estimates. Values of the SE calibration ratio below one indicate that the reported standard errors are smaller than the Monte Carlo standard deviation of the estimates, whereas values above one indicate overestimation of uncertainty.
+
+MLE and Bayesian estimates behave similarly across most scenarios, indicating limited influence of the weakly informative priors under this simulation design. Calibration is generally close to nominal for the Weibull generator cells, especially at \(n=100\). The largest departures occur for the log-logistic proportional-hazards generator fitted with BPPH, where coverage is below nominal and the SE calibration ratio is below one, particularly for the continuous covariate. This suggests that, in this setting, interval undercoverage is driven mainly by underestimation of uncertainty rather than by large coefficient relative bias (\%) alone.
+
+Together, Table~\ref{tab:bp-mcsim-abc} supports the two practical checks introduced at the start of this section. On agreement: maximum likelihood and Bayesian estimates track each other closely across most generator cells, consistent with limited prior influence on the standardised scale even at the smaller sample size, while the priors still regularise implausibly large coefficient or baseline-parameter values, the Bayesian implementation adds posterior uncertainty summaries without materially shifting the point estimates. On calibration: departures from nominal coverage are not uniform across generators, with log-logistic cells showing larger departures than the corresponding Weibull cells, particularly for BPPH; coverage should always be read together with the SE calibration ratio, since ratios below 1 flag underestimated uncertainty and ratios above 1 flag overestimated uncertainty.
+
+\subsubsection{Sensitivity to polynomial degree}\label{sensitivity-to-polynomial-degree}\label{sec:degree}
+
+The polynomial degree \(m\) controls the flexibility of the baseline
+approximation. The \pkg{spsurv} package defaults to \(m_0=\sqrt{n}\),
+which scales with the sample size and is consistent with sieve-rate
+theory \citep{barron1999risk, shen1994convergence}; the default is set in
+\texttt{spbp.default()} when \texttt{degree} is omitted. This default is a
+practical starting value rather than a data-adaptive optimum, and users
+may check local sensitivity of coefficients and survival predictions
+over nearby degrees. Larger \(m\) permits a more detailed baseline but
+typically increases sampling variability; smaller \(m\) stabilises
+estimation but may smooth over rapidly varying hazard features. In
+practice, users should examine sensitivity of coefficient estimates and
+survival predictions across nearby degrees, especially when
+baseline-shape recovery is a goal. \citet{Osman:2012} and \citet{de2025degree} discuss
+this choice further and relate it to the shape of the underlying hazard
+function.
+
+Table~\ref{tab:bp-mcsim-abc} suggests that the largest departures from
+nominal coverage occur for BPPH in the log-logistic generator cells at
+the polynomial degree of \(m =  n^{0.4}\) used in the baseline simulation.
+To assess whether this behaviour is partly explained by polynomial
+underfitting, we ran a degree-sensitivity study for the
+LLPH\(\rightarrow\)BPPH setting, comparing \(m =  n^{0.4}\) with
+\(m \in \{ n^{0.2} ,  n^{0.3} ,  n^{0.5} ,  n^{0.6} ,  n^{0.7} ,  n^{0.8} \}\),
+while keeping the remaining simulation design unchanged. Within each
+replicate, the same simulated dataset is reused across all degrees, so
+differences mainly reflect degree rather than resampling noise.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=1\linewidth]{008_degree_llph_bpph.pdf}
+\caption{Polynomial-degree sensitivity under log-logistic PH generation with MLE BPPH. Degree rule on the horizontal axis; each line is one sample size and parameter. Panels: 95\% Wald coverage, relative bias (\%), and SE ratio. The SE ratio panel is limited to $[0.5, 1.2]$; 28 of 28 summaries fall outside this range and are omitted from the plot (full values in Table~\ref{tab:degree-llph-bpph}).}
+\label{fig:degree-llph-bpph-plot}
+\end{figure}
+
+Table~\ref{tab:degree-llph-bpph} in~\ref{app:mc-tables} gives the numerical
+values underlying Figure~\ref{fig:degree-llph-bpph-plot}, reporting the
+corresponding Monte Carlo estimates for each sample size, degree rule, and
+regression parameter. Together, they show that increasing the polynomial
+degree mainly improves finite-sample uncertainty calibration and coverage
+in this LLPH\(\rightarrow\)BPPH setting, whereas additional relative-bias (\%) reduction
+beyond the default range is more modest. In particular, the SE ratio moves
+toward 1 as the degree increases, consistent with improved interval
+calibration and the corresponding rise in coverage probability. Across the
+explored degree grid, higher degrees did not visibly increase instability
+in relative bias (\%), coverage, or SE calibration. Thus, for this setting, the results
+suggest treating \(m=\sqrt{n}\) as a starting value and increasing the
+degree when calibration diagnostics indicate interval calibration below
+nominal levels.
+
+\section{Motivating examples}\label{sec:illustrations}
+
+We illustrate the package using two standard survival datasets, showing
+typical \pkg{spsurv} usage, comparing Bernstein-based fits to familiar
+benchmarks such as Cox regression, and highlighting the output needed
+for interpretation (coefficient tables via \texttt{tidy()} and \texttt{glance()},
+survival curves, and residuals).
+
+\subsection{Laryngeal cancer}\label{sec:illus-larynx}
+
+\citet{Kardaun:1983} reports a cohort of patients with laryngeal cancer treated
+in Dutch hospitals in the 1970s. We examine whether survival is
+associated with age at diagnosis and tumour stage (I--IV). The \texttt{larynx} data in \pkg{KMsurv} \citep{Klein:1997} contain
+\texttt{time} (months to death or censoring), \texttt{delta} (event
+indicator), \texttt{age} (years), \texttt{stage} (1--4), and \texttt{diagyr}
+(year of diagnosis). The data set has
+\(n=90\) subjects with 50 deaths. With default treatment contrasts,
+stage effects compare each level to Stage I; the continuous coefficient is
+the log hazard ratio per additional year of age, holding stage fixed.
+Proportional hazards models are a natural starting point for staged
+oncology outcomes; we therefore fit a BPPH model by both maximum likelihood
+and Bayesian approaches, comparing results with Cox partial likelihood
+estimates.
+
+\subsubsection{Model fit and coefficients}\label{model-fit-and-coefficients}
+
+The BPPH model described in Section~\ref{sec:models} was fitted to the
+\texttt{larynx} data using maximum likelihood estimation. Categorical
+covariates such as \texttt{stage} are converted to factors in the data
+before model fitting rather than through \texttt{factor()} in the formula,
+so coefficient labels appear as \texttt{stage2}, \texttt{stage3}, and
+\texttt{stage4}. Numeric output in the examples below is rounded to two
+decimal places for display. The corresponding hazard-ratio estimates are
+reported below.
+
+{\scriptsize\begin{verbatim}
+data("larynx", package = "KMsurv")
+larynx$stage <- factor(larynx$stage)
+
+bpph_fit <- bpph(
+  Surv(time, delta) ~ age + stage,
+  data = larynx,
+  approach = "mle"
+)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+tidy(bpph_fit)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#>     term component   estimate  std.error statistic
+#> p.value
+#> 1    age      coef 0.01926934 0.01436865 1.3410681
+#> 1.798983e-01
+#> 2 stage2      coef 0.17194254 0.46264669 0.3716498
+#> 7.101536e-01
+#> 3 stage3      coef 0.65846087 0.35566433 1.8513548
+#> 6.411853e-02
+#> 4 stage4      coef 1.79929944 0.42910533 4.1931416
+#> 2.751176e-05
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+glance(bpph_fit)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#>    n nevent    logLik approach model df statistic
+#> p.value       rsq
+#> 1 90     50 -140.0512      mle    ph 14   19.5695
+#> 0.0006072218 0.1954232
+#>     max.rsq      AIC      BIC
+#> 1 0.9641957 308.1024 343.0998
+\end{verbatim}}
+
+\needspace{6\baselineskip}
+
+The estimated hazard ratio for Stage IV versus Stage I at the same age
+is 6.05, with 95\% limits 2.61
+and 14.02 from \texttt{tidy(bpph\_fit, conf.int = TRUE, exponentiate = TRUE)},
+indicating higher mortality for Stage IV than for Stage
+I. The \texttt{tidy()} and \texttt{glance()} methods from \pkg{generics} provide
+broom-style summaries: \texttt{print(..., what = "tidy")}
+returns one row per coefficient with exponentiated intervals, and
+\texttt{print(..., what = "glance")} returns a one-row table of model-level
+statistics including sample size, log-likelihood, likelihood-ratio test, and
+information criteria. For maximum-likelihood fits, \texttt{glance()} and \texttt{AIC()}
+count both regression and Bernstein (\texttt{gamma}) parameters
+(\texttt{.spbp\_nparams()}); the likelihood-ratio \texttt{df} in
+\texttt{summary()} remains the number of regression terms only.
+For models fitted by maximum likelihood,
+\texttt{print()} with the default \texttt{what = "summary"} and \texttt{summary()}
+report coefficient estimates, Wald 95\% confidence limits on the log scale
+(\(2.5\%\) and \(97.5\%\)), standard errors, \(z\) statistics, and \(p\)-values in a
+compact layout, followed by exponentiated confidence intervals on the same
+percentiles and model-level log-likelihood and information criteria at the foot of the summary.
+
+{\scriptsize\begin{verbatim}
+print(bpph_fit)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#> Call:
+#> bpph(formula = Surv(time, delta) ~ age + stage, data = larynx,
+#>     approach = "mle", model = "ph")
+#>
+#> Bernstein PH model:
+#> Regression coefficients:
+#>        Estimate    2.5%   97.5% Std. Error z value Pr(>|z|)
+#> age      0.0193 -0.0089  0.0474     0.0144     1.3     0.18
+#> stage2   0.1719 -0.7348  1.0787     0.4626     0.4     0.71
+#> stage3   0.6585 -0.0386  1.3556     0.3557     1.9     0.06 .
+#> stage4   1.7993  0.9583  2.6403     0.4291     4.2    3e-05
+#> ***
+#> ---
+#> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+#>
+#> Exponentiated coefficients:
+#>        Estimate 2.5% 97.5%
+#> age        1.02 0.99   1.0
+#> stage2     1.19 0.48   2.9
+#> stage3     1.93 0.96   3.9
+#> stage4     6.05 2.61  14.0
+#>
+#> ---
+#> loglik = -140   AIC = 308
+\end{verbatim}}
+
+\subsubsection{Survival prediction}\label{survival-prediction}
+
+Predicted survival curves for \texttt{spbp} objects are obtained with
+\texttt{survfit()} in \pkg{spsurv} (\texttt{survfit.spbp}). The method
+follows the familiar \texttt{survfit} generic interface while replacing
+\pkg{survival} \citep{survival:2000} point estimates with Bernstein-polynomial
+predictions; a reference Cox object from \pkg{survival} supplies only the
+time grid and \texttt{survfit} object structure. Predicted curves for each
+stage at the reference age are obtained as follows. For maximum-likelihood
+fits on small samples such as \texttt{larynx}, the default Bernstein degree
+$m=\lceil\sqrt{n}\rceil$ can leave the $\boldsymbol{\gamma}$ information
+block ill-conditioned (Section~\ref{sec:delta}); \texttt{survfit.spbp} still
+computes delta-method bands but issues a single warning that they may be
+unreliable and advising a lower
+\texttt{degree}. Fitting, \texttt{summary()}, and \texttt{vcov()} do not emit
+this warning. Passing
+\texttt{tidy = TRUE} returns a long data frame suitable for \pkg{ggplot2}.
+By default, \texttt{survfit.spbp} evaluates curves on a dense time grid; users may pass
+an explicit \texttt{times} vector for plotting.
+
+{\scriptsize\begin{verbatim}
+nd <- data.frame(
+  age   = 65,
+  stage = factor(levels(larynx$stage))
+)
+
+survfit(bpph_fit, newdata = nd)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#> Call: survfit.spbp(formula = bpph_fit, newdata = nd)
+#>
+#>    n events median 0.95LCL 0.95UCL
+#> 1 90     50   7.35   0.324      NA
+#> 2 90     50   6.59   0.324      NA
+#> 3 90     50   4.76   0.216      NA
+#> 4 90     50   1.62   0.108      NA
+\end{verbatim}}
+
+Figure~\ref{fig:larynx-survfit-plot} shows predicted survival across
+stages at age 65 years (rounded from the sample mean age
+64.61 years), computed with \texttt{survfit.spbp} in \pkg{spsurv} and
+displayed with \pkg{ggplot2}. Survival decreases with
+increasing stage. Where a curve crosses 0.5, that time is an estimated
+median survival on the time scale of the data; curves that remain above 0.5 on the plotted
+follow-up have no median crossing visible on the grid shown.
+Panel~(a) uses the default Bernstein degree
+$m=\lceil\sqrt{n}\rceil=10$ on the 90-patient \texttt{larynx} sample;
+the $\boldsymbol{\gamma}$ information block is then ill-conditioned
+(Section~\ref{sec:delta}), so \texttt{survfit.spbp} reports pointwise
+delta-method bands together with a warning that they may be unreliable
+(printed at this step only).
+Panel~(b) contrasts the same covariate profiles under three fits:
+$m=3$ maximum likelihood (stable $\boldsymbol{\gamma}$ information and
+95\% delta-method bands without an instability warning), default
+$m=10$ maximum likelihood (ill-conditioned $\boldsymbol{\gamma}$ block and
+unreliable delta-method bands with a \texttt{survfit()} warning), and
+default $m=10$ Bayesian (posterior HPD bands at the same degree, without
+the delta method).
+Lowering $m$ trades baseline flexibility for identifiability on small
+samples and is one adjustment suggested by the \texttt{survfit()} warning;
+panel~(b) shows that refitting with \texttt{approach = "bayes"} at the
+same degree is the other main route for curve-wise uncertainty. The next
+subsection gives posterior summaries and code for the Bayesian fit.
+
+\begin{figure}[!ht]
+\centering
+\begin{minipage}{0.48\linewidth}
+\centering
+\includegraphics[width=\linewidth]{001_larynx_survfit.pdf}\\[0.4em]
+{\footnotesize (a) Default $m=10$ MLE with delta-method bands.}
+\end{minipage}\hfill
+\begin{minipage}{0.48\linewidth}
+\centering
+\includegraphics[width=\linewidth]{006_larynx_degree_comparison.pdf}\\[0.4em]
+{\footnotesize (b) $m=3$ MLE, $m=10$ MLE, and $m=10$ Bayes (top to bottom).}
+\end{minipage}
+\caption{Estimated survival curves from maximum-likelihood BPPH fits for a
+patient aged 65 years in the \texttt{larynx} data (\pkg{KMsurv}).
+Time is in years. Curves use \texttt{survfit.spbp} on a dense time grid
+and \pkg{ggplot2}. Panel~(a): default Bernstein degree with
+ill-conditioned $\boldsymbol{\gamma}$ information---delta-method
+intervals are reported with an instability warning from \texttt{survfit()}.
+Panel~(b): three-way comparison at age 65 years---$m=3$ MLE with stable
+delta-method bands, default $m=10$ MLE with an instability warning on
+delta-method bands, and default $m=10$ Bayes with posterior HPD bands at
+the same polynomial degree. Lower curves indicate poorer prognosis; stage
+ordering is monotone from highest survival (Stage~I) to lowest (Stage~IV).}
+\label{fig:larynx-survfit-plot}
+\end{figure}
+
+\subsubsection{Bayesian analysis}\label{bayesian-analysis}
+
+As an alternative to lowering Bernstein \texttt{degree} when maximum-likelihood
+delta-method bands are unreliable (Figure~\ref{fig:larynx-survfit-plot},
+panel~(b)), the same model can be refitted with
+\texttt{approach\ =\ "bayes"}; the posterior
+summaries agree closely with the maximum likelihood estimates, as the
+priors are weakly informative by default, using the prior specification
+of Section \ref{sec:priors}. Unlike the maximum-likelihood fit above,
+the Bayesian \texttt{survfit.spbp} summary returns finite credible limits
+for median survival when the posterior supports them. Curve-wise bands
+use posterior draws of \((\boldsymbol{\beta},\boldsymbol{\gamma})\) with
+\texttt{interval.type = "hpd"} by default and optional monotone enforcement
+over time. For the Bayesian fits, we ran 4 chains (the \texttt{spbp.default()}
+default) without overriding \texttt{iter},
+\texttt{warmup}, \texttt{thin}, \texttt{adapt\_delta}, or
+\texttt{max\_treedepth}, and the stored fitted-model \texttt{call} lists
+\texttt{refresh = 0} (Section~\ref{sec:mcmc}).
+
+{\scriptsize\begin{verbatim}
+set.seed(1)
+bpph_fit_bayes <- bpph(
+  Surv(time, delta) ~ age + stage,
+  data = larynx,
+  approach = "bayes"
+)
+
+survfit(bpph_fit_bayes, newdata = nd)
+
+plot_times <- seq(0, max(larynx$time), length.out = 121)
+sf_bayes <- survfit(
+  bpph_fit_bayes,
+  newdata = nd,
+  times = plot_times,
+  type = "log",
+  interval.type = "hpd"
+)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#> Call: survfit.spbp(formula = bpph_fit_bayes, newdata = nd)
+#>
+#>    n events median 0.95LCL 0.95UCL
+#> 1 90     50   7.46   5.512      NA
+#> 2 90     50   6.70   4.431      NA
+#> 3 90     50   4.86   3.351    7.24
+#> 4 90     50   1.73   0.973    3.57
+\end{verbatim}}
+
+\needspace{6\baselineskip}
+
+Posterior summaries provide highest posterior density (HPD) intervals
+and model comparison via deviance information criterion and widely
+applicable information criterion (WAIC) when available, with the same PH
+interpretation. For Bayesian fits (\texttt{approach\ =\ "bayes"}), \texttt{print()}
+lists posterior means, HPD credible intervals on the log and exponentiated
+scales (\(2.5\%\) and \(97.5\%\)), and posterior standard deviations for
+regression coefficients, and reports deviance information
+criterion \citep{spiegelhalter2002bayesian}, WAIC \citep{Vehtari:2017, watanabe2013widely}, and log pseudo-marginal likelihood
+\citep{geisser1979predictive, Ibrahim:2014} when the posterior
+log-likelihood is available. \texttt{summary()} gives the same HPD intervals
+as \texttt{print()} for regression and exponentiated coefficients; the
+exponentiated intervals also appear in \texttt{print(..., what = "tidy")} and
+\texttt{tidy(..., conf.int = TRUE, exponentiate = TRUE)}, while
+\texttt{print(..., what = "glance")} and \texttt{glance()} collect WAIC, DIC,
+and LPML in one row.
+
+{\scriptsize\begin{verbatim}
+print(bpph_fit_bayes)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#> Call:
+#> bpph(formula = Surv(time, delta) ~ age + stage, data = larynx,
+#>     approach = "bayes", model = "ph")
+#>
+#> Bayesian Bernstein PH model:
+#> Regression coefficients:
+#>        Estimate    2.5%   97.5% Std. Error
+#> age      0.0196 -0.0073  0.0467        0.0
+#> stage2   0.1510 -0.8597  0.9527        0.5
+#> stage3   0.6518 -0.0780  1.3000        0.4
+#> stage4   1.7870  0.9767  2.6022        0.4
+#>
+#> Exponentiated coefficients:
+#>        Estimate 2.5% 97.5%
+#> age        1.02 0.99   1.0
+#> stage2     1.29 0.38   2.5
+#> stage3     2.04 0.84   3.5
+#> stage4     6.51 2.28  12.3
+#>
+#> ---
+#> DIC = 297   WAIC = -149
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+tidy(bpph_fit_bayes)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#>     term component   estimate  std.error
+#> 1    age      coef 0.01964955 0.01386941
+#> 2 stage2      coef 0.15103394 0.46681666
+#> 3 stage3      coef 0.65178815 0.35179221
+#> 4 stage4      coef 1.78698661 0.41426879
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+glance(bpph_fit_bayes)
+\end{verbatim}}
+
+{\scriptsize\begin{verbatim}
+#>    n nevent   logLik approach model df      waic      dic
+#> lpml
+#> 1 90     50 -144.596    bayes    ph  4 -149.2064 296.9485
+#> -149.3341
+\end{verbatim}}
+
+Extractors such as \texttt{tidy()}, \texttt{glance()}, \texttt{coef()},
+\texttt{model.matrix()}, and \texttt{credint()} follow
+the conventions of standard fitted objects and integrate with the
+\pkg{generics} / broom workflow. When comparing models,
+posterior means and HPD limits from \texttt{tidy()} can be read alongside
+WAIC and log pseudo-marginal likelihood from \texttt{glance()}, for example when
+choosing between PO and AFT formulations that both fit the data reasonably well.
+
+\subsubsection{Residual diagnostics}\label{residual-diagnostics}
+
+Having compared the maximum-likelihood and Bayesian BPPH fits directly,
+we now check both against an external benchmark: a Cox model with the
+same linear predictor. Martingale residuals depend on the estimated
+survival function, so we extract \texttt{residuals()} from each fit with
+matching formulae. Under
+proportional hazards, residuals from BPPH agree closely with those from
+the Cox model, since the smooth BP baseline produces residual patterns
+similar to those from the Cox/Breslow fit.
+
+{\scriptsize\begin{verbatim}
+mod_cox <- coxph(
+  Surv(time, delta) ~ age + stage,
+  data = larynx
+)
+
+resid_df <- data.frame(
+  ml_bpph = residuals(bpph_fit, type = "martingale"),
+  bayes_bpph = residuals(bpph_fit_bayes,
+    type = "martingale"),
+  cox = residuals(mod_cox, type = "martingale")
+)
+\end{verbatim}}
+
+Figure \ref{fig:larynx-bpxcox} overlays the two residual vectors; the
+patterns are similar, so the BPPH fit produces martingale residuals
+close to those from the Cox model under the same linear predictor.
+Similar residuals suggest that both models capture the same hazard
+structure. Overall, the BPPH specification is a flexible alternative to
+partial likelihood when PH is plausible.
+
+\begin{figure}[!h]
+\includegraphics[width=1\linewidth]{002_larynx_bpxcox_residuals.pdf} \caption{Martingale residuals (\texttt{larynx}), matched linear predictors. Panels: MLE BPPH vs Cox PH, Bayes BPPH vs Cox PH, and MLE vs Bayes BPPH.}\label{fig:larynx-bpxcox}
+\end{figure}
+
+\subsection{Veteran lung cancer (no prior therapy)}\label{sec:illus-veteran}
+
+The Veterans Administration lung cancer trial \citep{Prentice:1973,kalbfleisch2002statistical} enrolled
+patients with advanced, inoperable lung cancer. Following \citet{Pettitt:1984}, we restrict
+analysis to participants with \texttt{prior\ ==\ 0} (no prior therapy), as in
+that proportional-odds reanalysis of the trial. The
+\texttt{veteran} data in \pkg{survival} \citep{Therneau:2020} provide survival
+\texttt{time} (days) and censoring \texttt{status}, Karnofsky performance score
+\texttt{karno} (0--100), histologic celltype \texttt{celltype}, treatment \texttt{trt}, and other
+covariates. Following \citet{Bennett:1983}, we model \texttt{karno} and \texttt{celltype}
+only (omitting \texttt{trt}, \texttt{age}, and \texttt{diagtime}); that paper also questions
+the proportional hazards assumption for this subset, so we fit Bayesian
+BPPO and BPAFT as semi-parametric alternatives to proportional hazards.
+The restricted subsample has \(n=97\) subjects with 91 deaths.
+
+\subsubsection{Alternatives to proportional hazards}\label{sec:alternatives}
+
+We fit Bayesian BPPO and BPAFT models to the \texttt{veteran2} subsample
+with \texttt{bppo()} and \texttt{bpaft()}, whose likelihood structures are given in
+Table \ref{tab:models}, and summarise the regression parameters.
+Histology uses large cell as the reference level; \texttt{karno} enters
+linearly, so its coefficient is the change in the linear predictor per
+one-point increase on the Karnofsky scale, holding cell type fixed.
+Predicted survival curves below use Karnofsky scores 30 and 70 with
+squamous histology, matching the \texttt{newdata2} object passed to
+the method \texttt{survfit.spbp}. These two scores were chosen as contrasting clinical
+profiles (low versus higher functional status) to make survival
+differences easier to compare.
+
+{\scriptsize\begin{verbatim}
+data("veteran", package = "survival")
+
+# Pettitt (1984) analytic subsample: no prior therapy
+veteran2 <- veteran |>
+  dplyr::filter(prior == 0) |>
+  dplyr::mutate(celltype = factor(
+    celltype,
+    levels = c("large", "adeno", "smallcell", "squamous")
+  ))
+
+f <- Surv(time, status) ~ karno + celltype
+
+fit_po  <- bppo(f, data = veteran2, approach = "bayes")
+fit_aft <- bpaft(f, data = veteran2, approach = "bayes")
+\end{verbatim}}
+
+BPAFT can be more computationally demanding than BPPH and BPPO because
+the residual domain depends on the regression coefficients and must be
+updated during estimation (Section~\ref{sec:bp-domain}). Bayesian BPAFT
+fits can benefit from standard No-U-Turn Sampler (NUTS) diagnostic checks; users should treat
+divergent transitions and low effective sample sizes as diagnostics
+suggesting further tuning rather than negligible numerical variation.
+
+Posterior mean survival for squamous histology at Karnofsky scores
+30 and 70 is obtained with \texttt{survfit.spbp} for each
+Bayesian fit.
+
+\subsubsection{Survival comparison}\label{survival-comparison}
+
+Figure \ref{fig:bpaftxbppo} is generated by calling \texttt{survfit.spbp}
+(in \pkg{spsurv}) on the Bayesian BPPO and BPAFT fits using \texttt{newdata2},
+which fixes histology at squamous cell type and sets two contrasting clinical
+profiles (30 and 70). The resulting objects are tidied with
+\pkg{ggsurvfit} \citep{ggsurvfit:2024} (\texttt{tidy\_survfit()}) and plotted
+in \pkg{ggplot2} with pointwise HPD credible bands from posterior simulation.
+
+\begin{figure}[!h]
+\includegraphics[width=1\linewidth]{003_veteran_bpaft_bppo_survival.pdf} \caption{Veteran no-prior-therapy subset: Bayesian BPPO and BPAFT posterior mean survival for squamous histology at Karnofsky 30 and 70 (\texttt{newdata2}). Pointwise 95\% HPD bands from \texttt{survfit.spbp}; within each model, lower Karnofsky (30) has higher survival.}\label{fig:bpaftxbppo}
+\end{figure}
+
+Figure \ref{fig:bpaftxbppo} compares posterior mean survival for
+squamous histology at Karnofsky scores 30 and 70.
+Within each performance-status stratum, the BPPO and BPAFT mean curves
+are similar and the pointwise credible bands overlap substantially.
+Accordingly, when proportional hazards is doubtful, BPPO and BPAFT
+provide semi-parametric alternatives that relax proportional hazards, and
+the overlap of their survival curves illustrates how the BP formulation
+can be used to represent odds-based and accelerated failure time structure without a
+parametric baseline distribution.
+
+%\subsubsection{Comparison with Cox PH}\label{comparison-with-cox-ph}
+
+%To contrast the non-PH alternatives with a proportional-hazards
+%benchmark, we also fit a Cox model with the same linear predictor and
+%compute predicted survival for \texttt{newdata2} with
+%\texttt{survival::survfit()} \citep{survival:2000, Therneau:2020}.
+
+%\begin{figure}[!h]
+%\includegraphics[width=1\linewidth]{004_veteran_bpaft_bppo_cox.pdf} \caption{Veteran no-prior-therapy subset: predicted survival at Karnofsky 30 and 70 for Bayesian BPPO, Bayesian BPAFT, and Cox PH. Bernstein fits via \texttt{survfit.spbp}; Cox via \texttt{survival::survfit}. Divergence from Cox illustrates sensitivity to relaxing PH.}\label{fig:bpaftxbppo-cox}
+%\end{figure}
+
+%The comparison in Figure \ref{fig:bpaftxbppo-cox} illustrates how BPPO
+%and BPAFT predictions differ from the Cox PH benchmark. When the
+%proportional hazards assumption is questionable, differences between the
+%Cox and non-PH survival curves illustrate how model choice can affect
+%predicted survival, even when the same linear predictor is used. In this
+%example, the similarity of BPPO and BPAFT predictions, together with
+%their contrast against the Cox benchmark, suggests that differences may
+%be driven more by proportional-hazards versus non-proportional-hazards
+%structure than by differences between two competing flexible fits.
+
+\subsubsection{Model fit diagnostics}\label{model-fit-diagnostics}
+
+Diagnostics follow standard survival-analysis practice \citep{Collett2015, survival:2000}. For \pkg{spsurv} objects, \texttt{residuals()} accepts
+\texttt{type\ =\ "martingale"} (default), \texttt{"deviance"}, and \texttt{"cox-snell"}.
+Under a well-specified model, a Kaplan--Meier estimate of the
+cumulative hazard of Cox--Snell residuals is expected to lie close to
+the identity line. We compute Cox--Snell residuals with
+\texttt{residuals(...,\ type\ =\ "cox-snell")} and plot the cumulative hazard of
+those residuals against the reference.
+Deviance residuals transform martingale residuals to a signed square-root
+scale that emphasises subjects poorly explained by the fitted model; they are
+available via \texttt{residuals(...,\ type\ =\ "deviance")} and are useful for
+flagging influential or outlying observations after global calibration has been
+checked.
+
+For covariate functional form, martingale residuals should be taken from
+the fitted model that includes all covariates in the linear predictor.
+Scatter plots with LOESS smooths of full-model martingale residuals
+against each continuous covariate assess possible nonlinearity after
+adjustment; boxplots against categorical covariates summarise residual
+patterns within factor levels. Under a well-specified linear effect, the
+smooth against a continuous covariate should be approximately flat around
+zero. Figure~\ref{fig:martingale} (rows~2--3) shows these adjusted
+diagnostics for BPPO and BPAFT.
+
+Intercept-only martingale residuals plotted against a single covariate
+remain useful as unadjusted exploratory checks: they summarise how that
+covariate relates to overall event risk without holding other terms fixed.
+They should not be read as formal tests of the fitted linear term in the
+full model. Figure~\ref{fig:martingale} (bottom row) keeps this
+null-model view for Karnofsky score only.
+
+{\scriptsize\begin{verbatim}
+mod_cox_vet <- coxph(
+  Surv(time, status) ~ karno + celltype,
+  data = veteran2
+)
+
+fit_po_mle  <- bppo(f, data = veteran2, approach = "mle")
+fit_aft_mle <- bpaft(f, data = veteran2, approach = "mle")
+
+mr_bppo <- residuals(fit_po_mle, type = "martingale")
+mr_bpaft <- residuals(fit_aft_mle, type = "martingale")
+mr_cox <- residuals(mod_cox_vet, type = "martingale")
+
+bppo_null_fit <- bppo(
+  Surv(time, status) ~ 1,
+  data = veteran2,
+  approach = "mle"
+)
+mr_bppo_null <- residuals(bppo_null_fit, type = "martingale")
+\end{verbatim}}
+
+\begin{figure}[!h]
+\includegraphics[width=1\linewidth]{005_veteran_martingale.pdf} \caption{BPPO and BPAFT diagnostics (veteran no-prior-therapy). Top: Cox--Snell cumulative hazard vs 45° reference (global fit). Rows~2--3: full-model martingale residuals vs Karnofsky and cell type (functional form). Bottom: intercept-only residuals vs Karnofsky (exploratory); mild curvature may suggest nonlinearity.}\label{fig:martingale}
+\end{figure}
+
+Full-model martingale patterns are similar for BPPO and BPAFT. The
+adjusted smooth against Karnofsky score shows mild departure from
+linearity, so a nonlinear performance status term may be worth exploring
+in a full analysis; cell-type boxplots show no strong imbalance across
+histology levels after fitting the full linear predictor.
+
+\section{Discussion}\label{sec:discussion}
+
+Semi-parametric survival modelling based on the BP was previously
+introduced by \citet{Osman:2012}. The methods in the package do not require a
+parametric family for the baseline; instead, they rely on the polynomial
+coefficient structure. In contrast to partial-likelihood Cox regression,
+where the baseline hazard is left unspecified and absorbed by the
+partial likelihood, the BP formulation expresses baseline hazard, odds,
+or log-time features explicitly through polynomial coefficients and
+estimates smooth baseline shapes via this sieve construction, while
+retaining the usual PH/PO/AFT regression interpretation for covariate
+effects. AFT uses the monomial construction on the adaptive log-time
+domain, at the added per-iteration cost discussed in
+Section~\ref{sec:bp-domain}.
+
+When analysts have no strong reason to prefer PH, PO, or AFT, a
+practical workflow, consistent with general model comparison principles
+for failure time data \citep[Chapter 7]{kalbfleisch2002statistical} is to fit
+at least two families (typically BPPO and BPAFT, with BPPH added when PH
+interpretability is central), then compare survival predictions,
+residual diagnostics, and model-comparison summaries. Similar inferences
+across families can reinforce a conclusion, but they are not sufficient
+on their own; large discrepancies show sensitivity to the fitted
+regression family and should be reported together with residuals and
+context.
+
+The implementation
+emphasises residual-based diagnostics that are available in a common
+form across the fitted model families and that support routine applied
+checking of global fit and covariate functional form. More specialised
+diagnostics, including extensions tailored to proportional hazards or
+proportional odds structure, remain future work. These examples are intended
+to illustrate use and model comparison rather than provide a universal
+ranking of methods.
+
+Taken together, these results suggest that Bernstein-polynomial fits can
+recover regression effects with small finite-sample relative bias (\%) in the aligned
+generator--model settings considered here, while interval calibration is
+more sensitive to the baseline generator, sample size, and polynomial
+degree. The close pairing of maximum-likelihood and Bayesian summaries
+suggests that the default weakly informative priors mainly provide
+regularisation rather than materially shifting coefficient estimates in
+these simulations. The remaining departures from nominal coverage motivate the
+degree-sensitivity analysis in Section~\ref{sec:simulation} and support
+the practical recommendation that users examine local sensitivity to the
+polynomial degree.
+
+For predicted survival under maximum likelihood, delta-method bands from
+\texttt{survfit.spbp} can be unreliable when the Bernstein-polynomial
+information block is ill-conditioned, as in the larynx illustration; the
+package still reports such bands but warns only when \texttt{survfit()} is
+called, suggesting a lower Bernstein \texttt{degree} or a Bayesian refit (Figure~\ref{fig:larynx-survfit-plot},
+panel~(b)). In those settings,
+Bayesian posterior simulation or external resampling is the more
+trustworthy route for curve-wise uncertainty when maximum-likelihood
+delta-method bands remain unreliable, while Wald intervals for
+regression coefficients may remain usable when the corresponding
+information block is well identified.
+
+\section{Computational details}\label{sec:computational}
+
+The results in this paper were obtained using R 4.5.1, with maximum-likelihood
+fits relying on \pkg{MASS} 7.3-65 and Bayesian fits obtained with \pkg{rstan}
+2.32.7 (Stan 2.32.2; \pkg{StanHeaders} 2.32.10). All packages used in this
+manuscript are available from CRAN or the package repository. The analyses
+were conducted with the development version of \pkg{spsurv} prepared for the
+forthcoming release.
+
+\subsection{Reproducibility}\label{sec:reproducibility}
+
+The larynx and veteran workflows load the  \texttt{KMsurv::larynx}
+and \texttt{survival::veteran} datasets, factor \texttt{stage} or \texttt{celltype},
+and fit \pkg{spsurv} models with default \texttt{degree} (when omitted,
+\(m=\sqrt{n}\)), \texttt{scale = TRUE}, and \texttt{chains = 4}
+for Bayesian examples (\texttt{spbp.default()} default). Predicted survival from
+Bernstein fits is computed with \texttt{survfit.spbp}; multi-curve objects
+are tidied with \pkg{ggsurvfit} \citep{ggsurvfit:2024} and plotted with
+\pkg{ggplot2}. The Bayesian larynx fit uses
+\texttt{set.seed(1)} before calling \texttt{bpph(..., approach = "bayes")}.
+Monte Carlo summaries in Section~\ref{sec:simulation} are defined as
+follows: \emph{coverage} is the fraction of replicates in which a nominal
+95\% interval (Wald for MLE, HPD for Bayes) contains the data-generating
+coefficient; \emph{relative bias (\%)} is \(100(\hat\beta-\beta_0)/\beta_0\);
+and the \emph{SE calibration ratio} is the mean
+reported standard error divided by the Monte Carlo standard deviation of
+the estimates (Section~\ref{sec:simulation}).
+
+\subsubsection{Bayesian computation and MCMC settings}\label{sec:mcmc}
+
+Bayesian estimation calls \texttt{rstan::sampling()}, passing \texttt{chains}
+and any additional Stan arguments supplied in \texttt{...}, with defaults of
+\texttt{chains = 4} and \texttt{adapt\_delta = 0.8}; posterior summaries
+exclude warmup draws, and \pkg{rstan} keeps every post-warmup iteration
+unless \texttt{thin} is supplied. Package documentation recommends
+increasing \texttt{adapt\_delta} when NUTS diagnostics indicate poor mixing.
+The clinical illustrations (Section~\ref{sec:illustrations}) and the Monte
+Carlo simulation study (Section~\ref{sec:simulation}) use the same Bayesian
+MCMC defaults.
+ Table~\ref{tab:mcmc-settings} gives the exact settings. The degree-sensitivity
+study (Figure~\ref{fig:degree-llph-bpph-plot}) used MLE only.
+
+\begin{table}[!h]
+\footnotesize
+\centering
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{\label{tab:mcmc-settings}
+Bayesian MCMC settings used for the clinical illustrations  and the Monte Carlo simulation study.}
+\begin{tabularx}{\columnwidth}{@{}
+  >{\raggedright\arraybackslash}p{0.32\columnwidth}
+  >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}X
+@{}}
+\toprule
+ & Clinical illustrations & Monte Carlo simulation \\
+\midrule
+Chains & 4 & 4 \\
+Iterations per chain & 2000 & 2000 \\
+Warmup iterations & 1000 & 1000 \\
+Post-warmup draws retained & 1000 (no thinning) & 1000 (no thinning) \\
+Random seed & \texttt{set.seed(1)} (larynx fit) & \texttt{set.seed(r)}, \(r=1,\ldots,R\), \(R=1000\) \\
+Other settings & \texttt{cores} from \texttt{spbp.default()} & \texttt{cores} from \texttt{spbp.default()} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{Acknowledgments}\label{acknowledgments}
+
+The authors are grateful to everyone who contributed to discussions of this R package through helpful conversations, especially Dr.~Rumenick Pereira da Silva, Dr.~Silvio Cabral Patrício, Prof.~Dr.~Dani Gamerman, Prof.~Dr.~Marcos Oliveira Prates, and Prof.~Dr.~Marcelo Azevedo Costa. The authors acknowledge scholarship support from CEMIG and support from CNPq, CAPES, and FAPEMIG in Brazil. Additional institutional support came from the Department of Statistics and the School of Engineering at the Federal University of Minas Gerais (UFMG).
+
+\appendix
+\section{Bernstein-to-monomial coefficient conversion}\label{app:monomial}
+
+Section~\ref{sec:bp-domain} rewrites the BP as
+\(B_m(t)=\sum_{i=0}^m c_i b_{i,m}(t)\) in the equivalent monomial form
+\(B_m(t) = \sum_{k=0}^m a_k t^k\), where \(c_i\) is the \(i\)-th Bernstein
+coefficient and \(a_k\) is the corresponding coefficient in the monomial
+representation. This appendix gives the closed-form map from \(c_i\) to
+\(a_k\) used by the BPAFT implementation. To obtain the monomial
+coefficients \(a_k\), expand \((1-t)^{m-i}\) and collect powers of \(t\):
+{\footnotesize\begin{align}
+b_{i,m}(t)
+&=
+\binom{m}{i} t^i
+\sum_{j=0}^{m-i}
+\binom{m-i}{j}(-1)^j t^j \nonumber \\
+&=
+\sum_{k=i}^{m}
+\binom{m}{i}
+\binom{m-i}{k-i}
+(-1)^{k-i} t^k .
+\end{align}}
+Therefore,
+{\footnotesize
+\begin{align}
+a_k =
+\sum_{i=0}^{k}
+c_i
+\binom{m}{i}
+\binom{m-i}{k-i}
+(-1)^{k-i},
+\qquad k=0,\ldots,m .
+\end{align}
+}
+This transformation matrix depends only on the polynomial degree \(m\) and
+is therefore formed once per fit; only the monomial powers
+\(u_i(\boldsymbol{\beta})^k\) need to be re-evaluated as \(\boldsymbol{\beta}\)
+changes during estimation (Section~\ref{sec:bp-domain}).
+
+\section{Derivation of the Bernstein-polynomial derivative property}\label{app:derivative-derivation}
+
+Section~\ref{bernstein-polynomials-in-time-to-event-analysis} states that
+the derivative of a degree-\(m\) Bernstein approximation is itself a
+Bernstein expansion of degree \(m-1\), with coefficients given by first
+differences of \(c\). This appendix gives the full term-by-term
+derivation. The first derivative with respect to \(t\) is
+{\footnotesize\begin{align}
+d B_m^c(t)
+&= \sum_{i = 0}^{m} c\left(\frac{i}{m}\right) {m \choose i}
+\left\{
+i t^{i-1}(1-t)^{m-i}
+-
+(m-i)t^i(1-t)^{m-i-1}
+\right\} dt \nonumber \\
+&= m \sum_{i=0}^{m} c\left(\frac{i}{m}\right)b_{i-1,m-1}(t)dt
+-
+m \sum_{i=0}^{m} c\left(\frac{i}{m}\right)b_{i,m-1}(t)dt \nonumber \\
+&= m \sum_{j=-1}^{m-1} c\left(\frac{j+1}{m}\right)b_{j,m-1}(t)dt
+-
+m \sum_{i=0}^{m} c\left(\frac{i}{m}\right)b_{i,m-1}(t)dt \nonumber \\
+&= m \sum_{i=0}^{m-1}
+\left\{
+c\left(\frac{i+1}{m}\right)
+-
+c\left(\frac{i}{m}\right)
+\right\}
+b_{i,m-1}(t)dt \nonumber \\
+&= m \sum_{i=0}^{m-1} \Delta c_i^1 b_{i,m-1}(t)dt .
+\end{align}}
+where \(j = i -1\), and \(b_{-1,m-1}(t) = b_{m,m-1}(t) =0\)
+\citep{farouki2012bernstein} by definition.
+
+\section{AFT delta-method gradients and parameterization comparison}\label{app:aft-gradients}
+
+Section~\ref{sec:bp-domain} notes that gradients of baseline quantities with
+respect to \(\boldsymbol{\beta}\) under the BPAFT rescaling include endpoint
+correction terms beyond the ordinary \(-\boldsymbol{x}_i\) contribution.
+This appendix gives the full expressions used by \texttt{survfit.spbp} and
+compares the resulting derivative structure with an alternative
+covariate-scaled-time parameterization.
+
+For a differentiable baseline quantity \(q\) evaluated at the scaled
+argument \(u_i(\beta)\), the chain rule gives
+{\footnotesize\begin{align}
+\frac{\partial u_i}{\partial\boldsymbol{\beta}}
+&=
+\frac{1}{R(\boldsymbol{\beta})}
+\left(
+-\boldsymbol{x}_i
++\boldsymbol{x}_{i^\ast}
+-u_i(\boldsymbol{\beta})\bigl[\boldsymbol{x}_{i^\ast}-\boldsymbol{x}_{j^\ast}\bigr]
+\right),
+\label{eq:aft-u-deriv}
+\end{align}}
+where \(R(\boldsymbol{\beta})=w_{\max}(\boldsymbol{\beta})-w_{\min}(\boldsymbol{\beta})\),
+\(i^\ast=\arg\min_i w_i(\boldsymbol{\beta})\), and
+\(j^\ast=\arg\max_i w_i(\boldsymbol{\beta})\).
+Only the two training subjects at the residual extremes contribute
+through \(\boldsymbol{x}_{i^\ast}\) and \(\boldsymbol{x}_{j^\ast}\); all other
+subjects enter only through \(-\boldsymbol{x}_i/R\).
+For a predicted cumulative hazard
+\(H(t\mid\boldsymbol{x})=\boldsymbol{\gamma}'\boldsymbol{G}\bigl(u(\boldsymbol{\beta})\bigr)\)
+at fixed \(t\), with \(h=\partial H/\partial w\) the log-time hazard,
+{\footnotesize\begin{align}
+\frac{\partial H(t\mid\boldsymbol{x})}{\partial\boldsymbol{\beta}}
+=
+h\,
+\left(
+-\boldsymbol{x}
++\boldsymbol{x}_{i^\ast}
+-u(\boldsymbol{\beta})\bigl[\boldsymbol{x}_{i^\ast}-\boldsymbol{x}_{j^\ast}\bigr]
+\right).
+\label{eq:aft-H-grad}
+\end{align}}
+Equations~\eqref{eq:aft-u-deriv}--\eqref{eq:aft-H-grad} are the gradients
+used in \texttt{survfit.spbp} delta-method bands for BPAFT; they reduce to
+the frozen-endpoint form \(-h\,\boldsymbol{x}\) only if
+\(w_{\min}\) and \(w_{\max}\) are treated as fixed at the MLE.
+
+For any differentiable baseline quantity
+\(q(w_i)\) evaluated directly at the log residual (not composed with
+\(u_i(\boldsymbol{\beta})\)),
+{\footnotesize\begin{align}
+\frac{\partial w_i}{\partial\boldsymbol{\beta}}
+=
+-\boldsymbol{x}_i,
+\qquad
+\frac{\partial q(w_i)}{\partial\boldsymbol{\beta}}
+=
+-q'(w_i)\,\boldsymbol{x}_i,
+\qquad
+\frac{\partial^2 q(w_i)}{\partial\boldsymbol{\beta}\partial\boldsymbol{\beta}'}
+=
+q''(w_i)\,\boldsymbol{x}_i\boldsymbol{x}_i'.
+\label{eq:aft-deriv}
+\end{align}}
+Thus, score contributions for \(\boldsymbol{\beta}\) can be obtained by
+differentiating the BP representation once with respect to its scalar
+argument and then multiplying by the covariates, and the second
+derivative in \eqref{eq:aft-deriv} has the outer-product form
+\(\boldsymbol{x}_i\boldsymbol{x}_i'\). This structure is simpler than
+differentiating a full covariate-dependent time-scale representation.
+Table~\ref{tab:aft-deriv-compare} compares the two parameterizations
+directly: writing the scaled time as
+\(v_i=y_i\,e^{-\boldsymbol{\beta}'\boldsymbol{x}_i}\),
+so that \(w_i=\log v_i\), the same baseline quantity
+can equivalently be written as \(q(w_i)\) or as
+\(p\{v_i\}=q(w_i)\) on the scaled-time index. Because
+the index derivative \(\partial w_i/\partial\boldsymbol{\beta}\) in
+\eqref{eq:aft-deriv} is the constant \(-\boldsymbol{x}_i\), every order of
+derivative on the \(w_i\) scale stops at \(\boldsymbol{x}_i\) or
+\(\boldsymbol{x}_i\boldsymbol{x}_i'\); on the \(v_i\)
+scale, the index derivative is itself proportional to
+\(v_i\), so it is reintroduced at every derivative
+order, which is the additional multiplicative time-scale structure in
+the Hessian that the log-residual formulation avoids.
+
+\begin{table}[!h]
+\footnotesize
+\centering
+\caption{\label{tab:aft-deriv-compare} Derivative structure under log-time residual \(w_i\) vs covariate-scaled time \(v_i\) (\(w_i=\log v_i\)) for a generic baseline quantity. \(q(\cdot)\) and \(p(\cdot)\) denote baseline functions; primes denote derivatives w.r.t.\ the scalar argument.}
+\begin{tabularx}{\columnwidth}{%
+>{\raggedright\arraybackslash}p{0.27\columnwidth}
+>{\raggedright\arraybackslash}X
+>{\raggedright\arraybackslash}X}
+\toprule
+ & Log-time residual \(w_i\) & Scaled time \(v_i\) \\
+\midrule
+Index &
+\(w_i=\log(y_i)-\boldsymbol{\beta}'\boldsymbol{x}_i\) &
+\(v_i=y_i\,e^{-\boldsymbol{\beta}'\boldsymbol{x}_i}\)
+\\[0.7em]
+Baseline quantity &
+\(q(w_i)\) &
+\(p\{v_i\}=q(w_i)\)
+\\[0.7em]
+\(\partial(\text{index})/\partial\boldsymbol{\beta}\) &
+\(-\boldsymbol{x}_i\) (constant) &
+\(-\boldsymbol{x}_i\,v_i\) (\(\boldsymbol{\beta}\)-dependent)
+\\[0.7em]
+\(\partial(\text{baseline})/\partial\boldsymbol{\beta}\) &
+\(-q'(w_i)\,\boldsymbol{x}_i\) &
+\(-p'\{v_i\}\,v_i\,\boldsymbol{x}_i\)
+\\[0.7em]
+\(\partial^2(\text{baseline})/\partial\boldsymbol{\beta}\partial\boldsymbol{\beta}'\) &
+\(q''(w_i)\,\boldsymbol{x}_i\boldsymbol{x}_i'\) &
+\(\bigl[v_i\,p'\{v_i\}+v_i^2\,p''\{v_i\}\bigr]\boldsymbol{x}_i\boldsymbol{x}_i'\)
+\\[0.7em]
+Extra \(\boldsymbol{\beta}\)-dependence beyond
+\(\boldsymbol{x}_i\boldsymbol{x}_i'\) &
+none for \(q(w_i)\); endpoint terms in \eqref{eq:aft-u-deriv} when \(q\) is evaluated at \(u_i(\boldsymbol{\beta})\) &
+\(v_i\) re-enters at every derivative order
+\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Hessian block-inversion and numerical conditioning}\label{app:hessian-blocks}
+
+Section~\ref{sec:delta} notes that the observed Hessian used for
+delta-method inference is inverted block-wise, using separate blocks for
+the regression coefficients \(\boldsymbol{\beta}\) and the basis parameters
+\(\boldsymbol{\gamma}\). This block-wise inversion is a numerical
+stabilisation strategy for cases in which the full observed information
+matrix is singular or nearly singular, so that direct inversion may be
+unreliable \citep{nocedal2006numerical}. If one of the resulting blocks
+requires additional numerical conditioning, a Cholesky--QR solve is used
+in preference to a full matrix pseudoinverse, since the pseudoinverse can
+mask, rather than resolve, near-singularity in a way that silently
+degrades the reported standard errors. This conditioning choice is
+internal to \texttt{vcov()} and \texttt{survfit.spbp} and does not require
+any action from the user; the resulting instability warnings are described
+in Section~\ref{sec:delta}.
+
+\section{Monte Carlo numerical summaries}\label{app:mc-tables}
+
+This appendix reports the numerical summaries underlying
+Figure~\ref{fig:degree-llph-bpph-plot} in
+Section~\ref{sec:simulation}; Table~\ref{tab:bp-mcsim-abc} in the main text
+reports the baseline Monte Carlo grid. Both are regenerated from
+\texttt{bp-mcsim-results.rds} and \texttt{degree\_llph\_bpph.csv} under
+\texttt{paper/} by scripts in \texttt{paper/simulation/} and
+\texttt{paper/render/}.
+
+\begin{table}[!h]
+\footnotesize
+\centering
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\caption{\label{tab:degree-llph-bpph}
+Degree sensitivity under LLPH/BPPH (\(R=1000\)). Coverage for 95\% Wald intervals; relative bias (\%); SE ratio. Degree rule \(m=n^p\) (see Figure~\ref{fig:degree-llph-bpph-plot}).}
+\begin{tabularx}{\columnwidth}{@{}
+  >{\raggedright\arraybackslash}p{0.13\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.07\columnwidth}
+  >{\raggedright\arraybackslash}X
+  >{\raggedleft\arraybackslash}p{0.13\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.13\columnwidth}
+  >{\raggedleft\arraybackslash}p{0.12\columnwidth}
+@{}}
+\toprule
+Degree rule & \(m\) & Parameter & Coverage (\%) & Rel. bias (\%) & SE ratio \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{\(n=50\)}} \\
+\cmidrule(lr){1-6}
+\(n^0.2\) &  3 & Continuous (age) & 64.7 &  6.9 & 0.57 \\
+\(n^0.2\) &  3 & Binary (sex) & 91.0 & -8.4 & 0.91 \\
+\(n^0.3\) &  4 & Continuous (age) & 66.8 & -0.5 & 0.55 \\
+\(n^0.3\) &  4 & Binary (sex) & 89.3 & -1.0 & 0.84 \\
+\(n^0.4\) &  5 & Continuous (age) & 68.6 & -5.6 & 0.59 \\
+\(n^0.4\) &  5 & Binary (sex) & 88.6 &  4.0 & 0.82 \\
+\(n^0.5\) &  8 & Continuous (age) & 74.6 & -10.5 & 0.73 \\
+\(n^0.5\) &  8 & Binary (sex) & 91.0 &  8.3 & 0.89 \\
+\(n^0.6\) & 11 & Continuous (age) & 79.8 & -11.2 & 0.81 \\
+\(n^0.6\) & 11 & Binary (sex) & 91.7 &  8.7 & 0.89 \\
+\(n^0.7\) & 16 & Continuous (age) & 85.8 & -10.3 & 0.86 \\
+\(n^0.7\) & 16 & Binary (sex) & 92.9 &  8.1 & 0.91 \\
+\(n^0.8\) & 23 & Continuous (age) & 88.6 & -10.3 & 0.87 \\
+\(n^0.8\) & 23 & Binary (sex) & 93.2 &  8.5 & 0.91 \\
+\addlinespace[4pt]
+\multicolumn{6}{@{}l}{\textit{\(n=100\)}} \\
+\cmidrule(lr){1-6}
+\(n^0.2\) &  3 & Continuous (age) & 43.1 &  14.0 & 0.62 \\
+\(n^0.2\) &  3 & Binary (sex) & 91.2 & -13.3 & 0.97 \\
+\(n^0.3\) &  4 & Continuous (age) & 56.3 &  8.0 & 0.53 \\
+\(n^0.3\) &  4 & Binary (sex) & 90.0 & -7.2 & 0.85 \\
+\(n^0.4\) &  7 & Continuous (age) & 76.2 & -5.6 & 0.64 \\
+\(n^0.4\) &  7 & Binary (sex) & 90.8 &  5.9 & 0.85 \\
+\(n^0.5\) & 10 & Continuous (age) & 79.5 & -7.4 & 0.74 \\
+\(n^0.5\) & 10 & Binary (sex) & 90.3 &  7.8 & 0.87 \\
+\(n^0.6\) & 16 & Continuous (age) & 83.4 & -6.3 & 0.83 \\
+\(n^0.6\) & 16 & Binary (sex) & 91.2 &  6.6 & 0.90 \\
+\(n^0.7\) & 26 & Continuous (age) & 88.1 & -5.7 & 0.87 \\
+\(n^0.7\) & 26 & Binary (sex) & 91.7 &  6.2 & 0.91 \\
+\(n^0.8\) & 40 & Continuous (age) & 90.6 & -5.5 & 0.90 \\
+\(n^0.8\) & 40 & Binary (sex) & 93.0 &  5.9 & 0.92 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\clearpage
+
+\input{spsurv.bbl}
+
+\address{%
+Renato Valladares Panaro\\
+University Medical Center Göttingen\\%
+Department of Medical Statistics\\ Georg-August-Universität\\ 37073 Göttingen, Germany\\
+%
+\url{https://rvpanaro.github.io/spsurv/}\\%
+%
+\href{mailto:rvpanaro@gmail.com}{\nolinkurl{rvpanaro@gmail.com}}%
+}
+
+\address{%
+Vinícius Mayrink\\
+Universidade Federal de Minas Gerais\\%
+\\
+%
+%
+%
+\href{mailto:vdinizm@gmail.com}{\nolinkurl{vdinizm@gmail.com}}%
+}
+
+\address{%
+Fábio Demarqui\\
+Universidade Federal de Minas Gerais\\%
+\\
+%
+%
+%
+\href{mailto:fndemarqui@gmail.com}{\nolinkurl{fndemarqui@gmail.com}}%
+}
+
+\end{document}

@@ -23,7 +23,14 @@ _spsurv_bayes_*.rds
 Rplots.pdf
 **/Rplots.pdf
 paper/tex-fragments.rds
-inst/simulation/output/
+paper/bp-mcsim-results.rds
+paper/degree_llph_bpph.csv
+paper/*.pdf
+paper/simulation/output/
+paper/logs/
+paper/build/
+paper/spsurv.pdf
+paper/archive/
 figures/
 vignettes/*_cache/
 vignettes/*.html

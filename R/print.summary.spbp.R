@@ -44,9 +44,21 @@
   on.exit(options(savedig))
 
   coef_tab <- x$coefficients
+  coef_int_cols <- NULL
+  if (isTRUE(controls$show_intervals) && !is.null(x$coef_interval)) {
+    coef_int_tab <- x$coef_interval
+    lower_col <- grep("^lower", colnames(coef_int_tab), value = TRUE)[1]
+    upper_col <- grep("^upper", colnames(coef_int_tab), value = TRUE)[1]
+    if (!is.na(lower_col) && !is.na(upper_col)) {
+      coef_int_cols <- coef_int_tab[, c(lower_col, upper_col), drop = FALSE]
+      colnames(coef_int_cols) <- .spbp_interval_colnames(colnames(coef_int_tab))
+    }
+  }
+
   if (approach == "mle") {
     reg_tab <- cbind(
       Estimate = coef_tab[, "coef"],
+      coef_int_cols,
       `Std. Error` = coef_tab[, "se(coef)"],
       `z value` = coef_tab[, "z"],
       `Pr(>|z|)` = coef_tab[, "Pr(>|z|)"]
@@ -56,6 +68,7 @@
   } else {
     reg_tab <- cbind(
       Estimate = coef_tab[, "mean(coef)"],
+      coef_int_cols,
       `Std. Error` = coef_tab[, "sd(coef)"]
     )
     has_pvalue <- FALSE

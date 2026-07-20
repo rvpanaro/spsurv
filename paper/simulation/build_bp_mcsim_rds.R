@@ -1,21 +1,21 @@
 #!/usr/bin/env Rscript
-# Aggregate inst/simulation/output/results-*.txt into paper/bp-mcsim-results.rds.
+# Aggregate paper/simulation/output/results-*.txt into paper/bp-mcsim-results.rds.
 #
 # Usage (from package root):
-#   Rscript inst/simulation/build_bp_mcsim_rds.R
+#   Rscript paper/simulation/build_bp_mcsim_rds.R
 
-args <- commandArgs(trailingOnly = FALSE)
-file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
-pkg_root <- if (length(file_arg)) {
-  normalizePath(file.path(dirname(file_arg[[1L]]), "..", ".."), winslash = "/")
-} else {
-  normalizePath(getwd(), winslash = "/")
+for (src in c("paper/paths.R", "../paths.R")) {
+  if (file.exists(src)) {
+    source(src, local = FALSE)
+    break
+  }
 }
+paths <- source_paper_paths()
 
-sim_dir <- file.path(pkg_root, "inst", "simulation")
+sim_dir <- paths$sim_dir
 source(file.path(sim_dir, "R", "simulation_io.R"), local = TRUE)
 
-output_dir <- file.path(sim_dir, "output")
+output_dir <- paths$sim_output_dir
 results_path <- find_latest_output("results", output_dir)
 censoring_path <- find_latest_output("censoring", output_dir)
 if (is.null(results_path)) {
@@ -80,9 +80,9 @@ summary <- do.call(rbind, lapply(split_keys, function(dd) {
   }
 }))
 
-paper_dir <- file.path(pkg_root, "paper")
+paper_dir <- paths$paper_dir
 dir.create(paper_dir, recursive = TRUE, showWarnings = FALSE)
-out_rds <- file.path(paper_dir, "bp-mcsim-results.rds")
+out_rds <- paths$mcsim_rds
 
 meta <- list(
   results_path = results_path,

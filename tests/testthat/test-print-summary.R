@@ -10,6 +10,7 @@ test_that("print.summary.bpph.mle outputs standard PH summary", {
   expect_output(print(s), "Call:")
   expect_output(print(s), "Bernstein PH model")
   expect_output(print(s), "Regression coefficients:")
+  expect_output(print(s), "2.5%")
   expect_output(print(s), "Exponentiated coefficients:")
   expect_output(print(s), "loglik =|AIC =")
 })
@@ -20,6 +21,7 @@ test_that("print.summary.bpph.bayes outputs standard Bayesian PH summary", {
   expect_output(print(s), "Call:")
   expect_output(print(s), "Bayesian Bernstein PH model")
   expect_output(print(s), "Regression coefficients:")
+  expect_output(print(s), "2.5%")
   expect_output(print(s), "DIC =|WAIC =")
 })
 

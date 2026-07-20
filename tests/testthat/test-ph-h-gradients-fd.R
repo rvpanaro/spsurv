@@ -1,5 +1,4 @@
 # Analytic vs finite-difference gradients of H(t|x) for BPPH (PH model).
-# Detailed numeric output: Rscript inst/check-ph-h-gradients-fd.R
 
 library(spsurv)
 

@@ -4,6 +4,9 @@
 * **tidybayes:** `as_draws_df.spbp()`, `spread_surv_draws.spbp()`, and S3 hooks for `tidy_draws` / `spread_draws` / `gather_draws` on Bayes fits; posterior draw indices (`.chain`, `.iteration`, `.draw`).
 * **Prediction:** censored-style `predict.spbp()` types (`survival`, `time`, `linear_pred`); `augment.spbp()`.
 * **Vignette:** `vignette("tidymodels")`.
+* **Inference:** `vcov.spbp()` no longer applies a diagonal ridge (`polish` removed); beta standard errors are unchanged when the Bernstein block is stable and no longer inflated when it is ill-conditioned.
+* **Summary:** `summary.spbp()` now includes a `coef_interval` component (Wald for MLE, HPD for Bayes) and prints it when `show_intervals = TRUE`.
+* **Repository:** paper workflow moved from `inst/` to `paper/` (excluded from the package tarball).
 
 # spsurv 1.0.2
 

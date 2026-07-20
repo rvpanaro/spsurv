@@ -1,21 +1,28 @@
-# Monte Carlo regression study for spsurv.TeX figure 007.
+# Monte Carlo regression study for spsurv.TeX Table tab:bp-mcsim-abc.
 #
 # Usage (from package root):
-#   Rscript -e 'devtools::load_all(".", quiet=TRUE); source("inst/simulation/monte_carlo_regression.R")'
+#   Rscript -e 'devtools::load_all(".", quiet=TRUE); source("paper/simulation/monte_carlo_regression.R")'
 #
-# Smoke test:
+# Production defaults: R=1000, n in {50, 100}, parallel replicates (snowfall).
+# MLE only (Bayes archived separately):
+#   SPSURV_MC_MLE_ONLY=1 Rscript -e '... source("paper/simulation/monte_carlo_regression.R")'
+#   Then: Rscript paper/simulation/combine-mc-bayes-mle.R
+# Sequential smoke test only:
 #   SPSURV_MC_REPLICATES=2 SPSURV_MC_NSIZES=100 SPSURV_MC_FAST_BAYES=1 \
-#   SPSURV_MC_SEQUENTIAL=1 Rscript -e 'devtools::load_all(".", quiet=TRUE); source("inst/simulation/monte_carlo_regression.R")'
+#   SPSURV_MC_SEQUENTIAL=1 Rscript -e 'devtools::load_all(".", quiet=TRUE); source("paper/simulation/monte_carlo_regression.R")'
+#
+# Production Bayes fits use \code{spbp}/\code{rstan} defaults (4 chains,
+# \code{iter = 2000}, \code{warmup = 1000}); set \code{SPSURV_MC_FAST_BAYES=1}
+# only for smoke tests.
 
 if (!exists("pkg_root", inherits = FALSE)) {
-  pkg_root <- Sys.getenv("SPSURV_ROOT", unset = normalizePath("../..", winslash = "/"))
-  if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-    pkg_root <- normalizePath(getwd(), winslash = "/")
-  }
+  paths <- source_paper_paths()
+  pkg_root <- paths$pkg_root
 }
 
-sim_dir <- file.path(pkg_root, "inst", "simulation")
-output_dir <- file.path(sim_dir, "output")
+paths <- if (exists("paths", inherits = FALSE)) paths else source_paper_paths()
+sim_dir <- paths$sim_dir
+output_dir <- paths$sim_output_dir
 dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
 req_pkgs <- c("survival", "rsurv", "flexsurv")
@@ -48,13 +55,28 @@ if (!is.finite(R) || R < 1L) {
   R <- 1000L
 }
 
-nsizes <- parse_int_vec(Sys.getenv("SPSURV_MC_NSIZES", ""), c(100L, 300L))
+nsizes <- parse_int_vec(Sys.getenv("SPSURV_MC_NSIZES", ""), c(50L, 100L))
 nsizes <- nsizes[is.finite(nsizes) & nsizes > 0L]
 if (!length(nsizes)) {
-  nsizes <- c(100L, 300L)
+  nsizes <- c(50L, 100L)
 }
 
-approaches <- c("mle", "bayes")
+approaches <- {
+  if (nzchar(Sys.getenv("SPSURV_MC_MLE_ONLY", ""))) {
+    c("mle")
+  } else if (nzchar(Sys.getenv("SPSURV_MC_BAYES_ONLY", ""))) {
+    c("bayes")
+  } else {
+    raw <- Sys.getenv("SPSURV_MC_APPROACHES", "mle,bayes")
+    out <- strsplit(gsub("\\s+", "", raw), ",", fixed = TRUE)[[1L]]
+    out <- out[out %in% c("mle", "bayes")]
+    if (!length(out)) {
+      c("mle", "bayes")
+    } else {
+      out
+    }
+  }
+}
 gdists <- c("weibull", "llogis")
 models <- c("ph", "po", "aft")
 if (nzchar(Sys.getenv("SPSURV_MC_CORRECT_SPECIFIED_ONLY", ""))) {
@@ -67,22 +89,69 @@ scale <- 1
 tau <- 10
 
 fast_bayes <- nzchar(Sys.getenv("SPSURV_MC_FAST_BAYES", ""))
-bayes_mcmc_args <- if (fast_bayes) {
-  list(chains = 1L, iter = 150L, warmup = 75L, cores = 1L, verbose = FALSE)
-} else {
-  list(chains = 1L, iter = 800L, warmup = 400L, cores = 1L, verbose = FALSE)
-}
-
 sequential <- nzchar(Sys.getenv("SPSURV_MC_SEQUENTIAL", ""))
 use_parallel <- !sequential &&
   requireNamespace("snowfall", quietly = TRUE) &&
   R > 1L
 
-tag <- format(Sys.time(), "%Y%m%d-%H%M%S")
-tag <- paste0(tag, "-", Sys.getpid())
-results_path <- file.path(output_dir, paste0("results-", tag, ".txt"))
-errors_path <- file.path(output_dir, paste0("errors-", tag, ".txt"))
-censoring_path <- file.path(output_dir, paste0("censoring-", tag, ".txt"))
+bayes_fit_args <- function(approach) {
+  if (!identical(approach, "bayes")) {
+    return(list())
+  }
+  if (fast_bayes) {
+    return(list(
+      chains = 1L,
+      iter = 150L,
+      warmup = 75L,
+      cores = 1L,
+      verbose = FALSE
+    ))
+  }
+  cores_env <- suppressWarnings(as.integer(Sys.getenv("SPSURV_MC_BAYES_CORES", "")))
+  if (is.finite(cores_env) && cores_env >= 1L) {
+    return(list(cores = cores_env))
+  }
+  if (use_parallel) {
+    return(list(cores = 1L))
+  }
+  list()
+}
+
+resume_results <- Sys.getenv("SPSURV_MC_RESUME_RESULTS", "")
+if (nzchar(resume_results)) {
+  results_path <- resume_results
+  dirn <- dirname(results_path)
+  base <- basename(results_path)
+  errors_path <- file.path(dirn, sub("^results-", "errors-", base))
+  censoring_path <- file.path(dirn, sub("^results-", "censoring-", base))
+  tag <- sub("^results-", "", sub("\\.txt$", "", base))
+} else {
+  tag <- format(Sys.time(), "%Y%m%d-%H%M%S")
+  tag <- paste0(tag, "-", Sys.getpid())
+  results_path <- file.path(output_dir, paste0("results-", tag, ".txt"))
+  errors_path <- file.path(output_dir, paste0("errors-", tag, ".txt"))
+  censoring_path <- file.path(output_dir, paste0("censoring-", tag, ".txt"))
+}
+
+completed_scenarios <- character()
+if (file.exists(results_path) && file.info(results_path)$size > 0) {
+  # Keep this light: only read columns needed to identify completed cells.
+  # Columns (no header): 1=nsize, 10=gdist, 11=approach, 12=model
+  cc <- rep("NULL", 13L)
+  cc[c(1L, 10L, 11L, 12L)] <- c("integer", "character", "character", "character")
+  existing <- utils::read.table(
+    results_path,
+    header = FALSE,
+    stringsAsFactors = FALSE,
+    quote = "\"",
+    colClasses = cc
+  )
+  if (nrow(existing)) {
+    completed_scenarios <- unique(
+      paste(existing$V1, existing$V10, existing$V11, existing$V12)
+    )
+  }
+}
 
 truth_for_names <- function(par_names) {
   out <- rep(NA_real_, length(par_names))
@@ -149,7 +218,7 @@ simulate_dataset <- function(r, nsize, gdist, model) {
 }
 
 fit_spbp_row <- function(dat, nsize, gdist, approach, model, rep_id) {
-  m <- as.integer(ceiling(nsize^0.4))
+  m <- as.integer(ceiling(nsize^0.5))
   fit_fun <- switch(
     model,
     ph = spsurv::bpph,
@@ -167,7 +236,7 @@ fit_spbp_row <- function(dat, nsize, gdist, approach, model, rep_id) {
           degree = m,
           approach = approach
         ),
-        if (identical(approach, "bayes")) bayes_mcmc_args else list()
+        if (identical(approach, "bayes")) bayes_fit_args(approach) else list()
       )
     ),
     silent = TRUE
@@ -338,22 +407,39 @@ run_block <- function(reps, nsize, gdist, approach, model) {
 message(
   "Monte Carlo: R=", R,
   ", nsizes=", paste(nsizes, collapse = ","),
-  if (fast_bayes) " (fast Bayes)" else "",
+  if (fast_bayes) " (fast Bayes smoke)" else " (spbp/rstan default Bayes MCMC)",
   if (sequential) " (sequential)" else if (use_parallel) " (parallel)" else " (sequential)"
 )
 message("Writing: ", results_path)
+if (length(completed_scenarios)) {
+  message(
+    "Resume: found ", length(completed_scenarios),
+    " completed scenario cell(s) in existing results; will skip them."
+  )
+}
 
 reps <- seq_len(R)
 
 run_parallel_reps <- function(reps, worker_fun, export_vars) {
-  ncpus <- max(1L, parallel::detectCores(logical = TRUE) - 2L)
+  workers_env <- suppressWarnings(as.integer(Sys.getenv("SPSURV_MC_WORKERS", "")))
+  ncpus <- if (is.finite(workers_env) && workers_env >= 1L) {
+    workers_env
+  } else {
+    max(1L, parallel::detectCores(logical = TRUE) - 2L)
+  }
   snowfall::sfInit(parallel = TRUE, cpus = ncpus)
   on.exit(snowfall::sfStop(), add = TRUE)
-  snowfall::sfLibrary(spsurv)
+  # sfLibrary(spsurv) loads the *installed* package and ignores devtools::load_all()
+  # in the parent process. Reload package source on each worker instead.
+  if (!requireNamespace("devtools", quietly = TRUE)) {
+    stop("devtools is required for parallel MC with load_all() source.", call. = FALSE)
+  }
+  snowfall::sfExport("pkg_root")
+  snowfall::sfClusterEval(devtools::load_all(pkg_root, quiet = TRUE, reset = FALSE))
   snowfall::sfLibrary(survival)
   snowfall::sfLibrary(rsurv)
   snowfall::sfLibrary(flexsurv)
-  snowfall::sfExport(export_vars)
+  do.call(snowfall::sfExport, as.list(export_vars))
   snowfall::sfLapply(reps, worker_fun)
 }
 
@@ -361,6 +447,14 @@ for (nsize in nsizes) {
   for (approach in approaches) {
     for (gdist in gdists) {
       for (model in models) {
+        scenario_key <- paste(nsize, gdist, approach, model)
+        if (scenario_key %in% completed_scenarios) {
+          message(
+            "Skipping completed scenario n=", nsize, " ", gdist, " ", approach, " ", model,
+            " ..."
+          )
+          next
+        }
         message(
           "Scenario n=", nsize, " ", gdist, " ", approach, " ", model,
           " ..."
@@ -372,7 +466,7 @@ for (nsize in nsizes) {
             c(
               "run_monte_carlo", "simulate_dataset", "fit_spbp_row",
               "truth_for_names", "se_spbp", "beta_dgp", "shape", "scale",
-              "tau", "bayes_mcmc_args", "rsurv_package", "nsize", "gdist",
+              "tau", "bayes_fit_args", "fast_bayes", "rsurv_package", "nsize", "gdist",
               "approach", "model"
             )
           )
@@ -384,6 +478,11 @@ for (nsize in nsizes) {
         }
       }
       if (identical(approach, "mle") && "aft" %in% models) {
+        scenario_key <- paste(nsize, gdist, "mle", "flexsurv")
+        if (scenario_key %in% completed_scenarios) {
+          message("Skipping completed scenario n=", nsize, " ", gdist, " mle flexsurv ...")
+          next
+        }
         message("Scenario n=", nsize, " ", gdist, " mle flexsurv ...")
         if (use_parallel) {
           blocks <- run_parallel_reps(
@@ -407,4 +506,25 @@ for (nsize in nsizes) {
 }
 
 message("Done. Results: ", results_path)
-message("Next: Rscript inst/simulation/build_bp_mcsim_rds.R")
+message("Censoring: ", censoring_path)
+message("Errors: ", errors_path)
+if (file.exists(file.path(paths$paper_dir, "paper-runtime.R"))) {
+  source(file.path(paths$paper_dir, "paper-runtime.R"), local = FALSE)
+  manifest_path <- paper_write_manifest(
+    paths,
+    list(
+      run_id = tag,
+      step = "mc_regression_complete",
+      results_path = results_path,
+      censoring_path = censoring_path,
+      errors_path = errors_path,
+      replicates = R,
+      nsizes = nsizes,
+      fast_bayes = fast_bayes,
+      sequential = sequential,
+      stan_defaults = if (!fast_bayes) paper_spbp_stan_defaults() else "smoke_fast_bayes"
+    )
+  )
+  message("Manifest: ", manifest_path)
+}
+message("Next: Rscript paper/simulation/build_bp_mcsim_rds.R")

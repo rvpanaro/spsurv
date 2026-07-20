@@ -1,17 +1,18 @@
-# Patch appendix Monte Carlo tables in paper/spsurv.TeX from the same
-# paper/ artifacts used for figures 007--008.
+# Patch Monte Carlo tables in paper/spsurv.TeX from paper/ simulation summaries.
 #
 # Usage (from package root):
-#   Rscript inst/rebuild-mc-appendix-tables.R
+#   Rscript paper/render/rebuild-mc-appendix-tables.R
 
-pkg_root <- Sys.getenv("SPSURV_ROOT", unset = normalizePath("..", winslash = "/"))
-if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-  pkg_root <- normalizePath(".", winslash = "/")
+for (src in c("paper/paths.R", "../paths.R")) {
+  if (file.exists(src)) {
+    source(src, local = FALSE)
+    break
+  }
 }
+paths <- source_paper_paths()
+source(file.path(paths$render_dir, "mc-paper-summary.R"))
 
-source(file.path(pkg_root, "inst", "mc-paper-summary.R"))
-
-tex_path <- file.path(pkg_root, "paper", "spsurv.TeX")
+tex_path <- paths$tex_path
 tex <- readLines(tex_path, warn = FALSE)
 
 replace_table_body <- function(lines, label, new_body) {
@@ -37,10 +38,35 @@ replace_table_body <- function(lines, label, new_body) {
   )
 }
 
-mcsim_rds <- file.path(pkg_root, "paper", "bp-mcsim-results.rds")
-degree_csv <- file.path(pkg_root, "paper", "degree_llph_bpph.csv")
+mcsim_rds <- paths$mcsim_rds
+degree_csv <- paths$degree_csv
+source(file.path(paths$sim_dir, "R", "simulation_io.R"), local = TRUE)
+censoring_path <- if (file.exists(mcsim_rds)) {
+  meta_cen <- readRDS(mcsim_rds)$meta$censoring_path
+  if (!is.null(meta_cen) && file.exists(meta_cen)) {
+    meta_cen
+  } else {
+    find_latest_output("censoring", paths$sim_output_dir)
+  }
+} else {
+  find_latest_output("censoring", paths$sim_output_dir)
+}
 
 updated <- FALSE
+
+if (!is.null(censoring_path) && file.exists(censoring_path)) {
+  cen <- read_censoring_table(censoring_path)
+  event_df <- summarize_mc_design_events(cen)
+  tex <- replace_table_body(
+    tex,
+    "tab:mc-design-events",
+    format_mc_design_events_tex_body(event_df)
+  )
+  updated <- TRUE
+  message("Updated table tab:mc-design-events from ", censoring_path)
+} else {
+  message("Skipping tab:mc-design-events (missing censoring-*.txt)")
+}
 
 if (file.exists(mcsim_rds)) {
   x <- readRDS(mcsim_rds)
@@ -51,7 +77,7 @@ if (file.exists(mcsim_rds)) {
     format_bp_mcsim_tex_body(plot_df)
   )
   updated <- TRUE
-  message("Updated appendix table tab:bp-mcsim-abc from ", mcsim_rds)
+  message("Updated table tab:bp-mcsim-abc from ", mcsim_rds)
 } else {
   message("Skipping tab:bp-mcsim-abc (missing ", mcsim_rds, ")")
 }
@@ -71,7 +97,7 @@ if (file.exists(degree_csv)) {
 
 if (updated) {
   writeLines(tex, tex_path)
-  message("Patched Monte Carlo appendix tables in ", tex_path)
+  message("Patched Monte Carlo tables in ", tex_path)
 } else {
   message("No Monte Carlo appendix tables updated.")
 }

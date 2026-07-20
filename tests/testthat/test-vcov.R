@@ -168,3 +168,31 @@ test_that("ill-conditioned gamma warning appears only for survfit, not after fit
   expect_silent(summary(fit))
   expect_warning(survfit(fit, times = 50), "lower Bernstein degree")
 })
+
+test_that("default vcov does not inflate beta SE when gamma block is unstable", {
+  skip_if_not_installed("rsurv")
+  set.seed(2)
+  nsize <- 50L
+  dat <- data.frame(
+    age = rnorm(nsize),
+    sex = factor(sample(c("f", "m"), nsize, TRUE), levels = c("f", "m"))
+  )
+  t_ev <- rsurv::rphreg(
+    runif(nsize), ~age + sex, beta = c(-2, 1),
+    dist = "weibull", shape = 1.5, scale = 1,
+    package = "stats", data = dat
+  )
+  c_ev <- runif(nsize, 0, 10)
+  dat$time <- pmin(t_ev, c_ev)
+  dat$status <- as.integer(t_ev <= c_ev)
+  fit <- bpph(
+    Surv(time, status) ~ age + sex,
+    data = dat,
+    degree = as.integer(ceiling(nsize^0.5)),
+    approach = "mle"
+  )
+  expect_false(.spbp_gamma_information_diagnostics(fit)$stable)
+  se <- sqrt(diag(vcov(fit)))
+  expect_true(all(se < 10))
+  expect_true(all(is.finite(se)))
+})

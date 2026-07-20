@@ -62,6 +62,15 @@ summary.spbp <- function(object, interval = 0.95,
     ))
 
     z <- qnorm((1 + interval) / 2, 0, 1)
+    output$coef_interval <- cbind(
+      beta, beta - z * se, beta + z * se
+    )
+    dimnames(output$coef_interval) <- list(names(beta), c(
+      "coef",
+      paste("lower .", round(100 * interval, 2), sep = ""),
+      paste("upper .", round(100 * interval, 2), sep = "")
+    ))
+
     output$interval <- cbind(
       exp(beta), exp(-beta), exp(beta - z * se),
       exp(beta + z * se)
@@ -135,6 +144,19 @@ summary.spbp <- function(object, interval = 0.95,
     dimnames(output$coefficients) <- list(names(beta), c(
       "mean(coef)",
       "median(coef)", "mean(exp(coef))", "sd(coef)"
+    ))
+
+    output$coef_interval <- cbind(
+      beta,
+      {
+        hpd <- coda::HPDinterval(coda::mcmc(object$posterior$beta))
+        cbind(hpd[, 1], hpd[, 2])
+      }
+    )
+    dimnames(output$coef_interval) <- list(names(beta), c(
+      "mean(coef)",
+      paste("lower .", round(100 * interval, 2), "HPD", sep = ""),
+      paste("upper .", round(100 * interval, 2), "HPD", sep = "")
     ))
 
     output$interval <- cbind(

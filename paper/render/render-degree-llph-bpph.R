@@ -1,7 +1,14 @@
 # Polynomial-degree sensitivity figure (008_degree_llph_bpph.pdf).
 #
 # Usage (from package root):
-#   Rscript inst/render-degree-llph-bpph.R
+#   Rscript paper/render/render-degree-llph-bpph.R
+
+for (src in c("paper/paths.R", "../paths.R")) {
+  if (file.exists(src)) {
+    source(src, local = FALSE)
+    break
+  }
+}
 
 render_degree_llph_bpph <- function(
     output = NULL,
@@ -9,13 +16,10 @@ render_degree_llph_bpph <- function(
     width = 9.5,
     height = 5.2,
     base_size = 16) {
-  pkg_root <- Sys.getenv("SPSURV_ROOT", unset = normalizePath("..", winslash = "/"))
-  if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-    pkg_root <- normalizePath(".", winslash = "/")
-  }
+  paths <- source_paper_paths()
 
   if (is.null(csv_path)) {
-    csv_path <- file.path(pkg_root, "paper", "degree_llph_bpph.csv")
+    csv_path <- paths$figures$fig_008$summary_path
   }
   if (!file.exists(csv_path)) {
     stop("Missing degree sensitivity table: ", csv_path, call. = FALSE)
@@ -74,6 +78,27 @@ render_degree_llph_bpph <- function(
     levels = c("Coverage", "Bias (%)", "SE ratio")
   )
 
+  se_ylim <- c(0.5, 1.2)
+  se_rows <- d_long$metric == "SE ratio"
+  n_se_total <- sum(se_rows)
+  n_se_omitted <- sum(
+    se_rows & (d_long$value < se_ylim[1] | d_long$value > se_ylim[2]),
+    na.rm = TRUE
+  )
+  d_long$value[se_rows & (d_long$value < se_ylim[1] | d_long$value > se_ylim[2])] <- NA
+
+  # Keep the SE-ratio panel on a readable scale when extreme values are omitted.
+  d_anchor <- data.frame(
+    degree_rule = factor(deg_tbl$degree_rule[1], levels = levels(deg_tbl$degree_rule)),
+    line_group = deg_tbl$line_group[1],
+    metric = factor("SE ratio", levels = levels(d_long$metric)),
+    value = se_ylim,
+    anchor = TRUE,
+    stringsAsFactors = FALSE
+  )
+  d_long$anchor <- FALSE
+  d_long <- rbind(d_long, d_anchor)
+
   ref_df <- data.frame(
     metric = c("Coverage", "Bias (%)", "SE ratio"),
     yint = c(0.95, 0, 1),
@@ -81,7 +106,7 @@ render_degree_llph_bpph <- function(
   )
 
   if (is.null(output)) {
-    output <- file.path(pkg_root, "figures", "008_degree_llph_bpph.pdf")
+    output <- paths$figures$fig_008$path
   }
   dir.create(dirname(output), recursive = TRUE, showWarnings = FALSE)
 
@@ -96,8 +121,20 @@ render_degree_llph_bpph <- function(
       colour = "grey40",
       linewidth = 0.45
     ) +
-    ggplot2::geom_line(linewidth = 0.8) +
-    ggplot2::geom_point(size = 2.6) +
+    ggplot2::geom_line(
+      data = subset(d_long, !anchor),
+      na.rm = TRUE,
+      linewidth = 0.8
+    ) +
+    ggplot2::geom_point(
+      data = subset(d_long, !anchor & !is.na(value)),
+      size = 2.6
+    ) +
+    ggplot2::geom_point(
+      data = subset(d_long, anchor),
+      alpha = 0,
+      size = 0
+    ) +
     ggplot2::facet_wrap(~metric, scales = "free_y", nrow = 1L) +
     ggplot2::scale_x_discrete(labels = function(x) parse(text = x)) +
     ggplot2::labs(x = "Degree rule", y = NULL, colour = "(nsize, parameter)") +
@@ -119,8 +156,18 @@ render_degree_llph_bpph <- function(
     height = height,
     units = "in"
   )
+  message(
+    "SE ratio panel ylim = [", se_ylim[1], ", ", se_ylim[2],
+    "]; omitted ", n_se_omitted, " of ", n_se_total, " summaries"
+  )
   message("Wrote ", output)
-  invisible(list(plot = p, data = d_long))
+  invisible(list(
+    plot = p,
+    data = d_long,
+    se_ylim = se_ylim,
+    n_se_omitted = n_se_omitted,
+    n_se_total = n_se_total
+  ))
 }
 
 if (identical(sys.nframe(), 0L)) {

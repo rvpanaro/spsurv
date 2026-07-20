@@ -4,18 +4,19 @@
 # Output: paper/degree_llph_bpph.csv
 #
 # Usage (from package root):
-#   Rscript inst/simulation/build_degree_llph_bpph_csv.R
+#   Rscript paper/simulation/build_degree_llph_bpph_csv.R
 #
 # Smoke test:
-#   SPSURV_DEGREE_MC_REPS=5 Rscript inst/simulation/build_degree_llph_bpph_csv.R
+#   SPSURV_DEGREE_MC_REPS=5 SPSURV_DEGREE_MC_NSIZES=50 Rscript paper/simulation/build_degree_llph_bpph_csv.R
 
-args <- commandArgs(trailingOnly = FALSE)
-file_arg <- sub("^--file=", "", args[grep("^--file=", args)])
-pkg_root <- if (length(file_arg)) {
-  normalizePath(file.path(dirname(file_arg[[1L]]), "..", ".."), winslash = "/")
-} else {
-  normalizePath(getwd(), winslash = "/")
+for (src in c("paper/paths.R", "../paths.R")) {
+  if (file.exists(src)) {
+    source(src, local = FALSE)
+    break
+  }
 }
+paths <- source_paper_paths()
+pkg_root <- paths$pkg_root
 
 suppressPackageStartupMessages({
   if (!requireNamespace("rsurv", quietly = TRUE)) {
@@ -33,12 +34,23 @@ suppressPackageStartupMessages({
   }
 })
 
+parse_int_vec <- function(x, default) {
+  if (!nzchar(x)) {
+    return(default)
+  }
+  as.integer(strsplit(gsub("\\s+", "", x), ",", fixed = TRUE)[[1L]])
+}
+
 R <- suppressWarnings(as.integer(Sys.getenv("SPSURV_DEGREE_MC_REPS", "1000")))
 if (!is.finite(R) || R < 1L) {
   R <- 1000L
 }
 
-nsizes <- c(100L, 300L)
+nsizes <- parse_int_vec(Sys.getenv("SPSURV_DEGREE_MC_NSIZES", ""), c(50L, 100L))
+nsizes <- nsizes[is.finite(nsizes) & nsizes > 0L]
+if (!length(nsizes)) {
+  nsizes <- c(50L, 100L)
+}
 degree_exponents <- c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
 beta_dgp <- c(age = -2, sexm = 1)
 shape <- 1.5
@@ -176,8 +188,24 @@ summ$coverage <- round(summ$coverage, 3)
 summ$bias <- round(summ$bias, 3)
 summ$se_ratio <- round(summ$se_ratio, 3)
 
-paper_dir <- file.path(pkg_root, "paper")
+paper_dir <- paths$paper_dir
 dir.create(paper_dir, recursive = TRUE, showWarnings = FALSE)
-out_csv <- file.path(paper_dir, "degree_llph_bpph.csv")
-utils::write.csv(summ, file = out_csv, row.names = FALSE)
+out_csv <- paths$degree_csv
+utils::write.csv(summ, out_csv, row.names = FALSE)
 message("Wrote ", out_csv)
+if (file.exists(file.path(paths$paper_dir, "paper-runtime.R"))) {
+  source(file.path(paths$paper_dir, "paper-runtime.R"), local = FALSE)
+  manifest_path <- paper_write_manifest(
+    paths,
+    list(
+      run_id = format(Sys.time(), "%Y%m%d-%H%M%S"),
+      step = "degree_llph_bpph_complete",
+      output_csv = out_csv,
+      replicates = R,
+      nsizes = nsizes,
+      nrow_summary = nrow(summ),
+      approach = "mle"
+    )
+  )
+  message("Manifest: ", manifest_path)
+}

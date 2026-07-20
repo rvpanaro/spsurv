@@ -2,8 +2,8 @@
 # Illustrates delta-method instability vs lower degree vs posterior bands.
 #
 # Usage (from package root):
-#   Rscript inst/render-larynx-degree-comparison.R
-#   Rscript inst/render-larynx-degree-comparison.R /path/to/output.pdf
+#   Rscript paper/render/render-larynx-degree-comparison.R
+#   Rscript paper/render/render-larynx-degree-comparison.R /path/to/output.pdf
 
 render_larynx_degree_comparison <- function(
     output = NULL,
@@ -12,10 +12,8 @@ render_larynx_degree_comparison <- function(
     degree_high = NULL,
     width = 9,
     height = 10.5) {
-  pkg_root <- Sys.getenv("SPSURV_ROOT", unset = normalizePath("..", winslash = "/"))
-  if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-    pkg_root <- normalizePath(".", winslash = "/")
-  }
+  paths <- source_paper_paths()
+  pkg_root <- paths$pkg_root
 
   suppressPackageStartupMessages({
     if (!"package:spsurv" %in% search() &&
@@ -159,7 +157,7 @@ render_larynx_degree_comparison <- function(
     theme(legend.position = "bottom")
 
   if (is.null(output)) {
-    output <- file.path(pkg_root, "figures", "006_larynx_degree_comparison.pdf")
+    output <- paths$figures$fig_006$path
   }
   dir.create(dirname(output), showWarnings = FALSE, recursive = TRUE)
   grDevices::pdf(output, width = width, height = height, onefile = TRUE)
@@ -174,6 +172,12 @@ render_larynx_degree_comparison <- function(
 }
 
 if (identical(sys.nframe(), 0L)) {
+  for (src in c("paper/paths.R", "../paths.R")) {
+    if (file.exists(src)) {
+      source(src, local = FALSE)
+      break
+    }
+  }
   args <- commandArgs(trailingOnly = TRUE)
   out <- if (length(args)) args[[1L]] else NULL
   render_larynx_degree_comparison(output = out)

@@ -476,9 +476,13 @@ survfit.spbp <- function(formula, newdata = NULL, times = NULL,
       if (!length(tv)) {
         stop("'times' must contain at least one finite non-negative value", call. = FALSE)
       }
+      train_nevent <- .spbp_survfit_train_nevent(x, km)
       km$time <- tv
       n_t <- length(km$time)
       km$n.event <- rep(0L, n_t)
+      if (!is.na(train_nevent) && train_nevent > 0L) {
+        km$n.event[1L] <- train_nevent
+      }
       km$n.censor <- rep(0L, n_t)
       km$n.risk <- rep(NROW(data), n_t)
     } else {

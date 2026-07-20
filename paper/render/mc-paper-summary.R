@@ -1,5 +1,9 @@
 # Shared Monte Carlo summaries for paper figures 007--008 and appendix tables.
 
+mc_paper_nsize_levels <- function(nsize) {
+  as.character(sort(unique(as.integer(as.character(nsize)))))
+}
+
 summarize_bp_mcsim_replicates <- function(rep_df) {
   if (!requireNamespace("dplyr", quietly = TRUE)) {
     stop("Install dplyr for Monte Carlo summaries.", call. = FALSE)
@@ -52,7 +56,8 @@ summarize_bp_mcsim_replicates <- function(rep_df) {
     approach_lab[as.character(rep_df$approach)],
     levels = c("MLE", "Bayes")
   )
-  rep_df$nsize_f <- factor(as.character(rep_df$nsize), levels = c("100", "300"))
+  nsize_levels <- mc_paper_nsize_levels(rep_df$nsize)
+  rep_df$nsize_f <- factor(as.character(rep_df$nsize), levels = nsize_levels)
   rep_df$gen_cell_f <- factor(
     dplyr::recode(
       gen_cell_label(as.character(rep_df$gdist_f), as.character(rep_df$model_f)),
@@ -94,7 +99,7 @@ summarize_bp_mcsim_replicates <- function(rep_df) {
       levels = c("WPH", "WPO", "WAFT", "LLPH", "LLPO", "LLAFT")
     ),
     approach = factor(key_df[, 4], levels = c("MLE", "Bayes")),
-    nsize = factor(key_df[, 5], levels = c("100", "300")),
+    nsize = factor(key_df[, 5], levels = nsize_levels),
     rb = as.numeric(rb_m),
     sde = as.numeric(sde_m),
     calib = as.numeric(calib_m),
@@ -154,11 +159,18 @@ format_bp_mcsim_tex_body <- function(plot_df) {
     )
   }
 
-  c(
-    format_row(plot_df, "100"),
-    "\\addlinespace[4pt]",
-    format_row(plot_df, "300")
-  )
+  format_blocks <- function(nsize_labels) {
+    out <- character(0)
+    for (i in seq_along(nsize_labels)) {
+      if (i > 1L) {
+        out <- c(out, "\\addlinespace[4pt]")
+      }
+      out <- c(out, format_row(plot_df, nsize_labels[[i]]))
+    }
+    out
+  }
+
+  format_blocks(mc_paper_nsize_levels(plot_df$nsize))
 }
 
 format_degree_llph_tex_body <- function(deg_tbl) {
@@ -210,9 +222,90 @@ format_degree_llph_tex_body <- function(deg_tbl) {
     )
   }
 
-  c(
-    format_block("100"),
-    "\\addlinespace[4pt]",
-    format_block("300")
+  format_blocks <- function(nsize_labels) {
+    out <- character(0)
+    for (i in seq_along(nsize_labels)) {
+      if (i > 1L) {
+        out <- c(out, "\\addlinespace[4pt]")
+      }
+      out <- c(out, format_block(nsize_labels[[i]]))
+    }
+    out
+  }
+
+  format_blocks(mc_paper_nsize_levels(deg_tbl$nsize))
+}
+
+#' Mean event percentages for Table tab:mc-design-events.
+#'
+#' Uses one approach only (MLE by default); MLE and Bayes share realisations.
+summarize_mc_design_events <- function(
+    censoring,
+    approach = "mle",
+    shape = 1.5,
+    scale = 1) {
+  need <- c("nsize", "gdist", "approach", "model", "event_proportion")
+  miss <- setdiff(need, names(censoring))
+  if (length(miss)) {
+    stop(
+      "censoring table missing column(s): ",
+      paste(miss, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  cen <- censoring[
+    censoring$approach == approach &
+      censoring$model %in% c("ph", "po", "aft"),
+    ,
+    drop = FALSE
+  ]
+  if (!nrow(cen)) {
+    stop("No censoring rows for approach=", approach, call. = FALSE)
+  }
+  agg <- stats::aggregate(
+    event_proportion ~ nsize + gdist + model,
+    data = cen,
+    FUN = mean,
+    na.rm = TRUE
   )
+  agg$event_pct <- 100 * agg$event_proportion
+  agg$shape <- shape
+  agg$scale <- scale
+  agg
+}
+
+format_mc_design_events_tex_body <- function(event_df) {
+  gdist_tex <- c(weibull = "Weibull", llogis = "Log-logistic")
+  model_tex <- c(ph = "PH", po = "PO", aft = "AFT")
+  rows <- character(0)
+  for (g in c("weibull", "llogis")) {
+    for (m in c("ph", "po", "aft")) {
+      r50 <- event_df[
+        event_df$gdist == g & event_df$model == m & event_df$nsize == 50L,
+        ,
+        drop = FALSE
+      ]
+      r100 <- event_df[
+        event_df$gdist == g & event_df$model == m & event_df$nsize == 100L,
+        ,
+        drop = FALSE
+      ]
+      if (!nrow(r50) || !nrow(r100)) {
+        next
+      }
+      rows <- c(
+        rows,
+        sprintf(
+          "%s      & %s  & %g & %g & %.1f & %.1f \\\\",
+          gdist_tex[[g]],
+          model_tex[[m]],
+          r50$shape[[1L]],
+          r50$scale[[1L]],
+          r50$event_pct[[1L]],
+          r100$event_pct[[1L]]
+        )
+      )
+    }
+  }
+  rows
 }

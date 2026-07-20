@@ -77,6 +77,18 @@ read_prior <- function(prior) {
 #' Default evaluation grid for smooth survival curves (internal).
 #' @keywords internal
 #' @noRd
+.spbp_survfit_train_nevent <- function(x, km) {
+  if (!is.null(x$nevent)) {
+    return(as.integer(x$nevent))
+  }
+  if (!is.null(km$n.event)) {
+    return(as.integer(sum(km$n.event, na.rm = TRUE)))
+  }
+  NA_integer_
+}
+
+#' @keywords internal
+#' @noRd
 .spbp_default_survfit_times <- function(x, length.out = NULL) {
   t_max <- max(x$y[, 1L], na.rm = TRUE)
   if (!is.finite(t_max) || t_max <= 0) {
@@ -241,19 +253,6 @@ WAIC <- function(loglik) {
   } else {
     list(tau_a = tau_a, tau_b = tau_b)
   }
-}
-
-#' Ensure a symmetric matrix is positive semi-definite (internal).
-#' @keywords internal
-#' @noRd
-.spbp_near_pd_sym <- function(V, eps = 1e-8) {
-  V <- (V + t(V)) / 2
-  ev <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
-  min_ev <- min(ev)
-  if (is.finite(min_ev) && min_ev < 0) {
-    V <- V + diag(abs(min_ev) + eps, nrow(V))
-  }
-  V
 }
 
 #' Symmetric matrix inverse: Cholesky if SPD, else full-rank QR solve, else pivoted-QR pseudoinverse.

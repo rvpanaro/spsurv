@@ -97,6 +97,14 @@ test_that("bpaft predict returns surv = 1 at time = 0", {
   expect_false(any(is.nan(pr$surv)))
 })
 
+test_that("survfit.spbp summary reports training events on prediction grid", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
+  nd <- veteran[1:2, ]
+  sf <- survfit(fit, newdata = nd, times = seq(0, 200, by = 10))
+  tab <- summary(sf)$table
+  expect_equal(unname(tab[, "events"]), rep(fit$nevent, nrow(tab)))
+})
+
 test_that("survfit.spbp with times as Surv object updates time and n.event (lines 46-51)", {
   fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
   times_surv <- Surv(veteran$time[1:5], veteran$status[1:5])

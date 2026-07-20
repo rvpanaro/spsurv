@@ -1,13 +1,16 @@
 # Regenerate paper/spsurv.TeX illustration figures (001--006) and verbatim outputs.
-# Figures 007--008 need simulation artifacts in paper/; use inst/render-paper-figures.R
-# for the full 001--008 pipeline. PDFs are written to figures/ for paper/spsurv.TeX.
+# Monte Carlo figures (007--008) are rendered by paper/render/render-mc-figures.R.
 # Usage (from package root):
-#   Rscript inst/render-tex-assets.R
+#   Rscript paper/render/render-tex-assets.R
 
-pkg_root <- Sys.getenv("SPSURV_ROOT", unset = normalizePath("..", winslash = "/"))
-if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-  pkg_root <- normalizePath(".", winslash = "/")
+for (src in c("paper/paths.R", "../paths.R")) {
+  if (file.exists(src)) {
+    source(src, local = FALSE)
+    break
+  }
 }
+paths <- source_paper_paths()
+pkg_root <- paths$pkg_root
 setwd(pkg_root)
 
 suppressPackageStartupMessages({
@@ -19,12 +22,10 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-fig_dir <- file.path(pkg_root, "figures")
-paper_dir <- file.path(pkg_root, "paper")
-dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
+paper_dir <- paths$paper_dir
 dir.create(paper_dir, showWarnings = FALSE, recursive = TRUE)
 
-source(file.path(pkg_root, "inst", "tex-verbatim-wrap.R"))
+source(file.path(paths$render_dir, "tex-verbatim-wrap.R"))
 
 .bp_tidy_survfit_long <- function(sf, curve_labels) {
   td <- ggsurvfit::tidy_survfit(sf)
@@ -52,8 +53,8 @@ tex_lines <- function(x, width = 65L) {
   paste(wrapped, collapse = "\n")
 }
 
-save_fig <- function(plot, filename, width = 7, height = 5) {
-  path <- file.path(fig_dir, filename)
+save_fig <- function(plot, figure_key, width = 7, height = 5) {
+  path <- paths$figures[[figure_key]]$path
   grDevices::pdf(path, width = width, height = height, onefile = TRUE)
   on.exit(grDevices::dev.off(), add = TRUE)
   print(plot)
@@ -85,13 +86,13 @@ fragments <- list(
     ),
     collapse = "\n"
   ),
-  larynx_tidy_code = 'print(bpph_fit, what = "tidy")',
+  larynx_tidy_code = "tidy(bpph_fit)",
   larynx_tidy_out = tex_lines({
-    print(bpph_fit, what = "tidy")
+    tidy(bpph_fit)
   }),
-  larynx_glance_code = 'print(bpph_fit, what = "glance")',
+  larynx_glance_code = "glance(bpph_fit)",
   larynx_glance_out = tex_lines({
-    print(bpph_fit, what = "glance")
+    glance(bpph_fit)
   }),
   larynx_print_code = "print(bpph_fit)",
   larynx_print_out = tex_lines({
@@ -128,7 +129,7 @@ p_larynx <- ggplot(d_l, aes(x = time, y = estimate, color = series)) +
   labs(x = "Time (years)", y = "Survival probability", color = NULL) +
   theme_bw() +
   theme(legend.position = "bottom")
-save_fig(p_larynx, "001_larynx_survfit.pdf", width = 7, height = 4.5)
+save_fig(p_larynx, "fig_001", width = 7, height = 4.5)
 
 # --- Larynx Bayes ---------------------------------------------------------
 set.seed(1)
@@ -167,13 +168,13 @@ fragments$larynx_bayes_print_code <- "print(bpph_fit_bayes)"
 fragments$larynx_bayes_print_out <- tex_lines({
   print(bpph_fit_bayes)
 })
-fragments$larynx_bayes_tidy_code <- 'print(bpph_fit_bayes, what = "tidy")'
+fragments$larynx_bayes_tidy_code <- "tidy(bpph_fit_bayes)"
 fragments$larynx_bayes_tidy_out <- tex_lines({
-  print(bpph_fit_bayes, what = "tidy")
+  tidy(bpph_fit_bayes)
 })
-fragments$larynx_bayes_glance_code <- 'print(bpph_fit_bayes, what = "glance")'
+fragments$larynx_bayes_glance_code <- "glance(bpph_fit_bayes)"
 fragments$larynx_bayes_glance_out <- tex_lines({
-  print(bpph_fit_bayes, what = "glance")
+  glance(bpph_fit_bayes)
 })
 
 # --- Larynx residuals (fig 002) -------------------------------------------
@@ -220,15 +221,16 @@ p_res3 <- ggplot(resid_df, aes(x = ml_bpph, y = bayes_bpph)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
   labs(x = "MLE BPPH martingale", y = "Bayes BPPH martingale", title = "(iii) MLE vs Bayes") +
   theme_bw()
-save_fig(p_res1 + p_res2 + p_res3, "002_larynx_bpxcox_residuals.pdf", width = 10, height = 3.5)
+save_fig(p_res1 + p_res2 + p_res3, "fig_002", width = 10, height = 3.5)
 
 # --- Veteran ----------------------------------------------------------------
 data("veteran", package = "survival")
-veteran2 <- veteran[veteran$prior == 0, ]
-veteran2$celltype <- factor(
-  veteran2$celltype,
-  levels = c("large", "adeno", "smallcell", "squamous")
-)
+veteran2 <- veteran |>
+  dplyr::filter(prior == 0) |>
+  dplyr::mutate(celltype = factor(
+    celltype,
+    levels = c("large", "adeno", "smallcell", "squamous")
+  ))
 
 f <- Surv(time, status) ~ karno + celltype
 fit_po <- bppo(f, data = veteran2, approach = "bayes")
@@ -239,11 +241,12 @@ fragments$veteran_setup_code <- paste(
     'data("veteran", package = "survival")',
     "",
     "# Pettitt (1984) analytic subsample: no prior therapy",
-    "veteran2 <- veteran[veteran$prior == 0, ]",
-    "veteran2$celltype <- factor(",
-    "  veteran2$celltype,",
-    '  levels = c("large", "adeno", "smallcell", "squamous")',
-    ")",
+    "veteran2 <- veteran |>",
+    "  dplyr::filter(prior == 0) |>",
+    "  dplyr::mutate(celltype = factor(",
+    "    celltype,",
+    '    levels = c("large", "adeno", "smallcell", "squamous")',
+    "  ))",
     "",
     "f <- Surv(time, status) ~ karno + celltype",
     "",
@@ -273,7 +276,7 @@ p_vet_surv <- ggplot(d_cmp, aes(x = time, y = estimate, color = series)) +
   labs(x = "Time (days)", y = "Survival probability", color = NULL, fill = NULL) +
   theme_bw() +
   theme(legend.position = "bottom")
-save_fig(p_vet_surv, "003_veteran_bpaft_bppo_survival.pdf", width = 7, height = 4.5)
+save_fig(p_vet_surv, "fig_003", width = 7, height = 4.5)
 
 mod_cox_vet <- coxph(
   Surv(time, status) ~ karno + celltype,
@@ -300,7 +303,7 @@ p_vet_cox <- ggplot(d_all, aes(x = time, y = estimate, color = series)) +
   labs(x = "Time (days)", y = "Survival probability", color = NULL, fill = NULL) +
   theme_bw() +
   theme(legend.position = "bottom")
-save_fig(p_vet_cox, "004_veteran_bpaft_bppo_cox.pdf", width = 7.5, height = 5)
+save_fig(p_vet_cox, "fig_004", width = 7.5, height = 5)
 
 fragments$veteran_diag_code <- paste(
   c(
@@ -425,53 +428,25 @@ p_mart <- (p1 | p2) /
   (p_fm_bp3_k | p_fm_bp4_k) /
   (p_fm_bp3_ct | p_fm_bp4_ct) /
   (p3 | p4)
-save_fig(p_mart, "005_veteran_martingale.pdf", width = 10, height = 12)
+save_fig(p_mart, "fig_005", width = 10, height = 12)
 
-source(file.path(pkg_root, "inst", "render-larynx-degree-comparison.R"))
+source(file.path(paths$render_dir, "render-larynx-degree-comparison.R"))
 render_larynx_degree_comparison(
-  output = file.path(fig_dir, "006_larynx_degree_comparison.pdf")
+  output = paths$figures$fig_006$path
 )
 
-mcsim_rds <- file.path(paper_dir, "bp-mcsim-results.rds")
-if (file.exists(mcsim_rds)) {
-  source(file.path(pkg_root, "inst", "render-bp-mcsim-abc.R"))
-  render_bp_mcsim_abc(
-    results_rds = mcsim_rds,
-    output = file.path(fig_dir, "007_bp_mcsim_abc.pdf")
-  )
-} else {
-  message(
-    "Skipping 007_bp_mcsim_abc.pdf (missing paper/bp-mcsim-results.rds)"
-  )
-}
-
-degree_csv <- file.path(paper_dir, "degree_llph_bpph.csv")
-if (file.exists(degree_csv)) {
-  source(file.path(pkg_root, "inst", "render-degree-llph-bpph.R"))
-  render_degree_llph_bpph(
-    csv_path = degree_csv,
-    output = file.path(fig_dir, "008_degree_llph_bpph.pdf")
-  )
-} else {
-  message(
-    "Skipping 008_degree_llph_bpph.pdf (missing paper/degree_llph_bpph.csv)"
-  )
-}
-
-mc_table_script <- file.path(pkg_root, "inst", "rebuild-mc-appendix-tables.R")
-if (file.exists(mcsim_rds) || file.exists(degree_csv)) {
-  status <- system2("Rscript", mc_table_script)
-  if (!identical(status, 0L)) {
-    stop("rebuild-mc-appendix-tables.R failed", call. = FALSE)
-  }
-}
-
 # --- Persist fragments for TeX patching -----------------------------------
-frag_path <- file.path(pkg_root, "paper", "tex-fragments.rds")
+frag_path <- paths$tex_fragments
 saveRDS(fragments, frag_path)
 message("Saved verbatim fragments to ", frag_path)
 
-rebuild_script <- file.path(pkg_root, "inst", "rebuild-tex-illustrations.R")
+source(file.path(paths$render_dir, "sync-tex-figures.R"))
+illustration_specs <- paper_figures_by_kind(paths$figures, "illustration")
+paths_illus <- paths
+paths_illus$figures <- illustration_specs
+sync_tex_figure_paths(paths_illus, patch = TRUE, verify_files = FALSE)
+
+rebuild_script <- file.path(paths$render_dir, "rebuild-tex-illustrations.R")
 if (file.exists(rebuild_script) && identical(Sys.getenv("SPSURV_REBUILD_TEX"), "1")) {
   system2("Rscript", rebuild_script)
 }

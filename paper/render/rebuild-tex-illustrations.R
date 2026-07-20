@@ -1,14 +1,18 @@
 # Rebuild paper/spsurv.TeX illustration verbatim blocks from paper/tex-fragments.rds
-pkg_root <- normalizePath("..", winslash = "/")
-if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
-  pkg_root <- normalizePath(".", winslash = "/")
+for (src in c("paper/paths.R", "../paths.R")) {
+  if (file.exists(src)) {
+    source(src, local = FALSE)
+    break
+  }
 }
+paths <- source_paper_paths()
+pkg_root <- paths$pkg_root
 
-fragments <- readRDS(file.path(pkg_root, "paper", "tex-fragments.rds"))
-tex_path <- file.path(pkg_root, "paper", "spsurv.TeX")
+fragments <- readRDS(paths$tex_fragments)
+tex_path <- paths$tex_path
 tex <- readLines(tex_path, warn = FALSE)
 
-source(file.path(pkg_root, "inst", "tex-verbatim-wrap.R"))
+source(file.path(paths$render_dir, "tex-verbatim-wrap.R"))
 
 wrap_code <- function(code, width = 65L) {
   lines <- tex_verbatim_wrap_lines(strsplit(code, "\n", fixed = TRUE)[[1L]], width = width)
@@ -68,9 +72,10 @@ middle <- c(
   "\\texttt{summary()} remains the number of regression terms only.",
   "For models fitted by maximum likelihood,",
   "\\texttt{print()} with the default \\texttt{what = \"summary\"} and \\texttt{summary()}",
-  "report coefficient estimates, standard errors, z statistics, and p-values in a",
-  "compact layout, with exponentiated confidence intervals and",
-  "model-level log-likelihood and information criteria at the foot of the summary.",
+  "report coefficient estimates, Wald 95\\% confidence limits on the log scale",
+  "(\\(2.5\\%\\) and \\(97.5\\%\\)), standard errors, \\(z\\) statistics, and \\(p\\)-values in a",
+  "compact layout, followed by exponentiated confidence intervals on the same",
+  "percentiles and model-level log-likelihood and information criteria at the foot of the summary.",
   "",
   wrap_code(fragments$larynx_print_code),
   "",
@@ -130,12 +135,12 @@ middle <- c(
   "\\centering",
   "\\begin{minipage}{0.48\\linewidth}",
   "\\centering",
-  "\\includegraphics[width=\\linewidth]{../figures/001_larynx_survfit.pdf}\\\\[0.4em]",
+  paste0(paper_figure_tex_graphics(paths$figures$fig_001), "\\\\[0.4em]"),
   "{\\footnotesize (a) Default $m=10$ MLE with delta-method bands.}",
   "\\end{minipage}\\hfill",
   "\\begin{minipage}{0.48\\linewidth}",
   "\\centering",
-  "\\includegraphics[width=\\linewidth]{../figures/006_larynx_degree_comparison.pdf}\\\\[0.4em]",
+  paste0(paper_figure_tex_graphics(paths$figures$fig_006), "\\\\[0.4em]"),
   "{\\footnotesize (b) $m=3$ MLE, $m=10$ MLE, and $m=10$ Bayes (top to bottom).}",
   "\\end{minipage}",
   "\\caption{Estimated survival curves from maximum-likelihood BPPH fits for a",
@@ -181,13 +186,14 @@ middle <- c(
   "and model comparison via deviance information criterion and widely",
   "applicable information criterion (WAIC) when available, with the same PH",
   "interpretation. For Bayesian fits (\\texttt{approach\\ =\\ \"bayes\"}), \\texttt{print()}",
-  "lists posterior summaries for regression coefficients (mean, mode,",
-  "median, and standard deviation) and reports deviance information",
+  "lists posterior means, HPD credible intervals on the log and exponentiated",
+  "scales (\\(2.5\\%\\) and \\(97.5\\%\\)), and posterior standard deviations for",
+  "regression coefficients, and reports deviance information",
   "criterion \\citep{spiegelhalter2002bayesian}, WAIC \\citep{Vehtari:2017, watanabe2013widely}, and log pseudo-marginal likelihood",
   "\\citep{geisser1979predictive, Ibrahim:2014} when the posterior",
-  "log-likelihood is available. \\texttt{summary()} gives HPD credible intervals",
-  "for exponentiated coefficients (e.g., hazard ratios under PH); the same",
-  "intervals appear in \\texttt{print(..., what = \"tidy\")} and",
+  "log-likelihood is available. \\texttt{summary()} gives the same HPD intervals",
+  "as \\texttt{print()} for regression and exponentiated coefficients; the",
+  "exponentiated intervals also appear in \\texttt{print(..., what = \"tidy\")} and",
   "\\texttt{tidy(..., conf.int = TRUE, exponentiate = TRUE)}, while",
   "\\texttt{print(..., what = \"glance\")} and \\texttt{glance()} collect WAIC, DIC,",
   "and LPML in one row.",
