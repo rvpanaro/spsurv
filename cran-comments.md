@@ -4,35 +4,36 @@
 * rhub: run `rhub::check_for_cran()` before upload
 * win-builder: run before upload
 
-## testthat (local, spsurv 1.1.0)
+## testthat (local, spsurv 1.1.0, 2026-07-20)
 
 ```
-576 tests, 0 failures, 39 warnings (Stan / ill-conditioned gamma diagnostics)
+devtools::test(): 576 passed, 0 failed, 39 warnings
+(Stan / ill-conditioned gamma diagnostics)
 ```
 
-Run: `testthat::test_dir("tests/testthat")` after `pkgload::load_all()`.
-
-## Code coverage (local, covr)
+## Code coverage (local, covr, 2026-07-20)
 
 ```
 Overall line coverage: 81.18%  (type = "tests"; excludes R/stanmodels.R)
+R/ mean line coverage: 81.92%
 ```
 
 | File | Coverage |
 |------|----------|
 | R/vcov.R | 95.9% |
-| R/summary.spbp.R | 98.6% |
-| R/survfit.R | 85.2% |
-| R/print.summary.spbp.R | 80.4% |
-| R/utils.R | 78.5% |
+| R/summary.spbp.R | 96.4% |
+| R/survfit.R | 85.5% |
+| R/print.summary.spbp.R | 89.0% |
+| R/utils.R | 80.9% |
 
-Run: `covr::package_coverage(type = "tests", line_exclusions = "R/stanmodels.R")`.
+Run: `NOT_CRAN=true SPSURV_RUN_COVERAGE=true Rscript -e 'testthat::test_file("tests/testthat/test-coverage.R")'`.
 Threshold enforced in `tests/testthat/test-coverage.R` (> 80%; opt-in via `SPSURV_RUN_COVERAGE=true`, skipped on CRAN).
 
 ## R CMD check results (spsurv 1.1.0)
 
 ```
-Status: (run R CMD check --as-cran before upload)
+Status: 0 errors, 0 test failures (local --as-cran, 2026-07-20)
+Run full R CMD check --as-cran with vignettes before upload.
 ```
 
 ## revdepcheck

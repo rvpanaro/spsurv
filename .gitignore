@@ -9,6 +9,7 @@
 *.tar.gz
 coverage.html
 coverage-summary.rds
+coverage-summary.md
 lib/
 src/*.gcda
 src/*.gcno
