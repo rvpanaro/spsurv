@@ -7,6 +7,7 @@
 * **Inference:** `vcov.spbp()` no longer applies a diagonal ridge (`polish` removed); beta standard errors are unchanged when the Bernstein block is stable and no longer inflated when it is ill-conditioned.
 * **Summary:** `summary.spbp()` now includes a `coef_interval` component (Wald for MLE, HPD for Bayes) and prints it when `show_intervals = TRUE`.
 * **Repository:** paper workflow moved from `inst/` to `paper/` (excluded from the package tarball).
+* **Dependencies:** trimmed `Suggests` to packages used in vignettes, tests, or optional integrations; dev tools (`devtools`, `roxygen2`, `covr`) and unused tidymodels/rsurv entries removed (install transitively or only when needed locally).
 
 # spsurv 1.0.2
 

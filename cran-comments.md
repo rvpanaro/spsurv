@@ -27,7 +27,17 @@ R/ mean line coverage: 81.92%
 | R/utils.R | 80.9% |
 
 Run: `NOT_CRAN=true SPSURV_RUN_COVERAGE=true Rscript -e 'testthat::test_file("tests/testthat/test-coverage.R")'`.
+Install `covr` locally or in CI when running that opt-in check (`covr` is no longer in `Suggests`).
 Threshold enforced in `tests/testthat/test-coverage.R` (> 80%; opt-in via `SPSURV_RUN_COVERAGE=true`, skipped on CRAN).
+
+## Suggests (spsurv 1.1.0)
+
+Required for CRAN check vignettes/tests: `testthat`, `knitr`, `rmarkdown`, `ggplot2`,
+`KMsurv`, `parsnip`, `censored`, `workflows`, `tidybayes`, `posterior`.
+
+Removed from `Suggests` (dev-only, transitive, or optional skipped tests):
+`devtools`, `roxygen2`, `covr`, `ggsurvfit`, `recipes`, `tune`, `yardstick`,
+`rsample`, `tidyr`, `dplyr`, `ggdist`, `hardhat`, `rsurv`.
 
 ## R CMD check results (spsurv 1.1.0)
 
