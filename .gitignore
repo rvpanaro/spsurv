@@ -7,6 +7,11 @@
 ..Rcheck
 .R-lib/
 *.tar.gz
+coverage.html
+coverage-summary.rds
+lib/
+src/*.gcda
+src/*.gcno
 .Rd2pdf*
 ..pdf
 ^\.\.pdf$
