@@ -28,9 +28,9 @@ jobs:
         with:
           extra-packages: |
             any::pkgdown
-            any::rmarkdown (>= 2.31)
             any::rstantools
             any::rstan
+          needs: website
 
       - name: Install package
         run: R CMD INSTALL . --no-docs
