@@ -22,3 +22,5 @@
 ^\*\*/\.DS_Store$
 ^coverage\.html$
 ^coverage-summary\.(rds|md)$
+^.*\.tar\.gz$
+^.*[.]Rcheck$

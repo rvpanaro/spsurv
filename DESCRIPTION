@@ -10,7 +10,7 @@ Authors@R:
            comment = c(ORCID = "0000-0002-1903-2091", URL = "https://rvpanaro.github.io/")),
     person(given = "Fábio",
            family = "Demarqui",
-           role = c("ctb", "ths"),
+           role = c("ths", "rev"),
            email = "fndemarqui@gmail.com",
            comment = c(ORCID = "0000-0001-9236-1986", URL = "http://www.est.ufmg.br/~fndemarqui/")),
     person(given = "Vinicius",
@@ -18,7 +18,10 @@ Authors@R:
            role = c("ths"),
            email = "vdinizm@gmail.com",
            comment = c(ORCID = "0000-0002-5683-8326", URL = "http://www.est.ufmg.br/~vdinizm/")))
-Description: Semiparametric survival analysis based on Bernstein polynomials. 'spsurv' includes proportional hazards, proportional odds and accelerated failure time frameworks for right-censored data. RV Panaro (2020) <arXiv:2003.10548>.
+Description: Semiparametric survival analysis based on Bernstein polynomials.
+    'spsurv' includes proportional hazards, proportional odds and accelerated
+    failure time frameworks for right-censored data. RV Panaro (2020)
+    <doi:10.48550/arXiv.2003.10548>.
 License: GPL-3 + file LICENSE
 Biarch: true
 Depends: 
@@ -29,6 +32,7 @@ Imports:
     methods,
     Rcpp (>= 0.12.0),
     rstan (>= 2.18.1),
+    rstantools (>= 1.5.1),
     generics,
     viridis
 LinkingTo: 
@@ -47,10 +51,13 @@ Suggests:
     censored (>= 0.3.0),
     workflows (>= 1.1.0),
     tidybayes (>= 3.0.0),
-    posterior (>= 1.4.0)
+    posterior (>= 1.4.0),
+    covr,
+    rsample (>= 1.1.0),
+    rsurv
 VignetteBuilder: knitr
 Encoding: UTF-8
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
-URL: https://github.com/rvpanaro/spsurv, https://rvpanaro.github.io/spsurv
+URL: https://github.com/rvpanaro/spsurv, https://rvpanaro.github.io/spsurv/
 Config/roxygen2/version: 8.0.0

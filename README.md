@@ -1,6 +1,6 @@
-## spsurv <a href='https://rvpanaro.github.io/spsurv'><img src="https://raw.githubusercontent.com/rvpanaro/spsurv/master/inst/figures/logo.png" align="right" width="120" height="139" alt="spsurv package logo"/></a>
+## spsurv <a href='https://rvpanaro.github.io/spsurv/'><img src="https://raw.githubusercontent.com/rvpanaro/spsurv/master/inst/figures/logo.png" align="right" width="120" height="139" alt="spsurv package logo"/></a>
 
-[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/spsurv)](https://cran.r-project.org/package=spsurv) [![R-CMD-check](https://github.com/rvpanaro/spsurv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rvpanaro/spsurv/actions/workflows/R-CMD-check.yaml) [![Codecov](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://codecov.io/gh/rvpanaro/spsurv)
+[![CRAN status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv) [![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/spsurv)](https://cran.r-project.org/package=spsurv) [![R-CMD-check](https://github.com/rvpanaro/spsurv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rvpanaro/spsurv/actions/workflows/R-CMD-check.yaml) [![Codecov](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://app.codecov.io/gh/rvpanaro/spsurv)
 
 ## Overview
 
@@ -185,7 +185,7 @@ Please report issues at [https://github.com/rvpanaro/spsurv/issues](https://gith
 
 ## Links
 
-- [Download from CRAN](https://cloud.r-project.org/package=spsurv)
+- [Download from CRAN](https://cran.r-project.org/package=spsurv)
 - [Browse source code](https://github.com/rvpanaro/spsurv)
 - [Report a bug](https://github.com/rvpanaro/spsurv/issues)
 

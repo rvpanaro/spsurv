@@ -1,5 +1,11 @@
 # spsurv 1.1.0
 
+* **CRAN resubmission:** Maintainer contact updated to `rvpanaro@gmail.com`;
+  `Authors@R` roles reviewed (single maintainer; thesis advisors listed as
+  `ths`, with `rev` for code review feedback); package `Description` citation
+  updated to `<doi:10.48550/arXiv.2003.10548>`; restored `rstantools` in
+  `Imports` (required by `configure` scripts); restored `covr`, `rsample`, and
+  `rsurv` in `Suggests` for optional tests referenced in `tests/`.
 * **tidymodels:** parsnip engines `spsurv` (MLE) and `spsurv_bayes` for `proportional_hazards()`, new `proportional_odds()`, and `survival_reg()`; `bp_survival_reg()` convenience constructor; `workflow` / `predict(type = "survival")` support.
 * **tidybayes:** `as_draws_df.spbp()`, `spread_surv_draws.spbp()`, and S3 hooks for `tidy_draws` / `spread_draws` / `gather_draws` on Bayes fits; posterior draw indices (`.chain`, `.iteration`, `.draw`).
 * **Prediction:** censored-style `predict.spbp()` types (`survival`, `time`, `linear_pred`); `augment.spbp()`.
