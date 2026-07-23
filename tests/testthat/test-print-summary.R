@@ -26,8 +26,15 @@ test_that("print.summary.bpph.bayes outputs standard Bayesian PH summary", {
 })
 
 test_that("print.summary.bppo.mle outputs PO title", {
-  fit <- bppo(Surv(time, status) ~ karno + factor(celltype), data = veteran, approach = "mle", init = 0)
-  s <- summary(fit)
+  dat <- survival::veteran
+  fit <- bppo(
+    Surv(time, status) ~ karno + factor(celltype),
+    data = dat,
+    approach = "mle",
+    degree = 5L,
+    init = 0
+  )
+  expect_silent(s <- summary(fit))
   expect_output(print(s), "Bernstein PO model")
 })
 

@@ -2,6 +2,6 @@ library(testthat)
 library(parsnip)
 library(generics)
 library(spsurv)
-data("veteran", package = "survival")
+veteran <- survival::veteran
 
 test_check("spsurv")

@@ -259,13 +259,25 @@ WAIC <- function(loglik) {
 #'
 #' @noRd
 .spbp_sym_inv <- function(A, tol = 1e-10) {
+  if (!is.matrix(A) || nrow(A) == 0L || ncol(A) == 0L || nrow(A) != ncol(A)) {
+    stop("symmetric inverse requires a square non-empty matrix", call. = FALSE)
+  }
+  if (!is.numeric(A) || any(!is.finite(A))) {
+    stop("symmetric inverse requires a finite numeric matrix", call. = FALSE)
+  }
   A <- (A + t(A)) / 2
   n <- nrow(A)
   Rch <- tryCatch(chol(A), error = function(e) NULL)
   if (!is.null(Rch)) {
     return(chol2inv(Rch))
   }
-  qrA <- qr(A, tol = tol, LAPACK = TRUE)
+  qrA <- tryCatch(
+    qr(A, tol = tol, LAPACK = TRUE),
+    error = function(e) NULL
+  )
+  if (is.null(qrA)) {
+    stop("QR decomposition failed for symmetric inverse", call. = FALSE)
+  }
   if (qrA$rank == n) {
     return(qr.solve(qrA, diag(n)))
   }
@@ -337,13 +349,18 @@ WAIC <- function(loglik) {
 .spbp_gamma_information_diagnostics <- function(object, kappa_threshold = 1e10) {
   hx <- .spbp_hessian_neg_beta_gamma(object)
   m <- hx$m
-  if (is.null(hx$H_neg) || m == 0L) {
-    return(list(
+  unavailable <- function(reason) {
+    list(
       stable = FALSE,
+      available = FALSE,
       kappa_gamma = NA_real_,
       rank_gamma = NA_integer_,
-      n_gamma = m
-    ))
+      n_gamma = m,
+      reason = reason
+    )
+  }
+  if (is.null(hx$H_neg) || m == 0L) {
+    return(unavailable("gamma information matrix is unavailable"))
   }
 
   q <- hx$q
@@ -352,28 +369,62 @@ WAIC <- function(loglik) {
   } else {
     hx$H_neg[(q + 1L):(q + m), (q + 1L):(q + m), drop = FALSE]
   }
-  rank_gamma <- qr(C)$rank
+
+  if (!is.matrix(C) || !is.numeric(C) || nrow(C) == 0L || ncol(C) == 0L) {
+    return(unavailable("gamma information matrix is not a valid numeric matrix"))
+  }
+  if (nrow(C) != m || ncol(C) != m) {
+    return(unavailable("gamma information matrix has invalid dimensions"))
+  }
+  if (any(!is.finite(C))) {
+    return(unavailable("gamma information matrix contains non-finite values"))
+  }
+
+  qrC <- tryCatch(qr(C), error = function(e) NULL)
+  if (is.null(qrC)) {
+    return(unavailable("QR decomposition of the gamma information matrix failed"))
+  }
+  rank_gamma <- qrC$rank
   kappa_gamma <- tryCatch(kappa(C), error = function(e) NA_real_)
   stable <- is.finite(kappa_gamma) &&
     kappa_gamma <= kappa_threshold &&
+    !is.na(rank_gamma) &&
     rank_gamma >= m
 
   list(
     stable = stable,
+    available = TRUE,
     kappa_gamma = kappa_gamma,
     rank_gamma = rank_gamma,
-    n_gamma = m
+    n_gamma = m,
+    reason = if (stable) {
+      NA_character_
+    } else {
+      "gamma information matrix is ill-conditioned"
+    }
   )
 }
 
 #' Warn when survfit delta-method bands may be unreliable due to unstable gamma information.
 #'
 #' @noRd
-.spbp_warn_gamma_unstable_survfit <- function(object, kappa_gamma) {
+.spbp_warn_gamma_unstable_survfit <- function(object, kappa_gamma, reason = NULL) {
   m <- length(object$bp.param)
+  if (!is.null(reason) && !is.na(reason) && identical(reason, "gamma information matrix contains non-finite values")) {
+    warning(
+      "Bernstein-polynomial (gamma) information matrix contains non-finite values ",
+      "(degree = ", m, "); ",
+      "delta-method survival standard errors and confidence bands are unavailable. ",
+      "Try refitting with a lower Bernstein degree ",
+      "(argument `degree` to bpph(), bppo(), bpaft(), or spbp()).",
+      call. = FALSE
+    )
+    return(invisible(NULL))
+  }
+  kappa_txt <- if (is.finite(kappa_gamma)) signif(kappa_gamma, 3) else "NA"
   warning(
     "Bernstein-polynomial (gamma) information matrix is ill-conditioned ",
-    "(kappa = ", signif(kappa_gamma, 3), ", degree = ", m, "); ",
+    "(kappa = ", kappa_txt, ", degree = ", m, "); ",
     "delta-method survival standard errors and confidence bands may be unreliable. ",
     "Try refitting with a lower Bernstein degree ",
     "(argument `degree` to bpph(), bppo(), bpaft(), or spbp()).",

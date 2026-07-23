@@ -22,7 +22,7 @@
 #' @import Rcpp
 #' @import survival
 #' @importFrom rstan stan sampling optimizing
-#' @importFrom rstantools rstan_config
+#' @importFrom RcppParallel RcppParallelLibs
 #' @author rvpanaro@gmail.com
 #' @references
 #'

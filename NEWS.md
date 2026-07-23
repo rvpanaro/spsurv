@@ -3,9 +3,16 @@
 * **CRAN resubmission:** Maintainer contact updated to `rvpanaro@gmail.com`;
   `Authors@R` roles reviewed (single maintainer; thesis advisors listed as
   `ths`, with `rev` for code review feedback); package `Description` citation
-  updated to `<doi:10.48550/arXiv.2003.10548>`; restored `rstantools` in
-  `Imports` (required by `configure` scripts); restored `covr`, `rsample`, and
-  `rsurv` in `Suggests` for optional tests referenced in `tests/`.
+  updated to `<doi:10.48550/arXiv.2003.10548>`; set
+  `Config/rstantools/auto_config: FALSE` and ship committed Stan C++ exports
+  (no install-time `configure`/`rstan_config()`, avoiding Windows R-devel
+  `rstan.dll` load failures); added `RcppParallel` and synced
+  `src/Makevars.win` TBB flags with Unix `Makevars`; restored `covr`,
+  `rsample`, and `rsurv` in `Suggests` for optional tests referenced in
+  `tests/`.
+* **Inference robustness:** `.spbp_gamma_information_diagnostics()` no longer
+  calls `qr()` on non-finite gamma information matrices; `vcov()`/`survfit()`
+  return NA uncertainty with a warning when that block is unavailable.
 * **tidymodels:** parsnip engines `spsurv` (MLE) and `spsurv_bayes` for `proportional_hazards()`, new `proportional_odds()`, and `survival_reg()`; `bp_survival_reg()` convenience constructor; `workflow` / `predict(type = "survival")` support.
 * **tidybayes:** `as_draws_df.spbp()`, `spread_surv_draws.spbp()`, and S3 hooks for `tidy_draws` / `spread_draws` / `gather_draws` on Bayes fits; posterior draw indices (`.chain`, `.iteration`, `.draw`).
 * **Prediction:** censored-style `predict.spbp()` types (`survival`, `time`, `linear_pred`); `augment.spbp()`.

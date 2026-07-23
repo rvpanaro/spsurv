@@ -31,14 +31,15 @@ Depends:
 Imports: 
     methods,
     Rcpp (>= 0.12.0),
+    RcppParallel (>= 5.0.1),
     rstan (>= 2.18.1),
-    rstantools (>= 1.5.1),
     generics,
     viridis
 LinkingTo: 
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
     RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
     rstan (>= 2.18.1),
     StanHeaders (>= 2.18.0)
 Suggests:
@@ -54,10 +55,12 @@ Suggests:
     posterior (>= 1.4.0),
     covr,
     rsample (>= 1.1.0),
-    rsurv
+    rsurv,
+    rstantools (>= 1.5.1)
 VignetteBuilder: knitr
 Encoding: UTF-8
 SystemRequirements: GNU make
 BugReports: https://github.com/rvpanaro/spsurv/issues
 URL: https://github.com/rvpanaro/spsurv, https://rvpanaro.github.io/spsurv/
 Config/roxygen2/version: 8.0.0
+Config/rstantools/auto_config: FALSE

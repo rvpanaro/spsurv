@@ -10,40 +10,86 @@ CRAN because the former maintainer email address was unreachable.
 * **Archived-package issues addressed:** updated maintainer contact; corrected
   package citation in `Description` (`<doi:10.48550/arXiv.2003.10548>`);
   reviewed `Authors@R` (single maintainer; thesis advisors as `ths`/`rev` only);
-  restored `rstantools` in `Imports` with explicit `NAMESPACE` import for
-  `configure`/`configure.win`.
+  disabled install-time Stan auto-config (`Config/rstantools/auto_config: FALSE`)
+  so Windows builds use committed Stan C++ exports and do not call
+  `rstantools::rstan_config()` during `configure`; added `RcppParallel` and
+  aligned `src/Makevars.win` with Unix TBB flags (fixes missing
+  `tbb/tbb_stddef.h`). R-devel Win-builder can still fail later when loading
+  Import `rstan.dll` (guest environment); R-release Windows check is clean.
 
 ## Test environments
 
-* local: R 4.5.x (macOS, aarch64), `R CMD check --as-cran`
-* win-builder: run before upload
-* macOS builder: run before upload if available
+* local: R 4.6.1 (macOS Sequoia, Apple Silicon), `R CMD check --as-cran`
+* win-builder R-release: R 4.6.1 (ucrt), x86_64-w64-mingw32
+  (https://win-builder.r-project.org/6bFfd06dsW09) — Status: 1 NOTE
+* win-builder R-devel (R 4.7.x guest): compile succeeds after `RcppParallel` /
+  `Makevars.win` sync, but install fails at lazy-load when loading dependency
+  `rstan.dll` (`LoadLibrary` / “Das angegebene Modul wurde nicht gefunden”).
+  This is an R-devel Win-builder `rstan` binary/environment issue, not an
+  `spsurv` compile or NAMESPACE error; R-release Windows check is clean.
+* macOS builder: not yet run
 
-## R CMD check results (spsurv 1.1.0, local macOS aarch64, R 4.5.1, 2026-07-21)
+## R CMD check results (spsurv 1.1.0, local macOS aarch64, R 4.6.1, 2026-07-21)
 
 ```
 R CMD build .  -> spsurv_1.1.0.tar.gz (OK)
 R CMD check --as-cran spsurv_1.1.0.tar.gz
 
-Status: 3 NOTEs
+Status: 2 NOTEs
 0 errors | 0 warnings | 0 failures
 ```
 
-* **NOTE:** `checking CRAN incoming feasibility` — new resubmission; package was
-  archived; maintainer `rvpanaro@gmail.com` (no invalid URL findings after
-  README/`DESCRIPTION` URL canonicalisation).
-* **NOTE:** `checking for future file timestamps` — environmental (sandbox/time).
-* **NOTE:** `checking HTML version of manual` — local `tidy` too old; not a
-  package issue.
-* **INFO:** `GNU make is a SystemRequirements` — expected for Stan.
-* **Resolved before final check:** unstated test dependencies (`covr`, `rsample`,
-  `rsurv`) — added to `Suggests` for optional/skipped tests.
+Installation, compilation, examples, tests, vignettes, and PDF manual: OK.
 
-## testthat (local, spsurv 1.1.0, 2026-07-21)
+* **NOTE:** `checking CRAN incoming feasibility` — archived-package resubmission;
+  updated maintainer address `rvpanaro@gmail.com`; `GPL-3 + file LICENSE`; no
+  invalid URL findings.
+* **NOTE:** `checking HTML version of manual` — local HTML Tidy was not recent
+  enough to validate the manual HTML; the optional V8-based math-rendering check
+  was unavailable locally.
+* **INFO:** `GNU make is a SystemRequirements` — expected for Stan.
+
+## R CMD check results (win-builder R-release, R 4.6.1 ucrt, 2026-07-23)
 
 ```
-devtools::test(): 665 passed, 0 failed, 1 skipped, 43 warnings
-(Stan / ill-conditioned gamma diagnostics)
+https://win-builder.r-project.org/6bFfd06dsW09
+Installation time: ~164s | Check time: ~321s
+
+Status: 1 NOTE
+0 errors | 0 warnings | 0 failures
+```
+
+Install, examples, tests, vignettes, PDF/HTML manuals: OK. Binary:
+`spsurv_1.1.0.zip`.
+
+* **NOTE:** `checking CRAN incoming feasibility` — New submission; package was
+  archived on CRAN; `GPL-3 + file LICENSE`; maintainer
+  `Renato Panaro <rvpanaro@gmail.com>`; CRAN comment notes archival on
+  2026-06-11 due to undeliverable maintainer email (addressed by this
+  resubmission).
+* **INFO:** `checking C++ specification` — specified C++17 (expected for Stan).
+
+## R CMD check results (win-builder R-devel, R 4.7.x guest)
+
+Compile of `spsurv` succeeds. Install then fails at byte-compile / lazy-load:
+
+```
+unable to load shared object '.../rstan/libs/x64/rstan.dll':
+  LoadLibrary failure: Das angegebene Modul wurde nicht gefunden.
+ERROR: lazy loading failed for package 'spsurv'
+```
+
+Cause: loading Import `rstan` on that guest fails inside `rstan.dll` (missing
+dependent module). Same class of failure previously seen at `configure` time;
+with `auto_config: FALSE` it now appears only when R loads Imports. Not
+actionable in `spsurv` without dropping `rstan` from Imports (incompatible with
+Stan MLE/Bayes engines). R-release Win-builder check above is the Windows
+reference result for this submission.
+
+## testthat (local, spsurv 1.1.0, R 4.6.1)
+
+```
+devtools::test(): 678 passed, 0 failed, 1 skipped
 ```
 
 ## revdepcheck
@@ -59,3 +105,6 @@ Not run for this resubmission.
 * New vignette `vignette("tidymodels")`.
 * Installed size is dominated by compiled Stan code in `libs/` (expected).
 * Bayesian tests use reduced `iter`/`chains` for speed.
+* Stan C++ exports are committed; regenerate with `rstantools::rstan_config()`
+  only when `inst/stan` models change (developers: install Suggests
+  `rstantools`).

@@ -172,30 +172,64 @@ test_that("BPAFT production survfit cumhaz matches endpoint-corrected map and FD
 
 test_that("PO survfit std.err follows delta method when gamma information is stable", {
   dat <- survival::veteran
-  fit <- bppo(Surv(time, status) ~ karno + factor(celltype), data = dat, approach = "mle", init = 0)
+  # Fixed low degree + init=0 keeps the gamma information finite and well-conditioned
+  # across platforms (default degree ceiling(sqrt(n)) is often ill-conditioned for PO).
+  fit <- bppo(
+    Surv(time, status) ~ karno + factor(celltype),
+    data = dat,
+    approach = "mle",
+    degree = 5L,
+    init = 0
+  )
   t0 <- 50
   gamma_diag <- .spbp_gamma_information_diagnostics(fit)
+  expect_true(gamma_diag$available)
+  expect_true(gamma_diag$stable)
+  expect_true(is.finite(gamma_diag$kappa_gamma))
 
-  if (gamma_diag$stable) {
-    sf <- survfit(fit, times = t0)
-    q <- length(fit$coefficients)
-    m <- length(fit$bp.param)
-    X <- t(fit$means)
-    G <- sapply(seq_len(m), function(k) pbeta(t0 / fit$tau_b, k, m - k + 1))
-    exp_eta <- exp(as.numeric(X %*% fit$coefficients))
-    odds <- sum(G * fit$bp.param) * exp_eta
-    H <- log1p(odds)
-    grad <- c(odds / (1 + odds) * as.numeric(X), G * exp_eta / (1 + odds))
-    V <- vcov(fit, bp.param = TRUE)
-    se_manual <- sqrt(as.numeric(t(grad) %*% V %*% grad))
-    expect_equal(unname(sf$std.err[1, 1]), unname(se_manual), tolerance = 1e-8)
-    expect_lt(se_manual / H, 1)
-  } else {
-    expect_warning(sf <- survfit(fit, times = t0), "lower Bernstein degree")
-    expect_true(all(is.finite(sf$std.err)))
-    expect_true(all(is.finite(sf$lower)))
-    expect_true(all(is.finite(sf$upper)))
-  }
+  sf <- survfit(fit, times = t0)
+  q <- length(fit$coefficients)
+  m <- length(fit$bp.param)
+  X <- t(fit$means)
+  G <- sapply(seq_len(m), function(k) pbeta(t0 / fit$tau_b, k, m - k + 1))
+  exp_eta <- exp(as.numeric(X %*% fit$coefficients))
+  odds <- sum(G * fit$bp.param) * exp_eta
+  H <- log1p(odds)
+  grad <- c(odds / (1 + odds) * as.numeric(X), G * exp_eta / (1 + odds))
+  V <- vcov(fit, bp.param = TRUE)
+  se_manual <- sqrt(as.numeric(t(grad) %*% V %*% grad))
+  expect_equal(unname(sf$std.err[1, 1]), unname(se_manual), tolerance = 1e-8)
+  expect_lt(se_manual / H, 1)
+})
+
+test_that("non-finite gamma information does not crash diagnostics or summary/survfit", {
+  dat <- survival::veteran
+  fit <- bppo(
+    Surv(time, status) ~ karno + factor(celltype),
+    data = dat,
+    approach = "mle",
+    degree = 5L,
+    init = 0
+  )
+  q <- length(fit$coefficients)
+  # Inject a non-finite entry into the gamma block of the stored Hessian.
+  bad <- fit
+  bad$hessian[q + 1L, q + 1L] <- Inf
+
+  gamma_diag <- .spbp_gamma_information_diagnostics(bad)
+  expect_false(gamma_diag$stable)
+  expect_false(gamma_diag$available)
+  expect_true(is.na(gamma_diag$rank_gamma))
+  expect_true(is.na(gamma_diag$kappa_gamma))
+  expect_match(gamma_diag$reason, "non-finite")
+
+  expect_warning(s <- summary(bad), regexp = NULL)
+  expect_true(is.matrix(s$coefficients))
+  expect_true(all(is.finite(s$coefficients[, "se(coef)"])))
+
+  expect_warning(sf <- survfit(bad, times = 50), "non-finite|Bernstein")
+  expect_true(all(is.na(sf$std.err)))
+  expect_true(all(is.finite(sf$surv)))
 })
 
 test_that("survfit point estimates satisfy survival identity", {

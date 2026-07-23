@@ -92,12 +92,22 @@
 
     exp_eta <- as.vector(exp(X %*% beta))
     gamma_diag <- .spbp_gamma_information_diagnostics(x)
+    gamma_unavailable <- isFALSE(gamma_diag$available)
     if (!gamma_diag$stable) {
-      .spbp_warn_gamma_unstable_survfit(x, gamma_diag$kappa_gamma)
+      .spbp_warn_gamma_unstable_survfit(
+        x,
+        gamma_diag$kappa_gamma,
+        reason = gamma_diag$reason
+      )
     }
     # Full delta-method: propagate joint (beta, gamma) uncertainty.
-    # This intentionally includes the gamma part even when p > 0.
-    var <- stats::vcov(x, bp.param = TRUE, mask_unstable_gamma = FALSE)
+    # This intentionally includes the gamma part even when p > 0, unless the
+    # gamma information is unavailable/non-finite.
+    if (gamma_unavailable) {
+      var <- NULL
+    } else {
+      var <- stats::vcov(x, bp.param = TRUE, mask_unstable_gamma = FALSE)
+    }
 
     if (x$call$model == "ph") {
       G <- matrix(sapply(seq_len(m), function(k) pbeta(time / x$tau_b, k, m - k + 1)), nrow = length(time))
@@ -105,19 +115,21 @@
       cumhaz <- as.vector(G %*% gamma) %o% exp_eta
       surv <- exp(-cumhaz)
       varH <- matrix(NA_real_, nrow = nrow(cumhaz), ncol = ncol(cumhaz))
-      for (i in seq_len(nrow(cumhaz))) {
-        for (j in seq_len(ncol(cumhaz))) {
-          cg <- .spbp_ph_cumhaz_grad(x$tau_b, time[i], gamma, beta, X[j, , drop = TRUE])
-          grad_beta <- cg$grad_beta
-          dgamma <- cg$grad_gamma
+      if (!is.null(var)) {
+        for (i in seq_len(nrow(cumhaz))) {
+          for (j in seq_len(ncol(cumhaz))) {
+            cg <- .spbp_ph_cumhaz_grad(x$tau_b, time[i], gamma, beta, X[j, , drop = TRUE])
+            grad_beta <- cg$grad_beta
+            dgamma <- cg$grad_gamma
 
-          if (p > 0) {
-            grad <- as.matrix(c(grad_beta, dgamma))
-          } else {
-            grad <- as.matrix(c(dgamma))
+            if (p > 0) {
+              grad <- as.matrix(c(grad_beta, dgamma))
+            } else {
+              grad <- as.matrix(c(dgamma))
+            }
+
+            varH[i, j] <- .spbp_sym_quad_form(var, grad)
           }
-
-          varH[i, j] <- .spbp_sym_quad_form(var, grad)
         }
       }
       std.err <- sqrt(varH)
@@ -128,18 +140,20 @@
       cumhaz <- log(1 + odds)
       surv <- exp(-cumhaz)
       varH <- matrix(NA_real_, nrow = nrow(odds), ncol = ncol(odds))
-      for (i in seq_len(nrow(odds))) {
-        for (j in seq_len(ncol(odds))) {
-          grad_beta <- 1 / (1 + odds[i, j]) * (odds[i, j] * X[j, ])
-          dgamma <- 1 / (1 + odds[i, j]) * (G[i, ] * exp_eta[j])
+      if (!is.null(var)) {
+        for (i in seq_len(nrow(odds))) {
+          for (j in seq_len(ncol(odds))) {
+            grad_beta <- 1 / (1 + odds[i, j]) * (odds[i, j] * X[j, ])
+            dgamma <- 1 / (1 + odds[i, j]) * (G[i, ] * exp_eta[j])
 
-          if (p > 0) {
-            grad <- as.matrix(c(grad_beta, dgamma))
-          } else {
-            grad <- as.matrix(c(dgamma))
+            if (p > 0) {
+              grad <- as.matrix(c(grad_beta, dgamma))
+            } else {
+              grad <- as.matrix(c(dgamma))
+            }
+
+            varH[i, j] <- .spbp_sym_quad_form(var, grad)
           }
-
-          varH[i, j] <- .spbp_sym_quad_form(var, grad)
         }
       }
       std.err <- sqrt(varH)
@@ -186,29 +200,31 @@
         cumhaz[at_zero, ] <- 0
       }
       varH <- matrix(NA_real_, nrow = nrow(cumhaz), ncol = ncol(cumhaz))
-      for (i in seq_len(nrow(cumhaz))) {
-        for (j in seq_len(ncol(cumhaz))) {
-          cg <- .spbp_aft_cumhaz_grad(
-            tau_a = tau_a,
-            tau_b = tau_b,
-            t = time[i],
-            gamma = gamma,
-            beta = beta,
-            xrow = X[j, , drop = TRUE],
-            P = P,
-            X_train = X_train,
-            log_time_train = log_time_train
-          )
-          grad_beta <- cg$grad_beta
-          dgamma <- cg$grad_gamma
+      if (!is.null(var)) {
+        for (i in seq_len(nrow(cumhaz))) {
+          for (j in seq_len(ncol(cumhaz))) {
+            cg <- .spbp_aft_cumhaz_grad(
+              tau_a = tau_a,
+              tau_b = tau_b,
+              t = time[i],
+              gamma = gamma,
+              beta = beta,
+              xrow = X[j, , drop = TRUE],
+              P = P,
+              X_train = X_train,
+              log_time_train = log_time_train
+            )
+            grad_beta <- cg$grad_beta
+            dgamma <- cg$grad_gamma
 
-          if (p > 0) {
-            grad <- as.matrix(c(grad_beta, dgamma))
-          } else {
-            grad <- as.matrix(c(dgamma))
+            if (p > 0) {
+              grad <- as.matrix(c(grad_beta, dgamma))
+            } else {
+              grad <- as.matrix(c(dgamma))
+            }
+
+            varH[i, j] <- .spbp_sym_quad_form(var, grad)
           }
-
-          varH[i, j] <- .spbp_sym_quad_form(var, grad)
         }
       }
       std.err <- sqrt(varH)
