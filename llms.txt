@@ -1,0 +1,419 @@
+## spsurv [![spsurv package logo](https://raw.githubusercontent.com/rvpanaro/spsurv/master/inst/figures/logo.png)](https://rvpanaro.github.io/spsurv/)
+
+[![CRAN
+status](https://www.r-pkg.org/badges/version/spsurv)](https://cran.r-project.org/package=spsurv)
+[![CRAN
+downloads](https://cranlogs.r-pkg.org/badges/spsurv)](https://cran.r-project.org/package=spsurv)
+[![CRAN
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/spsurv)](https://cran.r-project.org/package=spsurv)
+[![R-CMD-check](https://github.com/rvpanaro/spsurv/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rvpanaro/spsurv/actions/workflows/R-CMD-check.yaml)
+[![Codecov](https://codecov.io/gh/rvpanaro/spsurv/branch/master/graph/badge.svg)](https://app.codecov.io/gh/rvpanaro/spsurv)
+
+## Overview
+
+**spsurv**: An R package for semi-parametric survival analysis.
+
+The **spsurv** package was designed to contribute with a flexible set of
+semi-parametric survival regression options, including **proportional
+hazards (PH)**, **proportional odds (PO)**, and **accelerated failure
+time (AFT)** models for right-censored data.
+
+The package provides:
+
+- Survival classes (PH, PO, AFT) extensions based on a fully
+  likelihood-based approach for either **Bayesian** or **maximum
+  likelihood (ML)** estimation procedures
+- Smooth estimates for the unknown baseline functions based on the
+  **Bernstein polynomial (BP)**
+- Integration with **Stan** for user-defined modeling
+- Six distinct prior specification options in a Bayesian analysis
+
+Stan is an open-source platform with its own language and
+log-probability functions for custom likelihoods and priors. Access to
+Stan in R is provided via **rstan**; the package uses NUTS (No-U-Turn)
+sampling by default for Bayesian fits.
+
+## Installation
+
+### From CRAN
+
+``` r
+
+install.packages("spsurv")
+```
+
+### Development version
+
+``` r
+
+install.packages("devtools")
+devtools::install_github("rvpanaro/spsurv")
+```
+
+## Usage
+
+Fit a BP-based survival regression PH model. If `degree` is omitted, the
+default is `ceiling(sqrt(n))` where `n` is the number of rows in `data`;
+the resolved value is stored on the fit as `fit$degree`.
+
+``` r
+
+library("KMsurv")
+data("larynx")
+larynx$stage <- factor(larynx$stage)
+
+library(spsurv)
+
+fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle")
+summary(fit)
+fit$degree   # Bernstein polynomial degree used
+```
+
+Alternatively, use the `spbp` function or set the degree with
+`bernstein(m)`:
+
+``` r
+
+fit <- spbp(Surv(time, delta) ~ age + stage, model = "ph", data = larynx,
+            dist = bernstein(5), approach = "mle")
+summary(fit)
+```
+
+Bayesian analysis with the `approach` argument:
+
+``` r
+
+fit2 <- spbp(Surv(time, delta) ~ age + stage,
+             approach = "bayes", data = larynx,
+             iter = 2000, chains = 1, warmup = 1000)
+summary(fit2)
+```
+
+Nested model comparison (MLE) follows the same
+[`anova()`](https://rdrr.io/r/stats/anova.html) patterns as
+[`survival::survreg`](https://rdrr.io/pkg/survival/man/survreg.html):
+
+``` r
+
+fit0 <- bpph(Surv(time, delta) ~ 1, data = larynx, approach = "mle", degree = 5)
+fit1 <- bpph(Surv(time, delta) ~ age, data = larynx, approach = "mle", degree = 5)
+fit2 <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle", degree = 5)
+
+anova(fit0, fit1)
+anova(fit1, fit2)
+anova(fit2)   # sequential term-wise table
+```
+
+See the [reference
+manual](https://rvpanaro.github.io/spsurv/reference/index.html) and
+vignette
+[`vignette("getting-started", package = "spsurv")`](https://rvpanaro.github.io/spsurv/articles/getting-started.md)
+for more examples.
+
+### Tidy model summaries
+
+Coefficient and model-level summaries follow the
+[generics](https://generics.r-lib.org/) / broom convention:
+
+``` r
+
+library(generics)
+library(ggplot2)
+
+fit <- bpph(Surv(time, delta) ~ age + stage, data = larynx, approach = "mle")
+
+# One row per term (hazard ratios with 95% CI)
+td <- tidy(fit, conf.int = TRUE, exponentiate = TRUE)
+print(td)
+
+# One-row model summary (n, log-likelihood, global LR test, AIC, ...)
+glance(fit)
+
+# Forest plot
+ggplot(td, aes(x = estimate, y = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_vline(xintercept = 1, linetype = "dashed") +
+  labs(x = "Hazard ratio", y = NULL)
+```
+
+For publication-ready tables, pipe
+[`tidy()`](https://generics.r-lib.org/reference/tidy.html) output into
+[gt](https://gt.rstudio.com/) or similar packages.
+
+### Baseline inference, diagnostics, and model ranking
+
+``` r
+
+# Baseline gamma weights with Wald table (survstan-style summary)
+summary(fit, show_baseline = TRUE)
+print(fit, show_baseline = TRUE)   # same via print()
+print(fit, bp.param = TRUE)        # baseline-only table
+
+# Tidy baseline weights
+tidy(fit, component = "baseline", conf.int = TRUE)
+confint(fit, parm = names(fit$bp.param))
+
+# Rank nested models by AIC
+f0 <- bpph(Surv(time, delta) ~ 1, data = larynx, degree = 5)
+f1 <- bpph(Surv(time, delta) ~ age, data = larynx, degree = 5)
+rank_models(f0, f1)                # or AIC(f0, f1)
+
+# Baseline survival S0(t) at event times
+survfit(fit, baseline = TRUE, tidy = TRUE)
+
+# ggplot2 residual plots (requires ggplot2)
+ggresiduals(fit, type = "martingale")
+```
+
+If you also use the **survstan** package, qualify spsurv helpers after
+[`library(survstan)`](https://github.com/fndemarqui/survstan) —
+e.g. `spsurv::estimates(fit)` and `spsurv::se(fit)`.
+
+### tidymodels and tidybayes
+
+Load **parsnip** (or **tidymodels**) before **spsurv** so
+censored-regression engines register. Use `scale = FALSE` when
+preprocessing with **recipes**.
+
+``` r
+
+library(parsnip)
+library(censored)
+library(workflows)
+library(spsurv)
+
+wf <- workflow() |>
+  add_formula(Surv(time, status) ~ karno) |>
+  add_model(
+    proportional_hazards() |>
+      set_engine("spsurv", degree = 5, scale = FALSE, init = 0)
+  )
+
+fit_wf <- fit(wf, data = veteran)
+predict(fit_wf, veteran[1:2, ], type = "survival", eval_time = 100)
+```
+
+Bayesian fits support **tidybayes** via
+[`as_draws_df.spbp()`](https://rvpanaro.github.io/spsurv/reference/as_draws_df.spbp.md),
+`spread_draws()`, and
+[`spread_surv_draws.spbp()`](https://rvpanaro.github.io/spsurv/reference/spread_surv_draws.spbp.md).
+See
+[`vignette("tidymodels", package = "spsurv")`](https://rvpanaro.github.io/spsurv/articles/tidymodels.md).
+
+## Troubleshooting
+
+### Bayesian convergence checks
+
+For Bayesian fits, always check:
+
+- divergent transitions (target: 0)
+- split-(R) (target: close to 1, typically \< 1.01)
+- effective sample sizes (avoid very low bulk/tail ESS)
+
+If warnings appear, use this escalation order:
+
+1.  increase `adapt_delta` (for example, from 0.8 to 0.9 or 0.95)
+2.  increase `iter` and `warmup`
+3.  re-check divergences, `Rhat`, and ESS before interpretation
+
+Higher `adapt_delta` usually reduces divergences but increases runtime,
+so tuning should balance stability and compute cost.
+
+Please report issues at <https://github.com/rvpanaro/spsurv/issues> or
+contact the maintainer (see DESCRIPTION).
+
+## Links
+
+- [Download from CRAN](https://cran.r-project.org/package=spsurv)
+- [Browse source code](https://github.com/rvpanaro/spsurv)
+- [Report a bug](https://github.com/rvpanaro/spsurv/issues)
+
+## License
+
+GPL-3
+
+# Package index
+
+## Details
+
+- [`spsurv-package`](https://rvpanaro.github.io/spsurv/reference/spsurv-package.md)
+  [`spsurv`](https://rvpanaro.github.io/spsurv/reference/spsurv-package.md)
+  : The 'spsurv' package.
+
+## Fitter functions
+
+Functions for fitting a BP based survival regression model.
+
+- [`bpph()`](https://rvpanaro.github.io/spsurv/reference/bpph.md) :
+  Bernstein PH Model
+- [`bppo()`](https://rvpanaro.github.io/spsurv/reference/bppo.md) :
+  Bernstein PO Model
+- [`bpaft()`](https://rvpanaro.github.io/spsurv/reference/bpaft.md) :
+  Bernstein AFT Model
+- [`spbp()`](https://rvpanaro.github.io/spsurv/reference/spbp.md) :
+  spbp: The BP Based Survival Analysis Function
+- [`spbp(`*`<default>`*`)`](https://rvpanaro.github.io/spsurv/reference/spbp.default.md)
+  : spbp: The BP Based Semiparametric Survival Analysis Function
+
+## Extraction and inference
+
+Coefficients, confidence and credible intervals, residuals, survival
+curves.
+
+- [`coef(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/coef.spbp.md)
+  : Estimated regression coefficients
+- [`confint(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/confint.spbp.md)
+  : Confidence intervals for the regression coefficients
+- [`credint()`](https://rvpanaro.github.io/spsurv/reference/credint.md)
+  : Generic S3 method credint
+- [`credint(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/credint.spbp.md)
+  : Credible intervals for the regression coefficients
+- [`vcov(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/vcov.spbp.md)
+  : Covariance of the regression coefficients
+- [`residuals(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/residuals.spbp.md)
+  : BP based models residuals.
+- [`survfit(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/survfit.spbp.md)
+  [`as.data.frame(`*`<survfitbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/survfit.spbp.md)
+  : BP-based model survival curves
+- [`predict(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/predict.spbp.md)
+  : Predicted survival as a tidy data frame
+- [`augment(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/augment.spbp.md)
+  : Augment data with spbp model information
+- [`tidy(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/tidy.spbp.md)
+  : Tidy summary for fitted spbp models
+- [`glance(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/glance.spbp.md)
+  : Glance at a fitted spbp model
+- [`model.matrix(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/model.matrix.spbp.md)
+  : Model.matrix method for fitted spbp models
+- [`as_draws_df.spbp()`](https://rvpanaro.github.io/spsurv/reference/as_draws_df.spbp.md)
+  : Convert spbp Bayesian fit to posterior draws
+- [`spread_surv_draws.spbp()`](https://rvpanaro.github.io/spsurv/reference/spread_surv_draws.spbp.md)
+  : Posterior survival curves in long tidy format
+
+## tidymodels
+
+parsnip model specifications and engines.
+
+- [`proportional_odds()`](https://rvpanaro.github.io/spsurv/reference/proportional_odds.md)
+  : Proportional odds regression model specification
+- [`bp_survival_reg()`](https://rvpanaro.github.io/spsurv/reference/bp_survival_reg.md)
+  : Bernstein survival regression specification
+
+## Model comparison and extraction
+
+Bernstein baseline helper, parameter estimates, and information
+criteria.
+
+- [`bernstein()`](https://rvpanaro.github.io/spsurv/reference/bernstein.md)
+  : Bernstein polynomial baseline specification
+- [`estimates()`](https://rvpanaro.github.io/spsurv/reference/estimates.md)
+  : Parameter estimates for fitted spbp models
+- [`se()`](https://rvpanaro.github.io/spsurv/reference/se.md) : Standard
+  errors for fitted spbp model parameters
+- [`logLik(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/logLik.spbp.md)
+  : Log-likelihood for fitted spbp models
+- [`AIC(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/AIC.spbp.md)
+  : Akaike information criterion for fitted spbp models
+- [`extractAIC(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/extractAIC.spbp.md)
+  : Extract AIC from a fitted spbp model
+- [`anova(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/anova.spbp.md)
+  : Analysis of deviance table for nested spbp models
+- [`rank_models()`](https://rvpanaro.github.io/spsurv/reference/rank_models.md)
+  : Rank fitted spbp models by AIC
+
+## Bernstein polynomial basis
+
+Functions for the BP basis.
+
+- [`bp.basis()`](https://rvpanaro.github.io/spsurv/reference/bp.basis.md)
+  : Bernstein basis polynomials calculations
+- [`pw.basis()`](https://rvpanaro.github.io/spsurv/reference/pw.basis.md)
+  : Power basis polynomials calculations
+
+## Plot and print
+
+S3 methods for spbp objects.
+
+- [`plot(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/plot.spbp.md)
+  : BP based models plot.
+- [`ggresiduals()`](https://rvpanaro.github.io/spsurv/reference/ggresiduals.md)
+  : ggplot2 residual diagnostic plots for spbp models
+- [`print(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.spbp.md)
+  : Bernstein Polynomial Based Regression Object Print
+- [`summary(`*`<spbp>`*`)`](https://rvpanaro.github.io/spsurv/reference/summary.spbp.md)
+  : Bernstein Polynomial Based Regression Object Summary
+- [`print(`*`<summary.bpaft.bayes>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.bpaft.bayes.md)
+  : Bernstein Polynomial Based Regression Object Summary BPAFT Bayes
+- [`print(`*`<summary.bpaft.mle>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.bpaft.mle.md)
+  : Bernstein Polynomial Based Regression Object Summary BPAFT MLE
+- [`print(`*`<summary.bpph.bayes>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.bpph.bayes.md)
+  : Bernstein Polynomial Based Regression Object Summary BPPH Bayes
+- [`print(`*`<summary.bpph.mle>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.bpph.mle.md)
+  : Bernstein Polynomial Based Regression Object Summary BPPH MLE
+- [`print(`*`<summary.bppo.bayes>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.bppo.bayes.md)
+  : Bernstein Polynomial Based Regression Object Summary BPPO Bayes
+- [`print(`*`<summary.bppo.mle>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.bppo.mle.md)
+  : Bernstein Polynomial Based Regression Object BPPO MLE
+- [`print(`*`<summary.spbp.bayes>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.spbp.bayes.md)
+  : Bernstein Polynomial Based Regression Object Summary Bayes
+- [`print(`*`<summary.spbp.mle>`*`)`](https://rvpanaro.github.io/spsurv/reference/print.summary.spbp.mle.md)
+  : Bernstein Polynomial Based Regression Object Summary MLE
+
+# Articles
+
+### Getting started
+
+EDA, first fit, forest plots, and decision prompts
+
+- [Getting started with
+  spsurv](https://rvpanaro.github.io/spsurv/articles/getting-started.md):
+
+### Model families
+
+Veteran EDA, PH/PO/AFT survival overlays, and AIC commentary
+
+- [Choosing PH, PO, and AFT
+  models](https://rvpanaro.github.io/spsurv/articles/model-families.md):
+
+### Bernstein polynomial
+
+Event-time EDA, baseline overlays, and kappa stability
+
+- [Bernstein polynomial degree and baseline
+  plots](https://rvpanaro.github.io/spsurv/articles/bp-degree.md):
+
+### Survival curves
+
+KM vs model overlay, ribbons, and ggplot workflows
+
+- [Survival prediction and ggplot
+  workflows](https://rvpanaro.github.io/spsurv/articles/survival-ggplot.md):
+
+### MLE inference
+
+Forest plots, criterion comparison, and df interpretation
+
+- [Inference and model comparison
+  (MLE)](https://rvpanaro.github.io/spsurv/articles/mle-inference.md):
+
+### Bayesian analysis
+
+Posterior forests, MLE vs Bayes comparison, and convergence
+
+- [Bayesian analysis with
+  Stan](https://rvpanaro.github.io/spsurv/articles/bayesian-analysis.md):
+
+### Diagnostics
+
+Martingale, Cox-Snell calibration, deviance, and decision table
+
+- [Model checking and
+  residuals](https://rvpanaro.github.io/spsurv/articles/diagnostics.md):
+
+### tidymodels
+
+parsnip engines, workflows, and tidybayes draws
+
+- [tidymodels and tidybayes
+  integration](https://rvpanaro.github.io/spsurv/articles/tidymodels.md):
