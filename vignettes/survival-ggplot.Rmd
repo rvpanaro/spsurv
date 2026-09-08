@@ -20,8 +20,10 @@ knitr::opts_chunk$set(
 ```
 
 Unlike stepwise Cox `survfit` curves, `spsurv` evaluates survival on a **dense
-time grid** using the fitted Bernstein baseline. This vignette connects observed
-Kaplan-Meier curves to model-based predictions.
+time grid** using the fitted Bernstein baseline. Kaplan--Meier stays a
+**step** function; Bernstein-polynomial curves are always **smooth lines**
+(`geom_line`, or `plot(survfit(fit))`). This vignette connects observed KM to
+model-based predictions.
 
 ## Before you model
 
@@ -100,11 +102,11 @@ head(pr)
 
 ## Visual check — KM vs model overlay
 
-**Panel A:** observed KM (step) vs model prediction (dashed) per stage.
+**Panel A:** observed KM (**steps**) vs model prediction (**smooth** dashed)
+per stage.
 
-```{r km-model-overlay, fig.cap = "Observed KM (solid) vs model prediction at age 70 (dashed)."}
-curve_labs <- paste("Stage", newdata$stage)
-pr$series <- curve_labs[match(as.character(pr$id), as.character(seq_len(nrow(newdata))))]
+```{r km-model-overlay, fig.cap = "Observed KM (steps) vs smooth Bernstein prediction at age 70 (dashed)."}
+pr$stage <- newdata$stage[match(as.character(pr$id), as.character(seq_len(nrow(newdata))))]
 
 ggplot() +
   geom_step(
@@ -115,19 +117,20 @@ ggplot() +
   ) +
   geom_line(
     data = pr,
-    aes(x = time, y = surv, color = series),
+    aes(x = time, y = surv, color = stage),
     linetype = "dashed",
     linewidth = 0.6
   ) +
-  labs(x = "Time (years)", y = "Survival probability", color = NULL) +
+  labs(x = "Time (years)", y = "Survival probability", color = "Stage") +
   theme_bw() +
   theme(legend.position = "bottom")
 ```
 
-**Panel B:** model-based ribbons (adjusted prediction with uncertainty).
+**Panel B:** model-based ribbons (adjusted prediction with uncertainty), still
+drawn with `geom_line` rather than `geom_step`.
 
-```{r ggplot, fig.cap = "Stage-specific survival curves with 95% intervals."}
-ggplot(pr, aes(x = time, y = surv, color = series, fill = series)) +
+```{r ggplot, fig.cap = "Smooth stage-specific Bernstein survival with 95% intervals."}
+ggplot(pr, aes(x = time, y = surv, color = stage, fill = stage)) +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, colour = NA) +
   geom_line(linewidth = 0.5) +
   labs(x = "Time (years)", y = "Survival probability", color = NULL, fill = NULL) +

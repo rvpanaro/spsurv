@@ -73,6 +73,18 @@ test_that("survfit.spbp accepts numeric times for smooth evaluation grid", {
   expect_equal(nrow(sf$surv), length(g))
 })
 
+test_that("plot.survfitbp draws lines not steps", {
+  fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
+  sf <- survfit(fit, times = seq(0, 200, length.out = 40))
+  pdf(NULL)
+  on.exit(dev.off(), add = TRUE)
+  expect_silent(plot(sf))
+  expect_silent(plot(sf, conf.int = FALSE))
+  nd <- veteran[1:2, ]
+  sf2 <- survfit(fit, newdata = nd, times = seq(0, 100, length.out = 20))
+  expect_silent(plot(sf2, conf.int = TRUE, col = c("black", "steelblue")))
+})
+
 test_that("as.data.frame.survfitbp stacks curves for ggplot", {
   fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
   nd <- veteran[1:2, ]

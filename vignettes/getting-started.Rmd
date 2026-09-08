@@ -136,6 +136,38 @@ fit$call$approach
 | `call$model` | `"ph"`, `"po"`, or `"aft"` |
 | `call$approach` | `"mle"` or `"bayes"` |
 
+## Visual check — KM (step) vs Bernstein survival (smooth)
+
+Kaplan--Meier is nonparametric, so it is drawn with **steps**. Bernstein
+polynomial survival is a continuous function of time, so model curves use
+**lines** (`ggplot2::geom_line` or `plot(survfit(fit))`).
+
+```{r km-bp-overlay, fig.cap = "Kaplan-Meier by stage (steps) vs Bernstein PH at median age (smooth dashed)."}
+newdata <- data.frame(
+  age = median(larynx$age),
+  stage = factor(levels(larynx$stage), levels = levels(larynx$stage))
+)
+plot_times <- seq(0, max(larynx$time), length.out = 121)
+pr <- predict(fit, newdata = newdata, times = plot_times)
+pr$stage <- newdata$stage[match(as.character(pr$id), as.character(seq_len(nrow(newdata))))]
+
+ggplot() +
+  geom_step(
+    data = km_long,
+    aes(x = time, y = surv, color = stage),
+    linewidth = 0.5
+  ) +
+  geom_line(
+    data = pr,
+    aes(x = time, y = surv, color = stage),
+    linetype = "dashed",
+    linewidth = 0.7
+  ) +
+  labs(x = "Time (years)", y = "Survival probability", color = "Stage") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
 ## Visual check — forest plot
 
 ```{r forest, fig.cap = "Exponentiated coefficients (hazard ratios) with 95% CIs."}
@@ -158,7 +190,7 @@ after adjusting for age.
 
 - CI excludes 1 → evidence of effect at conventional levels.
 - Large age effect → clinically meaningful covariate; keep in model.
-- For smooth survival curves at fixed covariate profiles → see the *Survival
+- For more covariate-specific ribbons → see the *Survival
   prediction and ggplot* vignette.
 
 ## Printing

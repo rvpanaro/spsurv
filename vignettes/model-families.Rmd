@@ -126,7 +126,7 @@ pr_all$label <- paste0(
 )
 
 ggplot(pr_all, aes(x = time, y = surv, color = label, linetype = family)) +
-  geom_line(linewidth = 0.5) +
+  geom_line(linewidth = 0.5) +  # Bernstein survival is continuous; do not use geom_step
   labs(x = "Time (days)", y = "Survival probability", color = NULL, linetype = "Family") +
   theme_bw() +
   theme(legend.position = "bottom")

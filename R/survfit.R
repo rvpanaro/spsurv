@@ -394,6 +394,7 @@
 #' data(veteran, package = "survival")
 #' fit <- bpph(Surv(time, status) ~ karno + factor(celltype), data = veteran)
 #' survfit(fit)
+#' plot(survfit(fit, times = seq(0, max(veteran$time), length.out = 80)))
 #'
 survfit.spbp <- function(formula, newdata = NULL, times = NULL,
                          se.fit = TRUE, interval = .95,
@@ -617,6 +618,59 @@ as.data.frame.survfitbp <- function(x, row.names = NULL, optional = FALSE, ...) 
     std.err = as.vector(se),
     stringsAsFactors = FALSE
   )
+}
+
+#' @export
+#' @method plot survfitbp
+#' @describeIn survfit.spbp Plot Bernstein-polynomial survival as a smooth line
+#'   (\code{type = "l"}), never a Kaplan--Meier step function. Pass
+#'   \code{conf.int = TRUE} for pointwise bands (also drawn with lines).
+#' @param conf.int Logical; draw pointwise interval limits. Defaults to
+#'   \code{TRUE} for a single curve when limits are present.
+#' @param col,lty,lwd,xlab,ylab,ylim Graphical parameters.
+#' @param mark.time Ignored (Bernstein curves are continuous).
+plot.survfitbp <- function(x, conf.int, col = 1, lty = 1, lwd = 1.5,
+                          xlab = "Time", ylab = "Survival probability",
+                          ylim = c(0, 1), mark.time = FALSE, ...) {
+  time <- x$time
+  surv <- x$surv
+  if (is.null(time) || is.null(surv)) {
+    stop("survfitbp object is missing time/surv", call. = FALSE)
+  }
+  if (!is.matrix(surv)) {
+    surv <- matrix(as.numeric(surv), ncol = 1L)
+  }
+  ncurve <- ncol(surv)
+  col <- rep_len(col, ncurve)
+  lty <- rep_len(lty, ncurve)
+  lower <- x$lower
+  upper <- x$upper
+  if (!is.null(lower) && !is.matrix(lower)) {
+    lower <- matrix(as.numeric(lower), ncol = ncurve)
+  }
+  if (!is.null(upper) && !is.matrix(upper)) {
+    upper <- matrix(as.numeric(upper), ncol = ncurve)
+  }
+  if (missing(conf.int)) {
+    conf.int <- ncurve == 1L && !is.null(lower) && !is.null(upper)
+  }
+  graphics::plot(
+    time,
+    surv[, 1L],
+    type = "n",
+    ylim = ylim,
+    xlab = xlab,
+    ylab = ylab,
+    ...
+  )
+  for (j in seq_len(ncurve)) {
+    if (isTRUE(conf.int) && !is.null(lower) && !is.null(upper)) {
+      graphics::lines(time, lower[, j], col = col[j], lty = 2, lwd = max(1, lwd - 0.5))
+      graphics::lines(time, upper[, j], col = col[j], lty = 2, lwd = max(1, lwd - 0.5))
+    }
+    graphics::lines(time, surv[, j], col = col[j], lty = lty[j], lwd = lwd)
+  }
+  invisible(x)
 }
 
 #' @export

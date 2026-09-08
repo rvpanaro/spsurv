@@ -185,9 +185,19 @@ engines.
 
 ## Survival prediction
 
-```{r predict-bayes}
-pr <- predict(fit, times = seq(0, max(larynx$time), length.out = 50))
+Posterior mean survival is a Bernstein polynomial in time, so the curve is
+**smooth** (`geom_line`). Kaplan--Meier in the EDA plot above remains a step
+function.
+
+```{r predict-bayes, fig.cap = "Smooth posterior survival at the mean covariate profile with 95% HPD ribbon."}
+pr <- predict(fit, times = seq(0, max(larynx$time), length.out = 121))
 head(pr)
+ggplot(pr, aes(x = time, y = surv)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2, colour = NA) +
+  geom_line(linewidth = 0.6) +
+  labs(x = "Time (years)", y = "Survival probability") +
+  theme_bw()
 ```
 
-See the *Survival prediction and ggplot* vignette for ribbon workflows.
+See the *Survival prediction and ggplot* vignette for covariate-specific
+ribbons.

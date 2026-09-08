@@ -3,6 +3,7 @@
 \name{survfit.spbp}
 \alias{survfit.spbp}
 \alias{as.data.frame.survfitbp}
+\alias{plot.survfitbp}
 \title{BP-based model survival curves}
 \usage{
 \method{survfit}{spbp}(
@@ -20,6 +21,19 @@
 )
 
 \method{as.data.frame}{survfitbp}(x, row.names = NULL, optional = FALSE, ...)
+
+\method{plot}{survfitbp}(
+  x,
+  conf.int,
+  col = 1,
+  lty = 1,
+  lwd = 1.5,
+  xlab = "Time",
+  ylab = "Survival probability",
+  ylim = c(0, 1),
+  mark.time = FALSE,
+  ...
+)
 }
 \arguments{
 \item{formula}{An object of class \code{"spbp"} returned by \code{\link[spsurv:spbp]{spbp}}.}
@@ -56,6 +70,13 @@ reference Cox object (e.g. \code{conf.type} is ignored; use \code{type} instead)
 \item{x}{Object from \code{\link{survfit.spbp}}.}
 
 \item{row.names, optional}{Unused; included for S3 consistency.}
+
+\item{conf.int}{Logical; draw pointwise interval limits. Defaults to
+\code{TRUE} for a single curve when limits are present.}
+
+\item{col, lty, lwd, xlab, ylab, ylim}{Graphical parameters.}
+
+\item{mark.time}{Ignored (Bernstein curves are continuous).}
 }
 \value{
 An object of class \code{"survfit"} (with classes \code{survfitbp}, \code{survfitcox}, \code{survfit}).
@@ -70,12 +91,17 @@ Compute survival curves for a fitted \code{\link[spsurv:spbp]{spbp}} model.
 \itemize{
 \item \code{as.data.frame(survfitbp)}: Tidy survival curves for \code{ggplot2::geom_line} / \code{geom_ribbon}.
 
+\item \code{plot(survfitbp)}: Plot Bernstein-polynomial survival as a smooth line
+(\code{type = "l"}), never a Kaplan--Meier step function. Pass
+\code{conf.int = TRUE} for pointwise bands (also drawn with lines).
+
 }}
 \examples{
 library(spsurv)
 data(veteran, package = "survival")
 fit <- bpph(Surv(time, status) ~ karno + factor(celltype), data = veteran)
 survfit(fit)
+plot(survfit(fit, times = seq(0, max(veteran$time), length.out = 80)))
 
 data(veteran, package = "survival")
 fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
