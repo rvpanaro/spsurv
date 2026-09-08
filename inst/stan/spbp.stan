@@ -17,11 +17,11 @@ data {
   matrix[n,m] G;
   matrix[m,m] P;                   // Power basis
 
-  int<lower=0> priordist_beta[p];
+  array[p] int<lower=0> priordist_beta;
   vector[p] location_beta;
   vector<lower=0>[p] scale_beta;
 
-  int<lower=0> priordist_gamma[m];
+  array[m] int<lower=0> priordist_gamma;
   vector<lower=0>[m] location_gamma;
   vector<lower=0>[m] scale_gamma;
 
