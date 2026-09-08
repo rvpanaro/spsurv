@@ -13,7 +13,8 @@
 \arguments{
 \item{object}{an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.}
 
-\item{type}{type of residuals, default is "cox-snell"}
+\item{type}{type of residuals; default is \code{"martingale"}. Also
+\code{"deviance"}, \code{"cox-snell"}, and \code{"coxsnell"} (alias).}
 
 \item{...}{arguments passed to parent method.}
 }

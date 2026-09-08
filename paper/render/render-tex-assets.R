@@ -44,8 +44,43 @@ source(file.path(paths$render_dir, "tex-verbatim-wrap.R"))
   do.call(rbind, parts)
 }
 
-tex_lines <- function(x, width = 65L) {
-  x <- capture.output(x)
+round_display_df <- function(df, digits = 2L) {
+  out <- df
+  pval_names <- c("p.value", "pvalue", "pval")
+  for (nm in names(out)) {
+    col <- out[[nm]]
+    if (!is.numeric(col)) {
+      next
+    }
+    if (is.integer(col) || all(is.na(col) | abs(col - round(col)) < 1e-8)) {
+      next
+    }
+    if (nm %in% pval_names) {
+      out[[nm]] <- vapply(col, function(p) {
+        if (is.na(p)) {
+          return(NA_character_)
+        }
+        if (abs(p) >= 10^(-digits)) {
+          formatC(p, format = "f", digits = digits)
+        } else {
+          formatC(p, format = "e", digits = digits)
+        }
+      }, character(1))
+    } else {
+      out[[nm]] <- round(col, digits)
+    }
+  }
+  out
+}
+
+tex_lines <- function(x, width = 65L, digits = 2L) {
+  x <- capture.output({
+    if (is.data.frame(x)) {
+      print(round_display_df(x, digits = digits))
+    } else {
+      print(x, digits = digits)
+    }
+  })
   if (!length(x)) {
     return("")
   }
@@ -317,14 +352,7 @@ fragments$veteran_diag_code <- paste(
     "",
     'mr_bppo <- residuals(fit_po_mle, type = "martingale")',
     'mr_bpaft <- residuals(fit_aft_mle, type = "martingale")',
-    'mr_cox <- residuals(mod_cox_vet, type = "martingale")',
-    "",
-    "bppo_null_fit <- bppo(",
-    "  Surv(time, status) ~ 1,",
-    "  data = veteran2,",
-    '  approach = "mle"',
-    ")",
-    'mr_bppo_null <- residuals(bppo_null_fit, type = "martingale")'
+    'mr_cox <- residuals(mod_cox_vet, type = "martingale")'
   ),
   collapse = "\n"
 )
@@ -385,50 +413,10 @@ p_fm_bp4_ct <- ggplot(data.frame(celltype = veteran2$celltype, mr = mr_bpaft)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-bppo_null_fit <- bppo(Surv(time, status) ~ 1, data = veteran2, approach = "mle")
-mr_bppo_null <- residuals(bppo_null_fit, type = "martingale")
-
-p3 <- ggplot() +
-  geom_point(aes(
-    x = veteran2$karno, y = mr_bppo_null,
-    color = factor(veteran2$status)
-  )) +
-  coord_cartesian(ylim = c(-4, 2)) +
-  geom_smooth(aes(x = veteran2$karno, y = mr_bppo_null),
-    method = "loess", color = "black", se = FALSE
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(
-    title = "BPPO null vs Karnofsky",
-    y = "Martingale residuals", x = "Karnofsky score"
-  ) +
-  theme_bw() +
-  theme(legend.position = "none")
-
-mod_bp4_null <- bpaft(Surv(time, status) ~ 1, data = veteran2, approach = "mle")
-mr_bpaft_null <- residuals(mod_bp4_null, type = "martingale")
-p4 <- ggplot() +
-  geom_point(aes(
-    x = veteran2$karno, y = mr_bpaft_null,
-    color = factor(veteran2$status)
-  )) +
-  coord_cartesian(ylim = c(-4, 2)) +
-  geom_smooth(aes(x = veteran2$karno, y = mr_bpaft_null),
-    method = "loess", color = "black", se = FALSE
-  ) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  labs(
-    title = "BPAFT null vs Karnofsky",
-    y = "Martingale residuals", x = "Karnofsky score"
-  ) +
-  theme_bw() +
-  theme(legend.position = "none")
-
 p_mart <- (p1 | p2) /
   (p_fm_bp3_k | p_fm_bp4_k) /
-  (p_fm_bp3_ct | p_fm_bp4_ct) /
-  (p3 | p4)
-save_fig(p_mart, "fig_005", width = 10, height = 12)
+  (p_fm_bp3_ct | p_fm_bp4_ct)
+save_fig(p_mart, "fig_005", width = 10, height = 9)
 
 source(file.path(paths$render_dir, "render-larynx-degree-comparison.R"))
 render_larynx_degree_comparison(

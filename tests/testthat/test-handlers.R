@@ -26,6 +26,10 @@ test_that("spbp bayes uses default priors when priors not specified", {
     "priordist_frailty", "par1_frailty", "par2_frailty",
     "means", "sdv"
   ), ignore.order = TRUE)
+  expect_true(all(fit$standata$location_beta == 0))
+  expect_true(all(fit$standata$scale_beta == 2))
+  expect_true(all(fit$standata$location_gamma == 0))
+  expect_true(all(fit$standata$scale_gamma == 4))
 })
 
 test_that("spbp bayes accepts custom priors", {
@@ -69,6 +73,13 @@ test_that("spbp runs for valid right-censored model", {
   expect_s3_class(
     spbp(Surv(time, status) ~ karno, data = veteran),
     "spbp"
+  )
+})
+
+test_that("spbp errors on counting-process Surv", {
+  expect_error(
+    spbp(Surv(rep(0, nrow(veteran)), time, status) ~ karno, data = veteran),
+    "doesn't support \"counting\""
   )
 })
 

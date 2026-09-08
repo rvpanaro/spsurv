@@ -60,7 +60,7 @@ spbp <- function(formula, ...) {
 #' @param data a data.frame object
 #' @param approach Bayesian or Maximum Likelihood estimation methods; default is \code{"mle"}
 #' @param model Bernstein PH (\code{"ph"}), PO (\code{"po"}), or AFT (\code{"aft"}) model; default is \code{"ph"}
-#' @param priors prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients)
+#' @param priors prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients). Defaults are \code{normal(0,2)} for standardised regression coefficients and \code{lognormal(0,4)} for Bernstein coefficients.
 #' @param scale logical; indicates whether to center and scale the data
 #' @param dist optional baseline specification; use \code{\link{bernstein}(m)} for the Bernstein polynomial degree
 #' @param baseline optional alias for \code{dist}
@@ -106,7 +106,7 @@ spbp.default <-
            approach = c("mle", "bayes"),
            model = c("ph", "po", "aft"),
            priors = list(
-             beta = c("normal(0,4)"),
+             beta = c("normal(0,2)"),
              gamma = c("lognormal(0,4)"),
              frailty = c("gamma(0.01,0.01)")
            ),
@@ -217,7 +217,7 @@ spbp.default <-
 
     # Model frame / response validation
     if (nrow(mf) == 0) stop("Only missing observations")
-    if (!type %in% c("right", "counting")) {
+    if (!identical(type, "right")) {
       stop(paste0("spsurv doesn't support \"", type, "\" survival data"))
     }
     if (length(attr(Terms, "variables")) > 2) {

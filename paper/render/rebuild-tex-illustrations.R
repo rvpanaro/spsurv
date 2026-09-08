@@ -250,7 +250,7 @@ repeat {
 veteran_setup_end <- veteran_setup_idx +
   grep("\\end{verbatim}", after[veteran_setup_idx:length(after)], fixed = TRUE)[1L] - 1L
 
-veteran_diag_idx <- grep("mr_bppo_null <- residuals(bppo_null_fit", after, fixed = TRUE)[1L]
+veteran_diag_idx <- grep("mr_bppo <- residuals(fit_po_mle", after, fixed = TRUE)[1L]
 veteran_diag_start <- veteran_diag_idx
 while (veteran_diag_start > 1L && !grepl("begin\\{verbatim\\}", after[veteran_diag_start])) {
   veteran_diag_start <- veteran_diag_start - 1L

@@ -17,7 +17,7 @@ mkdir -p paper/logs paper/logs/tmp paper/simulation/output
 
 export SPSURV_ROOT="$ROOT"
 export SPSURV_MC_REPLICATES=1000
-export SPSURV_MC_NSIZES=50,100
+export SPSURV_MC_NSIZES=50,100,200
 export SPSURV_DEGREE_MC_REPS=1000
 export SPSURV_DEGREE_MC_NSIZES=50,100
 export SPSURV_MC_BAYES_CORES=1
@@ -28,7 +28,7 @@ Rscript paper/preflight-overnight.R
 
 LOG="paper/logs/workflow-$(date +%Y%m%d-%H%M%S).log"
 echo "Starting overnight workflow; log=$LOG"
-echo "Config: R=1000, n={50,100}, m=ceiling(n^0.5), parallel MC, Stan defaults, --skip-pdf"
+echo "Config: R=1000, n={50,100,200}, m=ceiling(n^0.4), parallel MC, Stan defaults, --skip-pdf"
 nohup Rscript paper/run-full-workflow.R --skip-pdf >>"$LOG" 2>&1 &
 echo $! > paper/logs/workflow.pid
 echo "PID=$(cat paper/logs/workflow.pid)"

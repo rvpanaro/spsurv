@@ -1,5 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.cursor$
 ^cran-comments\.md$
 ^inst/script_development\.R$
 ^revdep$

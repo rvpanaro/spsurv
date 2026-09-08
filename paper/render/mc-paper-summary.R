@@ -114,63 +114,81 @@ format_bp_mcsim_tex_body <- function(plot_df) {
     binary = "Bin. (sex)"
   )
   gen_order <- c("WPH", "WPO", "WAFT", "LLPH", "LLPO", "LLAFT")
+  n_levels <- mc_paper_nsize_levels(plot_df$nsize)
 
-  format_row <- function(df, nsize_label) {
-    rows <- character(0)
-    for (gen in gen_order) {
-      sub <- df[df$generator_cell == gen & df$nsize == nsize_label, , drop = FALSE]
-      if (!nrow(sub)) {
+  pick <- function(df, gen, par, nsize, approach) {
+    row <- df[
+      df$generator_cell == gen &
+        df$par == par &
+        as.character(df$nsize) == as.character(nsize) &
+        df$approach == approach,
+      ,
+      drop = FALSE
+    ]
+    if (!nrow(row)) {
+      return(NULL)
+    }
+    row[1L, , drop = FALSE]
+  }
+
+  fmt_triple <- function(vals, pattern) {
+    paste(sprintf(pattern, vals), collapse = " & ")
+  }
+
+  fmt_rb_triple <- function(vals) {
+    r <- round(as.numeric(vals), 1)
+    r[abs(r) < 0.05] <- 0
+    paste(sprintf("% .1f", r), collapse = " & ")
+  }
+
+  rows <- character(0)
+  for (gen in gen_order) {
+    sub <- plot_df[plot_df$generator_cell == gen, , drop = FALSE]
+    if (!nrow(sub)) {
+      next
+    }
+    fit <- as.character(unique(sub$model))[1L]
+    if (gen %in% c("LLPH") && length(rows)) {
+      rows <- c(rows, "\\addlinespace[2pt]")
+    }
+    for (par in c("continuous", "binary")) {
+      cov_mle <- cov_bayes <- rb_mle <- rb_bayes <- se_mle <- se_bayes <- numeric(0)
+      ok <- TRUE
+      for (nsize in n_levels) {
+        mle <- pick(sub, gen, par, nsize, "MLE")
+        bayes <- pick(sub, gen, par, nsize, "Bayes")
+        if (is.null(mle) || is.null(bayes)) {
+          ok <- FALSE
+          break
+        }
+        cov_mle <- c(cov_mle, mle$cov)
+        cov_bayes <- c(cov_bayes, bayes$cov)
+        rb_mle <- c(rb_mle, mle$rb)
+        rb_bayes <- c(rb_bayes, bayes$rb)
+        se_mle <- c(se_mle, mle$calib)
+        se_bayes <- c(se_bayes, bayes$calib)
+      }
+      if (!ok) {
         next
       }
-      fit <- as.character(unique(sub$model))[1L]
-      for (par in c("continuous", "binary")) {
-        par_rows <- sub[sub$par == par, , drop = FALSE]
-        if (!nrow(par_rows)) {
-          next
-        }
-        mle <- par_rows[par_rows$approach == "MLE", , drop = FALSE]
-        bayes <- par_rows[par_rows$approach == "Bayes", , drop = FALSE]
-        if (!nrow(mle) || !nrow(bayes)) {
-          next
-        }
-        rows <- c(
-          rows,
-          sprintf(
-            paste0(
-              "%s   & %s  & %s & %.1f & %.1f & % .1f & % .1f & %.2f & %.2f \\\\"
-            ),
-            gen,
-            fit,
-            par_tex[[par]],
-            mle$cov,
-            bayes$cov,
-            mle$rb,
-            bayes$rb,
-            mle$calib,
-            bayes$calib
-          )
+      rows <- c(
+        rows,
+        sprintf(
+          "%s  & %s & %s & %s & %s & %s & %s & %s & %s \\\\",
+          gen,
+          fit,
+          par_tex[[par]],
+          fmt_triple(cov_mle, "%.1f"),
+          fmt_triple(cov_bayes, "%.1f"),
+          fmt_rb_triple(rb_mle),
+          fmt_rb_triple(rb_bayes),
+          fmt_triple(se_mle, "%.2f"),
+          fmt_triple(se_bayes, "%.2f")
         )
-      }
+      )
     }
-    c(
-      sprintf("\\multicolumn{9}{@{}l}{\\textit{\\(n=%s\\)}} \\\\", nsize_label),
-      "\\cmidrule(lr){1-9}",
-      rows
-    )
   }
-
-  format_blocks <- function(nsize_labels) {
-    out <- character(0)
-    for (i in seq_along(nsize_labels)) {
-      if (i > 1L) {
-        out <- c(out, "\\addlinespace[4pt]")
-      }
-      out <- c(out, format_row(plot_df, nsize_labels[[i]]))
-    }
-    out
-  }
-
-  format_blocks(mc_paper_nsize_levels(plot_df$nsize))
+  rows
 }
 
 format_degree_llph_tex_body <- function(deg_tbl) {
@@ -190,50 +208,73 @@ format_degree_llph_tex_body <- function(deg_tbl) {
     deg_tbl$degree_rule,
     levels = c("n^0.2", "n^0.3", "n^0.4", "n^0.5", "n^0.6", "n^0.7", "n^0.8")
   )
-  param_tex <- function(p) {
-    ifelse(p %in% c("age", "continuous"), "Continuous (age)", "Binary (sex)")
+  n_levels <- mc_paper_nsize_levels(deg_tbl$nsize)
+  param_tex <- c(
+    continuous = "Cont. (age)",
+    binary = "Bin. (sex)"
+  )
+  param_key <- function(p) {
+    ifelse(p %in% c("age", "continuous"), "continuous", "binary")
   }
-
-  format_block <- function(nsize_label) {
-    sub <- deg_tbl[deg_tbl$nsize == as.integer(nsize_label), , drop = FALSE]
-    sub <- sub[order(sub$degree_rule, sub$parameter), , drop = FALSE]
-    rows <- apply(sub, 1L, function(row) {
-      cov_pct <- if (max(sub$coverage, na.rm = TRUE) <= 1) {
-        100 * as.numeric(row[["coverage"]])
-      } else {
-        as.numeric(row[["coverage"]])
-      }
-      sprintf(
-        paste0(
-          "\\(%s\\) & %2d & %s & %.1f & % .1f & %.2f \\\\"
-        ),
-        row[["degree_rule"]],
-        as.integer(row[["degree"]]),
-        param_tex(row[["parameter"]]),
-        cov_pct,
-        as.numeric(row[["bias"]]),
-        as.numeric(row[["se_ratio"]])
-      )
-    })
-    c(
-      sprintf("\\multicolumn{6}{@{}l}{\\textit{\\(n=%s\\)}} \\\\", nsize_label),
-      "\\cmidrule(lr){1-6}",
-      rows
-    )
+  rule_tex <- function(rule) {
+    sub("^n\\^(.*)$", "n^{\\1}", as.character(rule))
   }
-
-  format_blocks <- function(nsize_labels) {
-    out <- character(0)
-    for (i in seq_along(nsize_labels)) {
-      if (i > 1L) {
-        out <- c(out, "\\addlinespace[4pt]")
-      }
-      out <- c(out, format_block(nsize_labels[[i]]))
+  pick <- function(df, rule, par, nsize) {
+    row <- df[
+      as.character(df$degree_rule) == as.character(rule) &
+        param_key(df$parameter) == par &
+        as.character(df$nsize) == as.character(nsize),
+      ,
+      drop = FALSE
+    ]
+    if (!nrow(row)) {
+      return(NULL)
     }
-    out
+    row[1L, , drop = FALSE]
   }
+  fmt_n <- function(vals, pattern) {
+    paste(sprintf(pattern, vals), collapse = " & ")
+  }
+  coverage_as_pct <- max(deg_tbl$coverage, na.rm = TRUE) <= 1
 
-  format_blocks(mc_paper_nsize_levels(deg_tbl$nsize))
+  rows <- character(0)
+  for (rule in levels(deg_tbl$degree_rule)) {
+    if (!any(as.character(deg_tbl$degree_rule) == as.character(rule))) {
+      next
+    }
+    for (par in c("continuous", "binary")) {
+      deg <- cov <- rb <- se <- numeric(0)
+      ok <- TRUE
+      for (nsize in n_levels) {
+        row <- pick(deg_tbl, rule, par, nsize)
+        if (is.null(row)) {
+          ok <- FALSE
+          break
+        }
+        deg <- c(deg, as.integer(row$degree))
+        cov_raw <- as.numeric(row$coverage)
+        cov <- c(cov, if (coverage_as_pct) 100 * cov_raw else cov_raw)
+        rb <- c(rb, as.numeric(row$bias))
+        se <- c(se, as.numeric(row$se_ratio))
+      }
+      if (!ok) {
+        next
+      }
+      rows <- c(
+        rows,
+        sprintf(
+          "\\(%s\\) & %s & %s & %s & %s & %s \\\\",
+          rule_tex(rule),
+          param_tex[[par]],
+          fmt_n(deg, "%2d"),
+          fmt_n(cov, "%.1f"),
+          fmt_n(rb, "% .1f"),
+          fmt_n(se, "%.2f")
+        )
+      )
+    }
+  }
+  rows
 }
 
 #' Mean event percentages for Table tab:mc-design-events.
@@ -244,7 +285,10 @@ summarize_mc_design_events <- function(
     approach = "mle",
     shape = 1.5,
     scale = 1) {
-  need <- c("nsize", "gdist", "approach", "model", "event_proportion")
+  if ("event_rate" %in% names(censoring) && !"event_proportion" %in% names(censoring)) {
+    censoring$event_proportion <- censoring$event_rate
+  }
+  need <- c("nsize", "gdist", "model", "event_proportion")
   miss <- setdiff(need, names(censoring))
   if (length(miss)) {
     stop(
@@ -253,12 +297,16 @@ summarize_mc_design_events <- function(
       call. = FALSE
     )
   }
-  cen <- censoring[
-    censoring$approach == approach &
-      censoring$model %in% c("ph", "po", "aft"),
-    ,
-    drop = FALSE
-  ]
+  if ("approach" %in% names(censoring)) {
+    cen <- censoring[
+      censoring$approach == approach &
+        censoring$model %in% c("ph", "po", "aft"),
+      ,
+      drop = FALSE
+    ]
+  } else {
+    cen <- censoring[censoring$model %in% c("ph", "po", "aft"), , drop = FALSE]
+  }
   if (!nrow(cen)) {
     stop("No censoring rows for approach=", approach, call. = FALSE)
   }
@@ -277,32 +325,42 @@ summarize_mc_design_events <- function(
 format_mc_design_events_tex_body <- function(event_df) {
   gdist_tex <- c(weibull = "Weibull", llogis = "Log-logistic")
   model_tex <- c(ph = "PH", po = "PO", aft = "AFT")
+  n_levels <- as.integer(mc_paper_nsize_levels(event_df$nsize))
+  if (!length(n_levels)) {
+    n_levels <- c(50L, 100L, 200L)
+  }
   rows <- character(0)
   for (g in c("weibull", "llogis")) {
     for (m in c("ph", "po", "aft")) {
-      r50 <- event_df[
-        event_df$gdist == g & event_df$model == m & event_df$nsize == 50L,
-        ,
-        drop = FALSE
-      ]
-      r100 <- event_df[
-        event_df$gdist == g & event_df$model == m & event_df$nsize == 100L,
-        ,
-        drop = FALSE
-      ]
-      if (!nrow(r50) || !nrow(r100)) {
+      pcts <- numeric(0)
+      shape <- scale <- NA_real_
+      ok <- TRUE
+      for (n in n_levels) {
+        r <- event_df[
+          event_df$gdist == g & event_df$model == m & event_df$nsize == n,
+          ,
+          drop = FALSE
+        ]
+        if (!nrow(r)) {
+          ok <- FALSE
+          break
+        }
+        pcts <- c(pcts, r$event_pct[[1L]])
+        shape <- r$shape[[1L]]
+        scale <- r$scale[[1L]]
+      }
+      if (!ok) {
         next
       }
       rows <- c(
         rows,
         sprintf(
-          "%s      & %s  & %g & %g & %.1f & %.1f \\\\",
+          "%s      & %s  & %g & %g & %s \\\\",
           gdist_tex[[g]],
           model_tex[[m]],
-          r50$shape[[1L]],
-          r50$scale[[1L]],
-          r50$event_pct[[1L]],
-          r100$event_pct[[1L]]
+          shape,
+          scale,
+          paste(sprintf("%.1f", pcts), collapse = " & ")
         )
       )
     }

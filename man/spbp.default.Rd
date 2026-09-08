@@ -10,7 +10,7 @@
   data,
   approach = c("mle", "bayes"),
   model = c("ph", "po", "aft"),
-  priors = list(beta = c("normal(0,4)"), gamma = c("lognormal(0,4)"), frailty =
+  priors = list(beta = c("normal(0,2)"), gamma = c("lognormal(0,4)"), frailty =
     c("gamma(0.01,0.01)")),
   cores = .spbp_default_cores(),
   scale = TRUE,
@@ -35,7 +35,7 @@ default is \code{ceiling(sqrt(n))} where \code{n} is the number of rows in
 
 \item{model}{Bernstein PH (\code{"ph"}), PO (\code{"po"}), or AFT (\code{"aft"}) model; default is \code{"ph"}}
 
-\item{priors}{prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients)}
+\item{priors}{prior settings for the Bayesian approach; `normal` or `cauchy` for beta; `lognormal` or `loglogistic` for gamma (BP coefficients). Defaults are \code{normal(0,2)} for standardised regression coefficients and \code{lognormal(0,4)} for Bernstein coefficients.}
 
 \item{cores}{number of core threads to use (Bayes sampling)}
 

@@ -3,7 +3,7 @@
 # Usage (from package root):
 #   Rscript -e 'devtools::load_all(".", quiet=TRUE); source("paper/simulation/monte_carlo_regression.R")'
 #
-# Production defaults: R=1000, n in {50, 100}, parallel replicates (snowfall).
+# Production defaults: R=1000, n in {50, 100, 200}, m = ceiling(n^0.4), parallel replicates (snowfall).
 # MLE only (Bayes archived separately):
 #   SPSURV_MC_MLE_ONLY=1 Rscript -e '... source("paper/simulation/monte_carlo_regression.R")'
 #   Then: Rscript paper/simulation/combine-mc-bayes-mle.R
@@ -55,10 +55,10 @@ if (!is.finite(R) || R < 1L) {
   R <- 1000L
 }
 
-nsizes <- parse_int_vec(Sys.getenv("SPSURV_MC_NSIZES", ""), c(50L, 100L))
+nsizes <- parse_int_vec(Sys.getenv("SPSURV_MC_NSIZES", ""), c(50L, 100L, 200L))
 nsizes <- nsizes[is.finite(nsizes) & nsizes > 0L]
 if (!length(nsizes)) {
-  nsizes <- c(50L, 100L)
+  nsizes <- c(50L, 100L, 200L)
 }
 
 approaches <- {
@@ -218,7 +218,7 @@ simulate_dataset <- function(r, nsize, gdist, model) {
 }
 
 fit_spbp_row <- function(dat, nsize, gdist, approach, model, rep_id) {
-  m <- as.integer(ceiling(nsize^0.5))
+  m <- as.integer(ceiling(nsize^0.4))
   fit_fun <- switch(
     model,
     ph = spsurv::bpph,
@@ -254,7 +254,7 @@ fit_spbp_row <- function(dat, nsize, gdist, approach, model, rep_id) {
   }
   SE <- se_spbp(fit)
   names(SE) <- par
-  rb <- 100 * (estimates - truth) / pmax(abs(truth), .Machine$double.eps)
+  rb <- 100 * (estimates - truth) / truth
   cp <- truth > ci[, 1L] & truth < ci[, 2L]
 
   data.frame(
@@ -293,7 +293,7 @@ fit_flexsurv_row <- function(dat, nsize, gdist, rep_id) {
   truth <- truth_for_names(par)
   se <- sqrt(diag(stats::vcov(fit)))[par]
   ci <- cbind(co - 1.96 * se, co + 1.96 * se)
-  rb <- 100 * (co - truth) / pmax(abs(truth), .Machine$double.eps)
+  rb <- 100 * (co - truth) / truth
   cp <- truth > ci[, 1L] & truth < ci[, 2L]
   data.frame(
     nsize = nsize,

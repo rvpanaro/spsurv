@@ -148,6 +148,8 @@ for (nsize in nsizes) {
     function(p) as.integer(ceiling(nsize^p)),
     integer(1L)
   ))
+  message("Degree study n=", nsize, " degrees=", paste(deg_grid, collapse = ","), " R=", R)
+  t_n <- proc.time()[["elapsed"]]
   for (r in seq_len(R)) {
     dat <- generate_llph_dataset(r, nsize)
     for (deg in deg_grid) {
@@ -156,6 +158,10 @@ for (nsize in nsizes) {
         all_rows[[idx]] <- out
         idx <- idx + 1L
       }
+    }
+    if (r %% 25L == 0L || r == R) {
+      elapsed <- proc.time()[["elapsed"]] - t_n
+      message(sprintf("n=%d rep %d/%d (%.1f min)", nsize, r, R, elapsed / 60))
     }
   }
 }
@@ -191,8 +197,17 @@ summ$se_ratio <- round(summ$se_ratio, 3)
 paper_dir <- paths$paper_dir
 dir.create(paper_dir, recursive = TRUE, showWarnings = FALSE)
 out_csv <- paths$degree_csv
+if (file.exists(out_csv)) {
+  old <- utils::read.csv(out_csv, stringsAsFactors = FALSE)
+  keep <- old[!(as.integer(old$nsize) %in% as.integer(nsizes)), , drop = FALSE]
+  if (nrow(keep)) {
+    common <- intersect(names(keep), names(summ))
+    summ <- rbind(keep[common], summ[common])
+    summ <- summ[order(summ$nsize, summ$degree, summ$parameter), ]
+  }
+}
 utils::write.csv(summ, out_csv, row.names = FALSE)
-message("Wrote ", out_csv)
+message("Wrote ", out_csv, " nsizes=", paste(sort(unique(summ$nsize)), collapse = ","))
 if (file.exists(file.path(paths$paper_dir, "paper-runtime.R"))) {
   source(file.path(paths$paper_dir, "paper-runtime.R"), local = FALSE)
   manifest_path <- paper_write_manifest(

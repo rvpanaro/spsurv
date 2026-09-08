@@ -130,7 +130,7 @@ simulate_dataset <- function(r, nsize, gdist, model) {
 }
 
 fit_spbp_row <- function(dat, nsize, gdist, approach, model, rep_id) {
-  m <- as.integer(ceiling(nsize^0.5))
+  m <- as.integer(ceiling(nsize^0.4))
   fit_fun <- switch(
     model,
     ph = spsurv::bpph,
@@ -162,7 +162,7 @@ fit_spbp_row <- function(dat, nsize, gdist, approach, model, rep_id) {
   }
   SE <- se_spbp(fit)
   names(SE) <- par
-  rb <- 100 * (estimates - truth) / pmax(abs(truth), .Machine$double.eps)
+  rb <- 100 * (estimates - truth) / truth
   cp <- truth > ci[, 1L] & truth < ci[, 2L]
   data.frame(
     nsize = nsize,

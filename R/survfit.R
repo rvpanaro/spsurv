@@ -727,7 +727,8 @@ predict.spbp <- function(object, newdata = NULL, times = NULL, eval_time = NULL,
 #' @title BP based models residuals.
 #' @description Residuals for a fitted \code{\link[spsurv]{spbp}} model.
 #' @param object an object of class `spbp` result of a \code{\link[spsurv]{spbp}} fit.
-#' @param type type of residuals, default is "cox-snell"
+#' @param type type of residuals; default is \code{"martingale"}. Also
+#'   \code{"deviance"}, \code{"cox-snell"}, and \code{"coxsnell"} (alias).
 #' @seealso \code{\link[spsurv:spbp]{spbp}}, \code{\link[survival:survfit]{spbp}}.
 #' @param ... arguments passed to parent method.
 #' @examples
