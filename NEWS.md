@@ -1,6 +1,7 @@
 # spsurv 1.1.0
 
 * **CRAN resubmission:** Maintainer contact updated to `rvpanaro@gmail.com`;
+  license is `GPL-3` (removed the bundled `LICENSE` copy of the GPL);
   `Authors@R` roles reviewed (single maintainer; thesis advisors listed as
   `ths`, with `rev` for code review feedback); package `Description` citation
   updated to `<doi:10.48550/arXiv.2003.10548>`; set
@@ -20,7 +21,7 @@
 * **Inference:** `vcov.spbp()` no longer applies a diagonal ridge (`polish` removed); beta standard errors are unchanged when the Bernstein block is stable and no longer inflated when it is ill-conditioned.
 * **Summary:** `summary.spbp()` now includes a `coef_interval` component (Wald for MLE, HPD for Bayes) and prints it when `show_intervals = TRUE`.
 * **Repository:** paper workflow moved from `inst/` to `paper/` (excluded from the package tarball).
-* **Dependencies:** trimmed `Suggests` to packages used in vignettes, tests, or optional integrations; dev tools (`devtools`, `roxygen2`, `covr`) and unused tidymodels/rsurv entries removed (install transitively or only when needed locally).
+* **Dependencies:** trimmed `Suggests` to packages used in vignettes, tests, or optional integrations. `devtools` and `roxygen2` are not listed in `Suggests`.
 
 # spsurv 1.0.2
 

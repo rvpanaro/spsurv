@@ -28,15 +28,9 @@ _spsurv_bayes_ph.rds
 _spsurv_bayes_*.rds
 Rplots.pdf
 **/Rplots.pdf
-paper/tex-fragments.rds
-paper/bp-mcsim-results.rds
-paper/degree_llph_bpph.csv
-paper/*.pdf
-paper/simulation/output/
-paper/logs/
-paper/build/
-paper/spsurv.pdf
-paper/archive/
+# Manuscript and local LaTeX debris (not part of the package)
+paper/
+texput.log
 figures/
 vignettes/*_cache/
 vignettes/*.html

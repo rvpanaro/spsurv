@@ -22,7 +22,7 @@ Description: Semiparametric survival analysis based on Bernstein polynomials.
     'spsurv' includes proportional hazards, proportional odds and accelerated
     failure time frameworks for right-censored data. RV Panaro (2020)
     <doi:10.48550/arXiv.2003.10548>.
-License: GPL-3 + file LICENSE
+License: GPL-3
 Biarch: true
 Depends: 
     R (>= 4.1.0),

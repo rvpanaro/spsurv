@@ -1,7 +1,12 @@
 ## Resubmission context
 
-This is a resubmission of **spsurv 1.1.0** after the package was archived on
-CRAN because the former maintainer email address was unreachable.
+This is a resubmission of **spsurv 1.1.0**. The previous upload was not accepted.
+Uwe Ligges asked us to omit `+ file LICENSE` and the `LICENSE` file (a copy of
+GPL-3, which R already ships). This upload does that: `License: GPL-3`, and
+there is no `LICENSE` file and no additional restriction.
+
+The package was also archived on CRAN because the former maintainer email
+address was unreachable. That is addressed below.
 
 * **Maintainer:** Renato Panaro (`rvpanaro@gmail.com`) is the package maintainer
   and the only person with the `cre` role in `Authors@R`.
@@ -20,7 +25,7 @@ CRAN because the former maintainer email address was unreachable.
 ## Test environments
 
 * local: R 4.6.1 (macOS Sequoia, Apple Silicon), `R CMD check --as-cran`
-  (2026-09-08)
+  (2026-09-28)
 * win-builder R-release: R 4.6.1 (ucrt), x86_64-w64-mingw32
   (https://win-builder.r-project.org/6bFfd06dsW09) — Status: 1 NOTE
 * win-builder R-devel (R 4.7.x guest): compile succeeds after `RcppParallel` /
@@ -30,7 +35,7 @@ CRAN because the former maintainer email address was unreachable.
   `spsurv` compile or NAMESPACE error; R-release Windows check is clean.
 * macOS builder: not yet run
 
-## R CMD check results (spsurv 1.1.0, local macOS aarch64, R 4.6.1, 2026-09-08)
+## R CMD check results (spsurv 1.1.0, local macOS aarch64, R 4.6.1, 2026-09-28)
 
 ```
 R CMD build .  -> spsurv_1.1.0.tar.gz (OK)
@@ -43,12 +48,12 @@ Status: 2 NOTEs
 Installation, compilation, examples, tests, vignettes, and PDF manual: OK.
 `urlchecker::url_check()`: all package URLs valid.
 
-* **NOTE:** `checking CRAN incoming feasibility` — archived-package resubmission;
-  updated maintainer address `rvpanaro@gmail.com`; `GPL-3 + file LICENSE`; no
-  invalid URL findings.
+* **NOTE:** `checking CRAN incoming feasibility` — new submission; package was
+  archived on CRAN; maintainer `Renato Panaro <rvpanaro@gmail.com>`; CRAN
+  comment notes archival on 2026-06-11 due to undeliverable maintainer email
+  (addressed). The previous `GPL-3 + file LICENSE` component is gone.
 * **NOTE:** `checking HTML version of manual` — local HTML Tidy was not recent
-  enough to validate the manual HTML; the optional V8-based math-rendering check
-  was unavailable locally.
+  enough to validate the manual HTML.
 * **INFO:** `GNU make is a SystemRequirements` — expected for Stan.
 * **INFO:** `checking C++ specification` — specified C++17 (expected for Stan).
 
@@ -66,7 +71,8 @@ Install, examples, tests, vignettes, PDF/HTML manuals: OK. Binary:
 `spsurv_1.1.0.zip`.
 
 * **NOTE:** `checking CRAN incoming feasibility` — New submission; package was
-  archived on CRAN; `GPL-3 + file LICENSE`; maintainer
+  archived on CRAN; `GPL-3 + file LICENSE` (removed in this
+  resubmission; see License note above); maintainer
   `Renato Panaro <rvpanaro@gmail.com>`; CRAN comment notes archival on
   2026-06-11 due to undeliverable maintainer email (addressed by this
   resubmission).
