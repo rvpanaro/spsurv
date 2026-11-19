@@ -26,9 +26,10 @@ test_that("vcov with bp.param = TRUE returns full variance matrix", {
 test_that("vcov with bp.param = TRUE sets gamma variances to NA when ill-conditioned", {
   fit <- bpph(Surv(time, status) ~ karno, data = veteran, approach = "mle", init = 0)
   expect_false(.spbp_gamma_information_diagnostics(fit)$stable)
-  expect_silent(v <- vcov(fit, bp.param = TRUE))
+  expect_warning(v <- vcov(fit, bp.param = TRUE), "indefinite")
   m <- length(fit$bp.param)
   expect_true(all(is.na(diag(v)[(nrow(v) - m + 1L):nrow(v)])))
+  expect_true(is.finite(v[1, 1]))
 })
 
 test_that("vcov gives warning and NULL for Bayes fit", {
@@ -41,15 +42,15 @@ test_that("vcov gives warning and NULL for Bayes fit", {
   stan <- object$stanfit
   nms <- names(stan$par)
   eta <- stan$par[startsWith(nms, "beta[")]
-  psi <- stan$par[startsWith(nms, "gamma[")]
+  u <- log(stan$par[startsWith(nms, "gamma[")])
   means <- object$means
   sdv <- object$sdv
   q <- length(eta)
-  m <- length(psi)
+  m <- length(u)
 
-  to_orig <- function(e, p) {
+  to_orig <- function(e, uu) {
     alpha <- sum(e * means / sdv)
-    c(beta = e / sdv, gamma = p / exp(alpha))
+    c(beta = e / sdv, gamma = exp(uu - alpha))
   }
 
   eps <- 1e-5
@@ -57,19 +58,19 @@ test_that("vcov gives warning and NULL for Bayes fit", {
   for (j in seq_len(q)) {
     e <- eta
     e[j] <- e[j] + eps
-    up <- to_orig(e, psi)
+    up <- to_orig(e, u)
     e <- eta
     e[j] <- e[j] - eps
-    dn <- to_orig(e, psi)
+    dn <- to_orig(e, u)
     J[, j] <- (up - dn) / (2 * eps)
   }
   for (j in seq_len(m)) {
-    p <- psi
-    p[j] <- p[j] + eps
-    up <- to_orig(eta, p)
-    p <- psi
-    p[j] <- p[j] - eps
-    dn <- to_orig(eta, p)
+    uu <- u
+    uu[j] <- uu[j] + eps
+    up <- to_orig(eta, uu)
+    uu <- u
+    uu[j] <- uu[j] - eps
+    dn <- to_orig(eta, uu)
     J[, q + j] <- (up - dn) / (2 * eps)
   }
   J
@@ -82,10 +83,9 @@ test_that("PH/PO vcov Jacobian matches numerical back-transform", {
 
   q <- length(fit$coefficients)
   m <- length(fit$bp.param)
-  inv_exp_a <- 1 / exp(fit$alpha)
   J <- diag(q + m)
   diag(J)[seq_len(q)] <- 1 / fit$sdv
-  diag(J)[(q + 1):(q + m)] <- inv_exp_a
+  diag(J)[(q + 1):(q + m)] <- fit$bp.param
   for (i in seq_len(m)) {
     J[q + i, seq_len(q)] <- -fit$bp.param[i] * fit$means / fit$sdv
   }
@@ -167,6 +167,50 @@ test_that("ill-conditioned gamma warning appears only for survfit, not after fit
   expect_silent(vcov(fit, bp.param = TRUE))
   expect_silent(summary(fit))
   expect_warning(survfit(fit, times = 50), "lower Bernstein degree")
+})
+
+test_that("unavailable gamma block warns that beta SEs treat gamma as fixed", {
+  dat <- survival::veteran
+  fit <- bpph(
+    Surv(time, status) ~ karno,
+    data = dat,
+    approach = "mle",
+    init = 0,
+    degree = 3L
+  )
+  q <- length(fit$coefficients)
+  fit$hessian[q + 1L, q + 1L] <- Inf
+  expect_warning(v <- vcov(fit), "Bernstein weights as fixed")
+  expect_true(all(is.finite(diag(v))))
+})
+
+test_that("indefinite gamma variances do not wipe finite beta SEs", {
+  dat <- survival::veteran
+  fit <- bpph(
+    Surv(time, status) ~ karno,
+    data = dat,
+    approach = "mle",
+    init = 0
+  )
+  expect_warning(v <- vcov(fit), "indefinite")
+  expect_true(all(is.finite(v)))
+  expect_equal(length(diag(v)), length(coef(fit)))
+})
+
+test_that("negative unconstrained variances are NA, not flipped positive", {
+  dat <- survival::veteran
+  fit <- bpph(
+    Surv(time, status) ~ karno,
+    data = dat,
+    approach = "mle",
+    init = 0,
+    degree = 3L
+  )
+  q <- length(fit$coefficients)
+  m <- length(fit$bp.param)
+  fit$hessian <- diag(q + m)
+  expect_warning(v <- vcov(fit), "indefinite")
+  expect_true(all(is.na(diag(v))))
 })
 
 test_that("default vcov does not inflate beta SE when gamma block is unstable", {

@@ -1,3 +1,42 @@
+#' Keep formula and data as captured expressions. Other scalar arguments are
+#' stored as the values that were used, so print() does not show `scale = scale`.
+#'
+#' @noRd
+.spbp_call_value_is_literal <- function(val) {
+  if (is.null(val)) {
+    return(TRUE)
+  }
+  if (is.language(val) || is.function(val) || is.environment(val) || is.pairlist(val)) {
+    return(FALSE)
+  }
+  if (is.list(val) || is.data.frame(val) || is.matrix(val) || inherits(val, "formula")) {
+    return(FALSE)
+  }
+  is.atomic(val) && length(val) <= 5L
+}
+
+#' @noRd
+.spbp_explicit_call_args <- function(call, values) {
+  nms <- names(call)
+  if (is.null(nms) || !length(values)) {
+    return(call)
+  }
+  keep_symbol <- c("formula", "data")
+  for (nm in nms) {
+    if (!nzchar(nm) || nm %in% keep_symbol || !nm %in% names(values)) {
+      next
+    }
+    if (!is.symbol(call[[nm]])) {
+      next
+    }
+    val <- values[[nm]]
+    if (.spbp_call_value_is_literal(val)) {
+      call[[nm]] <- val
+    }
+  }
+  call
+}
+
 #' @keywords internal
 #' @noRd
 .spbp_fit_wrapper <- function(formula, degree = NULL, data, model, approach = c("mle", "bayes"),
@@ -33,6 +72,18 @@
   fit$call <- mc
   fit$call$approach <- resolved_call$approach
   fit$call$model <- resolved_call$model
+  fit$call$degree <- resolved_call$degree
+  fit$call <- .spbp_explicit_call_args(
+    fit$call,
+    utils::modifyList(
+      list(...),
+      list(
+        degree = fit$call$degree,
+        approach = fit$call$approach,
+        model = fit$call$model
+      )
+    )
+  )
   fit
 }
 

@@ -37,9 +37,9 @@ static constexpr std::array<const char*, 136> locations_array__ =
   " (in 'spbp', line 144, column 21 to line 148, column 3)",
   " (in 'spbp', line 144, column 2 to line 148, column 3)",
   " (in 'spbp', line 123, column 2 to line 125, column 4)",
-  " (in 'spbp', line 131, column 8 to column 86)",
-  " (in 'spbp', line 129, column 8 to column 84)",
-  " (in 'spbp', line 128, column 6 to line 131, column 86)",
+  " (in 'spbp', line 131, column 8 to column 75)",
+  " (in 'spbp', line 129, column 8 to column 73)",
+  " (in 'spbp', line 128, column 6 to line 131, column 75)",
   " (in 'spbp', line 127, column 19 to line 132, column 5)",
   " (in 'spbp', line 127, column 4 to line 132, column 5)",
   " (in 'spbp', line 137, column 8 to column 61)",
@@ -71,14 +71,14 @@ static constexpr std::array<const char*, 136> locations_array__ =
   " (in 'spbp', line 100, column 9 to column 10)",
   " (in 'spbp', line 100, column 11 to column 12)",
   " (in 'spbp', line 100, column 2 to column 16)",
-  " (in 'spbp', line 101, column 30 to column 31)",
-  " (in 'spbp', line 101, column 2 to column 33)",
+  " (in 'spbp', line 101, column 8 to column 9)",
+  " (in 'spbp', line 101, column 2 to column 39)",
   " (in 'spbp', line 102, column 9 to column 10)",
   " (in 'spbp', line 102, column 2 to column 26)",
   " (in 'spbp', line 103, column 18 to column 19)",
   " (in 'spbp', line 103, column 2 to column 32)",
-  " (in 'spbp', line 104, column 31 to column 32)",
-  " (in 'spbp', line 104, column 2 to column 34)",
+  " (in 'spbp', line 104, column 8 to column 9)",
+  " (in 'spbp', line 104, column 2 to column 40)",
   " (in 'spbp', line 105, column 18 to column 19)",
   " (in 'spbp', line 105, column 2 to column 36)",
   " (in 'spbp', line 106, column 18 to column 19)",
@@ -1074,22 +1074,22 @@ public:
                   stan::model::rvalue(priordist_beta, "priordist_beta",
                     stan::model::index_uni(j)), 0)) {
               current_statement__ = 10;
-              lp_accum__.add((stan::math::normal_lpdf<false>(beta,
-                                stan::model::rvalue(location_beta,
-                                  "location_beta", stan::model::index_uni(j)),
-                                stan::model::rvalue(scale_beta, "scale_beta",
-                                  stan::model::index_uni(j))) +
-                stan::math::log(
-                  stan::model::rvalue(sdv, "sdv", stan::model::index_uni(j)))));
+              lp_accum__.add(stan::math::normal_lpdf<false>(
+                               stan::model::rvalue(beta, "beta",
+                                 stan::model::index_uni(j)),
+                               stan::model::rvalue(location_beta,
+                                 "location_beta", stan::model::index_uni(j)),
+                               stan::model::rvalue(scale_beta, "scale_beta",
+                                 stan::model::index_uni(j))));
             } else {
               current_statement__ = 9;
-              lp_accum__.add((stan::math::logistic_lpdf<false>(beta,
-                                stan::model::rvalue(location_beta,
-                                  "location_beta", stan::model::index_uni(j)),
-                                stan::model::rvalue(scale_beta, "scale_beta",
-                                  stan::model::index_uni(j))) +
-                stan::math::log(
-                  stan::model::rvalue(sdv, "sdv", stan::model::index_uni(j)))));
+              lp_accum__.add(stan::math::logistic_lpdf<false>(
+                               stan::model::rvalue(beta, "beta",
+                                 stan::model::index_uni(j)),
+                               stan::model::rvalue(location_beta,
+                                 "location_beta", stan::model::index_uni(j)),
+                               stan::model::rvalue(scale_beta, "scale_beta",
+                                 stan::model::index_uni(j))));
             }
           }
           current_statement__ = 19;

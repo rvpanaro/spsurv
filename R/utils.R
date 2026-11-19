@@ -491,6 +491,17 @@ WAIC <- function(loglik) {
 
 #' @keywords internal
 #' @noRd
+.spbp_printed_degree <- function(x) {
+  deg <- x$degree
+  if (is.null(deg) && !is.null(x$call)) {
+    deg <- x$call$degree
+  }
+  if (is.null(deg) || length(deg) != 1L || !is.numeric(deg) || !is.finite(deg)) {
+    return(NULL)
+  }
+  as.integer(deg)
+}
+
 .spbp_summary_message <- function(x) {
   cls <- class(x)[1]
   is_bayes <- grepl("bayes$", cls)
@@ -502,7 +513,12 @@ WAIC <- function(loglik) {
     aft = "AFT",
     toupper(model)
   )
-  paste0(prefix, "Bernstein ", model_label, " model: \n")
+  msg <- paste0(prefix, "Bernstein ", model_label, " model")
+  deg <- .spbp_printed_degree(x)
+  if (!is.null(deg)) {
+    msg <- paste0(msg, " (degree = ", deg, ")")
+  }
+  paste0(msg, ": \n")
 }
 
 #' @keywords internal

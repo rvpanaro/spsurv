@@ -43,6 +43,7 @@ summary.spbp <- function(object, interval = 0.95,
 
     output <- list(
       call = object$call,
+      degree = object$degree,
       return_code = object$return_code,
       n = object$n,
       loglik = object$loglik
@@ -92,16 +93,24 @@ summary.spbp <- function(object, interval = 0.95,
       rsq = 1 - exp(-logtest / object$n),
       maxrsq = 1 - exp(2 * object$loglik[1] / object$n)
     )
-    wald_stat <- coxph.wtest(vcov(object), as.numeric(unname(coef(object))))
-    output$waldtest <- c(
-      test = as.vector(round(wald_stat$test, 2)),
-      df = df,
-      pvalue = pchisq(as.vector(round(wald_stat$test, 2)), df,
-        lower.tail = FALSE
-      )
+    # Reuse `var`. A second vcov() repeats indefinite-information warnings, and
+    # coxph.wtest() errors when that matrix is singular or contains NA.
+    wald_stat <- tryCatch(
+      coxph.wtest(var, as.numeric(unname(beta))),
+      error = function(e) NULL
     )
+    if (is.null(wald_stat) || !is.finite(wald_stat$test)) {
+      output$waldtest <- c(test = NA_real_, df = df, pvalue = NA_real_)
+    } else {
+      wald_test <- as.vector(round(wald_stat$test, 2))
+      output$waldtest <- c(
+        test = wald_test,
+        df = df,
+        pvalue = pchisq(wald_test, df, lower.tail = FALSE)
+      )
+    }
     output$nparams <- .spbp_nparams(object)
-    output$p <- ncol(vcov(object))
+    output$p <- ncol(var)
     output$controls <- list(
       compact = isTRUE(compact),
       show_call = isTRUE(show_call),
@@ -127,6 +136,7 @@ summary.spbp <- function(object, interval = 0.95,
 
     output <- list(
       call = object$call,
+      degree = object$degree,
       n = object$n,
       loglik = object$loglik
     )

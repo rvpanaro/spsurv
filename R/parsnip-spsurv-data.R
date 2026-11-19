@@ -100,7 +100,12 @@ spsurv_register_parsnip <- function() {
     eng = eng,
     mode = "censored regression",
     options = list(
-      predictor_indicators = "traditional",
+      # Match the survival engine. "traditional" with compute_intercept = FALSE
+      # makes hardhat keep every factor level (model.matrix without an
+      # intercept). Those columns sum to 1 and are collinear with the Bernstein
+      # baseline, so the observed information is singular and summary() fails
+      # in coxph.wtest(). Leave contrasts to bpph()/bppo()/bpaft().
+      predictor_indicators = "none",
       compute_intercept = FALSE,
       remove_intercept = FALSE,
       allow_sparse_x = FALSE
@@ -144,7 +149,7 @@ spsurv_register_parsnip <- function() {
 #' @noRd
 .spsurv_register_ph_engine <- function(eng, extra_defaults) {
   defaults <- utils::modifyList(
-    list(scale = FALSE, init = 0, verbose = FALSE),
+    list(scale = TRUE, init = 0, verbose = FALSE),
     extra_defaults
   )
   .spsurv_register_common_fit(
@@ -160,7 +165,7 @@ spsurv_register_parsnip <- function() {
 #' @noRd
 .spsurv_register_po_engine <- function(eng, extra_defaults) {
   defaults <- utils::modifyList(
-    list(scale = FALSE, init = 0, verbose = FALSE),
+    list(scale = TRUE, init = 0, verbose = FALSE),
     extra_defaults
   )
   .spsurv_register_common_fit(
@@ -176,7 +181,7 @@ spsurv_register_parsnip <- function() {
 #' @noRd
 .spsurv_register_aft_engine <- function(eng, extra_defaults) {
   defaults <- utils::modifyList(
-    list(scale = FALSE, init = 0, verbose = FALSE),
+    list(scale = TRUE, init = 0, verbose = FALSE),
     extra_defaults
   )
   .spsurv_register_common_fit(

@@ -4,6 +4,18 @@ skip_if_not_installed <- function(pkg) {
   testthat::skip_if_not_installed(pkg)
 }
 
+test_that("parsnip engines default scale to TRUE", {
+  skip_if_not_installed("parsnip")
+  skip_if_not_installed("censored")
+  for (model in c("proportional_hazards", "proportional_odds", "survival_reg")) {
+    info <- parsnip::get_from_env(paste0(model, "_fit"))
+    for (eng in c("spsurv", "spsurv_bayes")) {
+      defs <- info$value[info$engine == eng][[1]]$defaults
+      expect_identical(defs$scale, TRUE)
+    }
+  }
+})
+
 test_that("spsurv registers parsnip engines on load", {
   skip_if_not_installed("parsnip")
   skip_if_not_installed("censored")
@@ -43,6 +55,21 @@ test_that("workflow with spsurv engine", {
   fit <- workflows::fit(wf, data = veteran)
   pr <- predict(fit, veteran[1:2, ], type = "survival", eval_time = 100)
   expect_true(".pred" %in% names(pr))
+  eng <- parsnip::extract_fit_engine(fit)
+  # Reference level is dropped. One column per level is collinear with the baseline.
+  expect_equal(length(coef(eng)), 1L + nlevels(veteran$celltype) - 1L)
+  expect_true(all(is.finite(vcov(eng))))
+  out <- capture.output(print(fit))
+  expect_true(any(grepl(paste0("degree = ", eng$degree), out, fixed = TRUE)))
+  call_txt <- paste(deparse(eng$call), collapse = " ")
+  expect_false(grepl("scale = scale", call_txt, fixed = TRUE))
+  expect_false(grepl("init = init", call_txt, fixed = TRUE))
+  expect_false(grepl("verbose = verbose", call_txt, fixed = TRUE))
+  expect_true(grepl("scale = FALSE", call_txt, fixed = TRUE))
+  expect_true(grepl("init = 0", call_txt, fixed = TRUE))
+  expect_true(grepl("verbose = FALSE", call_txt, fixed = TRUE))
+  expect_true(grepl("approach = \"mle\"", call_txt, fixed = TRUE))
+  expect_true(grepl("model = \"ph\"", call_txt, fixed = TRUE))
 })
 
 test_that("workflow resampling smoke test with spsurv engine", {

@@ -13,6 +13,11 @@
     cat("\n")
   }
 
+  deg <- .spbp_printed_degree(x)
+  if (!is.null(deg)) {
+    cat("Bernstein polynomial degree:", deg, "\n")
+  }
+
   coef <- coef(x)
 
   if (x$call$approach == "mle") {

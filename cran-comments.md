@@ -1,6 +1,12 @@
 ## Resubmission context
 
-This is a resubmission of **spsurv 1.1.0**. The previous upload was not accepted.
+This upload is **spsurv 1.1.1**, a patch on the current CRAN release **1.1.0**
+(2026-09-28). It fixes parsnip workflow singular designs, `vcov()` delta-method
+mapping when the gamma block is ill-conditioned, `summary()`/`print()` with
+missing standard errors, and the Stan beta prior density (see `NEWS.md`).
+
+This section documents the earlier **1.1.0** resubmission. The previous 1.1.0
+upload to CRAN before acceptance was not accepted.
 Uwe Ligges asked us to omit `+ file LICENSE` and the `LICENSE` file (a copy of
 GPL-3, which R already ships). This upload does that: `License: GPL-3`, and
 there is no `LICENSE` file and no additional restriction.

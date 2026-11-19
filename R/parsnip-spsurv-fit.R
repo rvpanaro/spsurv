@@ -11,7 +11,7 @@
 .spsurv_parsnip_fit <- function(formula, data, model = c("ph", "po", "aft"),
                                 case_weights = NULL, degree = NULL,
                                 approach = c("mle", "bayes"),
-                                scale = FALSE, init = 0, verbose = FALSE,
+                                scale = TRUE, init = 0, verbose = FALSE,
                                 ...) {
   .spsurv_parsnip_warn_weights(case_weights)
   model <- match.arg(model)

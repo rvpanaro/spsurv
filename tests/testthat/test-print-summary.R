@@ -9,6 +9,7 @@ test_that("print.summary.bpph.mle outputs standard PH summary", {
   s <- summary(fit)
   expect_output(print(s), "Call:")
   expect_output(print(s), "Bernstein PH model")
+  expect_output(print(s), paste0("degree = ", fit$degree))
   expect_output(print(s), "Regression coefficients:")
   expect_output(print(s), "2.5%")
   expect_output(print(s), "Exponentiated coefficients:")

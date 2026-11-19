@@ -39,12 +39,14 @@ data(veteran)
 | `proportional_odds()` | `bppo` | `spsurv`, `spsurv_bayes` |
 | `survival_reg()` | `bpaft` | `spsurv`, `spsurv_bayes` |
 
-Use `scale = FALSE` when covariates are preprocessed with **recipes** (the
-package default-scales internally when `scale = TRUE`).
+The engine uses `scale = TRUE`, the same default as `bpph()`. Covariates are
+centered and scaled for fitting, and coefficients are returned on the original
+scale. Set `scale = FALSE` when a recipe has already centered or scaled the
+predictors.
 
 ```{r parsnip-fit}
 spec <- proportional_hazards() |>
-  set_engine("spsurv", degree = 5L, scale = FALSE, init = 0)
+  set_engine("spsurv", degree = 5L, init = 0)
 
 fit <- fit(spec, Surv(time, status) ~ karno + celltype, data = veteran)
 predict(fit, veteran[1:2, ], type = "survival", eval_time = c(100, 200))
@@ -57,7 +59,7 @@ wf <- workflow() |>
   add_formula(Surv(time, status) ~ karno + celltype) |>
   add_model(
     proportional_hazards() |>
-      set_engine("spsurv", degree = 5L, scale = FALSE, init = 0)
+      set_engine("spsurv", degree = 5L, init = 0)
   )
 
 wf_fit <- fit(wf, data = veteran)

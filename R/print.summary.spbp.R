@@ -1,3 +1,44 @@
+#' Print a coefficient table after dropping all-NA columns.
+#'
+#' \code{printCoefmat()} treats the last column as a p-value when
+#' \code{has.Pvalue} is TRUE. That errors if the p-value column was removed
+#' because every standard error was \code{NA}.
+#'
+#' @noRd
+.spbp_print_coefmat <- function(x, digits, signif.stars, has_pvalue = FALSE, ...) {
+  x <- .spbp_drop_all_na_cols(x)
+  if (is.null(x) || !is.matrix(x) || ncol(x) == 0L || nrow(x) == 0L) {
+    return(invisible(NULL))
+  }
+  cn <- colnames(x)
+  nc <- ncol(x)
+  has_pvalue <- isTRUE(has_pvalue) &&
+    nc >= 2L &&
+    length(cn) > 0L &&
+    substr(cn[nc], 1L, 3L) %in% c("Pr(", "p-v")
+  if (!has_pvalue && nc == 1L) {
+    stats::printCoefmat(
+      x,
+      digits = digits,
+      signif.stars = signif.stars,
+      P.values = FALSE,
+      has.Pvalue = FALSE,
+      cs.ind = 1L,
+      tst.ind = integer(0),
+      ...
+    )
+  } else {
+    stats::printCoefmat(
+      x,
+      digits = digits,
+      signif.stars = signif.stars,
+      P.values = has_pvalue,
+      has.Pvalue = has_pvalue,
+      ...
+    )
+  }
+}
+
 #' @keywords internal
 #' @noRd
 .print.summary.spbp <- function(x,
@@ -76,12 +117,11 @@
   }
 
   cat("Regression coefficients:\n")
-  stats::printCoefmat(
-    .spbp_drop_all_na_cols(reg_tab),
+  .spbp_print_coefmat(
+    reg_tab,
     digits = digits,
     signif.stars = signif.stars,
-    P.value = has_pvalue,
-    has.Pvalue = has_pvalue,
+    has_pvalue = has_pvalue,
     ...
   )
   cat("\n")
@@ -97,12 +137,11 @@
       )
       colnames(exp_tab)[2:3] <- .spbp_interval_colnames(colnames(int_tab))
       cat("Exponentiated coefficients:\n")
-      stats::printCoefmat(
-        .spbp_drop_all_na_cols(exp_tab),
+      .spbp_print_coefmat(
+        exp_tab,
         digits = digits,
         signif.stars = FALSE,
-        P.value = FALSE,
-        has.Pvalue = FALSE
+        has_pvalue = FALSE
       )
       cat("\n")
     }
@@ -116,12 +155,11 @@
       `Pr(>|z|)` = x$baseline[, "Pr(>|z|)"]
     )
     cat("Bernstein baseline coefficients:\n")
-    stats::printCoefmat(
-      .spbp_drop_all_na_cols(base_tab),
+    .spbp_print_coefmat(
+      base_tab,
       digits = digits,
       signif.stars = signif.stars,
-      P.value = TRUE,
-      has.Pvalue = TRUE,
+      has_pvalue = TRUE,
       ...
     )
     cat("\n")

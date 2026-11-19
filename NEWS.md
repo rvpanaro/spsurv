@@ -1,3 +1,20 @@
+# spsurv 1.1.1
+
+* **tidymodels:** parsnip engines use `predictor_indicators = "none"` (as the
+  `survival` engine) so factor contrasts match `bpph()` / `bppo()` / `bpaft()`
+  and avoid a singular design with the Bernstein baseline. Engines default to
+  `scale = TRUE`, matching the direct model constructors.
+* **Inference:** `vcov.spbp()` applies the delta method only on parameters with
+  finite variances; negative variances are set to `NA` with a warning instead of
+  taking absolute values, so finite regression standard errors are not wiped
+  when the gamma block is ill-conditioned.
+* **Summary and print:** `summary.spbp()` returns a missing Wald test when
+  `coxph.wtest()` fails; `print.summary.spbp()` tolerates all-NA standard-error
+  columns; fitted objects show Bernstein degree and literal call arguments
+  (`scale = TRUE`, `init = 0`, etc.).
+* **Bayesian:** beta priors in `inst/stan/spbp.stan` use elementwise
+  `normal_lpdf` / `logistic_lpdf` on `beta[j]` (regenerated Stan exports).
+
 # spsurv 1.1.0
 
 * **CRAN resubmission:** Maintainer contact updated to `rvpanaro@gmail.com`;

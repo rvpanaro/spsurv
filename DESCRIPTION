@@ -1,7 +1,7 @@
 Package: spsurv
 Type: Package
 Title: Bernstein Polynomial Based Semiparametric Survival Analysis
-Version: 1.1.0
+Version: 1.1.1
 Authors@R: 
     c(person(given = "Renato",
            family = "Panaro",

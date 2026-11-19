@@ -59,7 +59,7 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
     C <- H_neg[(q + 1L):(q + m), (q + 1L):(q + m), drop = FALSE]
 
     if (gamma_unavailable || any(!is.finite(C))) {
-      # Beta block remains usable; gamma-related uncertainty is unavailable.
+      # Gamma is unusable, so beta variances are conditional on gamma fixed.
       V_bb <- tryCatch(
         .spbp_sym_inv(A),
         error = function(e) NULL
@@ -75,7 +75,8 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
       V[1:q, 1:q] <- V_bb
       warning(
         "Bernstein-polynomial (gamma) information matrix is unavailable or non-finite; ",
-        "gamma-related variance entries are set to NA.",
+        "gamma-related variance entries are set to NA. ",
+        "Regression standard errors treat the Bernstein weights as fixed.",
         call. = FALSE
       )
     } else {
@@ -85,7 +86,8 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
       )
       if (is.null(inv_C)) {
         warning(
-          "Could not invert the gamma information block; gamma-related variance entries are set to NA.",
+          "Could not invert the gamma information block; gamma-related variance entries are set to NA. ",
+          "Regression standard errors treat the Bernstein weights as fixed.",
           call. = FALSE
         )
         V_bb <- tryCatch(
@@ -116,16 +118,16 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
       }
     }
   }
-  if (all(is.finite(diag(V)))) {
-    diag(V) <- abs(diag(V))
-  } else {
-    d <- diag(V)
-    d[is.finite(d)] <- abs(d[is.finite(d)])
+  d <- diag(V)
+  neg <- is.finite(d) & d < 0
+  if (any(neg)) {
+    warning(
+      "Observed information is indefinite; negative variances are set to NA.",
+      call. = FALSE
+    )
+    d[neg] <- NA_real_
     diag(V) <- d
   }
-
-  # Parameters for Delta Method
-  inv_exp_a <- 1 / exp(object$alpha)
 
   # Construct Jacobian J
   J <- matrix(0, q + m, q + m)
@@ -135,9 +137,9 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
     diag(J)[1:q] <- 1 / object$sdv
   }
 
-  # d(gamma)/d(gamma_std)
+  # d(gamma)/d(u), u = log(psi), gamma = exp(u - alpha)
   if (m > 0L) {
-    diag(J)[(q + 1):(q + m)] <- inv_exp_a
+    diag(J)[(q + 1):(q + m)] <- object$bp.param
   }
 
   # d(gamma)/d(beta_std): covariate centering shifts the baseline (PH/PO only).
@@ -151,16 +153,16 @@ vcov.spbp <- function(object, bp.param = FALSE, mask_unstable_gamma = TRUE, ...)
     }
   }
 
-  if (gamma_unavailable && q > 0L) {
-    # Map only the finite beta block; leave gamma-related entries as NA.
-    J_bb <- J[1:q, 1:q, drop = FALSE]
-    V_bb <- V[1:q, 1:q, drop = FALSE]
-    V_final <- matrix(NA_real_, q + m, q + m)
-    V_final[1:q, 1:q] <- J_bb %*% V_bb %*% t(J_bb)
-  } else if (gamma_unavailable && q == 0L) {
-    V_final <- matrix(NA_real_, m, m)
-  } else {
-    V_final <- J %*% V %*% t(J)
+  # Apply the delta method only on parameters with finite variances. A full
+  # J %*% V %*% t(J) spreads NA gamma diagonals into beta through the centering
+  # rows of J, even when the beta block itself is finite.
+  finite <- is.finite(diag(V))
+  V_final <- matrix(NA_real_, q + m, q + m)
+  if (any(finite)) {
+    idx <- which(finite)
+    J_sub <- J[idx, idx, drop = FALSE]
+    V_sub <- V[idx, idx, drop = FALSE]
+    V_final[idx, idx] <- J_sub %*% V_sub %*% t(J_sub)
   }
 
   # Labeling

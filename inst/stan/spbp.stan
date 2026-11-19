@@ -55,9 +55,9 @@ model {
   if (approach == 1) {             // priors
     for (j in 1:p) {
       if (priordist_beta[j] == 0)
-        target += normal_lpdf(beta | location_beta[j], scale_beta[j]) + log(sdv[j]);
+        target += normal_lpdf(beta[j] | location_beta[j], scale_beta[j]);
       else
-        target += logistic_lpdf(beta | location_beta[j], scale_beta[j]) + log(sdv[j]);
+        target += logistic_lpdf(beta[j] | location_beta[j], scale_beta[j]);
     }
 
     for (j in 1:m) {

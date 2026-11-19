@@ -140,7 +140,8 @@ If you also use the **survstan** package, qualify spsurv helpers after
 ### tidymodels and tidybayes
 
 Load **parsnip** (or **tidymodels**) before **spsurv** so censored-regression
-engines register. Use `scale = FALSE` when preprocessing with **recipes**.
+engines register. The `scale` default is `TRUE`, as in `bpph()`. Pass
+`scale = FALSE` when a recipe has already centered or scaled the predictors.
 
 ```r
 library(parsnip)
@@ -152,7 +153,7 @@ wf <- workflow() |>
   add_formula(Surv(time, status) ~ karno) |>
   add_model(
     proportional_hazards() |>
-      set_engine("spsurv", degree = 5, scale = FALSE, init = 0)
+      set_engine("spsurv", degree = 5, init = 0)
   )
 
 fit_wf <- fit(wf, data = veteran)
